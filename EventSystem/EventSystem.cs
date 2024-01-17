@@ -1,13 +1,20 @@
-﻿using EventSystem.Utils;
+﻿using EventSystem.Nexus;
+using EventSystem.Utils;
+using Nexus.API;
 using NLog;
+using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Reflection;
 using System.Windows.Controls;
+using System.Xml.Serialization;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
 using Torch.API.Plugins;
 using Torch.API.Session;
+using Torch.Managers;
 using Torch.Session;
 
 namespace EventSystem
@@ -17,13 +24,22 @@ namespace EventSystem
 
         public static readonly Logger Log = LogManager.GetCurrentClassLogger();
         public static EventSystemMain Instance;
+        private IMultiplayerManagerBase _multiplayerManager;
+        public static IChatManagerServer ChatManager => TorchBase.Instance.CurrentSession.Managers.GetManager<IChatManagerServer>();
 
+        //GUI
         private EventSystemControl _control;
         public UserControl GetControl() => _control ?? (_control = new EventSystemControl(this));
 
         //Config
         private Persistent<EventSystemConfig> _config;
         public EventSystemConfig Config => _config?.Data;
+
+        //Nexus
+        public static NexusAPI? nexusAPI { get; private set; }
+        private static readonly Guid NexusGUID = new("28a12184-0422-43ba-a6e6-2e228611cca5");
+        public static bool NexusInstalled { get; private set; } = false;
+        public static bool NexusInited;
 
         //Metody
         public override void Init(ITorchBase torch)
@@ -53,6 +69,21 @@ namespace EventSystem
                     break;
 
                 case TorchSessionState.Loaded:
+                    //Nexus
+                    ConnectNexus();
+
+                    //MultiplayerManager
+                    _multiplayerManager = session.Managers.GetManager<IMultiplayerManagerBase>();
+                    if (_multiplayerManager == null)
+                    {
+                        Log.Warn("Could not get multiplayer manager.");
+                    }
+                    else
+                    {
+                        LoggerHelper.DebugLog(Log, _config.Data, "Multiplayer manager initialized.");
+                        _multiplayerManager.PlayerJoined += OnPlayerJoined;
+                    }
+
                     Log.Info("Session Loaded!");
                     break;
 
@@ -64,6 +95,86 @@ namespace EventSystem
             }
         }
 
+        private void OnPlayerJoined(IPlayer player)
+        {
+            string playerFolder = Path.Combine(StoragePath, "EventSystem", "PlayerAccounts");
+            string fileName = $"{player.Name}-{player.SteamId}.xml";
+            string filePath = Path.Combine(playerFolder, fileName);
+
+            if (!File.Exists(filePath))
+            {
+                PlayerAccount playerAccount = new PlayerAccount(player.SteamId, 0);
+
+                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    serializer.Serialize(fileStream, playerAccount);
+                }
+
+                LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
+            }
+            else
+            {
+                LoggerHelper.DebugLog(Log, _config.Data, $"Player account file already exists for {player.Name}");
+            }
+        }
+
+
+        private void ConnectNexus()
+        {
+            if (!NexusInited)
+            {
+                PluginManager? _pluginManager = Torch.Managers.GetManager<PluginManager>();
+                if (_pluginManager is null)
+                    return;
+
+                if (_pluginManager.Plugins.TryGetValue(NexusGUID, out ITorchPlugin? torchPlugin))
+                {
+                    if (torchPlugin is null)
+                        return;
+
+                    Type? Plugin = torchPlugin.GetType();
+                    Type? NexusPatcher = Plugin != null ? Plugin.Assembly.GetType("Nexus.API.PluginAPISync") : null;
+                    if (NexusPatcher != null)
+                    {
+                        NexusPatcher.GetMethod("ApplyPatching", BindingFlags.Static | BindingFlags.NonPublic)!.Invoke(null, new object[]
+                        {
+                            typeof(NexusAPI), "EventSystem Plugin"
+                        });
+                        nexusAPI = new NexusAPI(9452);
+                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(9452, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
+                        NexusInstalled = true;
+                    }
+                }
+                NexusInited = true;
+            }
+
+            // Nowy dodany blok sprawdzający
+            if (NexusInstalled && nexusAPI != null)
+            {
+                NexusAPI.Server thisServer = NexusAPI.GetThisServer();
+                NexusManager.SetServerData(thisServer);
+
+                if (Config!.isLobby)
+                {
+                    // Announce to all other servers that started before the Lobby, that this is the lobby server
+                    List<NexusAPI.Server> servers = NexusAPI.GetAllServers();
+                    foreach (NexusAPI.Server server in servers)
+                    {
+                        if (server.ServerID != thisServer.ServerID)
+                        {
+                            NexusMessage message = new(thisServer.ServerID, server.ServerID, false, thisServer, false, true);
+                            byte[] data = MyAPIGateway.Utilities.SerializeToBinary(message);
+                            nexusAPI?.SendMessageToServer(server.ServerID, data);
+                        }
+                    }
+                }
+            }
+            else
+            {
+                Log.Warn("Nexus API is not installed or not initialized. Skipping Nexus connection.");
+            }
+        }
 
         public void Save()
         {
