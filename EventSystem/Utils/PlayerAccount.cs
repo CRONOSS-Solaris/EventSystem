@@ -2,7 +2,7 @@
 {
     public class PlayerAccount
     {
-        public ulong SteamID { get; set; }
+        public long SteamID { get; set; }
         public long Points { get; set; }
 
         public PlayerAccount()
@@ -10,7 +10,7 @@
 
         }
 
-        public PlayerAccount(ulong steamID, long points)
+        public PlayerAccount(long steamID, long points)
         {
             SteamID = steamID;
             Points = points;

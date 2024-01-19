@@ -1,4 +1,5 @@
-﻿using EventSystem.Nexus;
+﻿using EventSystem.DataBase;
+using EventSystem.Nexus;
 using EventSystem.Utils;
 using Nexus.API;
 using NLog;
@@ -39,7 +40,12 @@ namespace EventSystem
         public static NexusAPI? nexusAPI { get; private set; }
         private static readonly Guid NexusGUID = new("28a12184-0422-43ba-a6e6-2e228611cca5");
         public static bool NexusInstalled { get; private set; } = false;
+
         public static bool NexusInited;
+
+        //PostgresSQL
+        private PostgresDatabaseManager _databaseManager;
+        public PostgresDatabaseManager DatabaseManager => _databaseManager;
 
         //Metody
         public override void Init(ITorchBase torch)
@@ -49,6 +55,15 @@ namespace EventSystem
             //config
             var configManager = new ConfigManager(Path.Combine(StoragePath, "EventSystem"));
             _config = configManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
+
+            //PostgresSQL
+            if (_config.Data.UseDatabase)
+            {
+                // Ciąg połączenia z ustawień konfiguracji
+                string connectionString = $"Host={_config.Data.DatabaseHost};Port={_config.Data.DatabasePort};Username={_config.Data.DatabaseUsername};Password={_config.Data.DatabasePassword};Database={_config.Data.DatabaseName};";
+                _databaseManager = new PostgresDatabaseManager(connectionString);
+                _databaseManager.InitializeDatabase();
+            }
 
             //inne
             var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
@@ -97,25 +112,36 @@ namespace EventSystem
 
         private void OnPlayerJoined(IPlayer player)
         {
-            string playerFolder = Path.Combine(StoragePath, "EventSystem", "PlayerAccounts");
-            string fileName = $"{player.Name}-{player.SteamId}.xml";
-            string filePath = Path.Combine(playerFolder, fileName);
-
-            if (!File.Exists(filePath))
+            // Sprawdź, czy korzystanie z bazy danych jest włączone
+            if (_config.Data.UseDatabase && _databaseManager != null)
             {
-                PlayerAccount playerAccount = new PlayerAccount(player.SteamId, 0);
-
-                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    serializer.Serialize(fileStream, playerAccount);
-                }
-
-                LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
+                // Logika zapisywania danych gracza w bazie danych
+                _databaseManager.CreatePlayerAccount(player.Name, (long)player.SteamId);
+                LoggerHelper.DebugLog(Log, _config.Data, $"Player data saved in database for {player.Name}");
             }
             else
             {
-                LoggerHelper.DebugLog(Log, _config.Data, $"Player account file already exists for {player.Name}");
+                // Logika tworzenia pliku XML, jeśli baza danych nie jest używana
+                string playerFolder = Path.Combine(StoragePath, "EventSystem", "PlayerAccounts");
+                string fileName = $"{player.Name}-{player.SteamId}.xml";
+                string filePath = Path.Combine(playerFolder, fileName);
+
+                if (!File.Exists(filePath))
+                {
+                    PlayerAccount playerAccount = new PlayerAccount((long)player.SteamId, 0);
+
+                    XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
+                    using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        serializer.Serialize(fileStream, playerAccount);
+                    }
+
+                    LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
+                }
+                else
+                {
+                    LoggerHelper.DebugLog(Log, _config.Data, $"Player account file already exists for {player.Name}");
+                }
             }
         }
 
