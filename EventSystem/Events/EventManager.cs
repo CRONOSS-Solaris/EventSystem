@@ -22,14 +22,14 @@ namespace EventSystem.Events
         {
             _events.Add(eventItem);
             eventItem.LoadEventSettings(_config);
-            LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.Name}' registered.");
+            LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' registered.");
         }
 
         public IEnumerable<EventsBase> Events => _events;
 
         public void ExecuteEvent(string eventName)
         {
-            var eventToExecute = _events.FirstOrDefault(e => e.Name == eventName);
+            var eventToExecute = _events.FirstOrDefault(e => e.EventName == eventName);
             if (eventToExecute != null && eventToExecute.IsActiveNow())
             {
                 eventToExecute.ExecuteEvent();

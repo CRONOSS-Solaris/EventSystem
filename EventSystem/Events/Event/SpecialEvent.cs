@@ -14,7 +14,7 @@ namespace EventSystem.Event
         public SpecialEvent(EventSystemConfig config)
         {
             _config = config;
-            Name = "SpecialEvent";
+            EventName = "SpecialEvent";
         }
 
         public override void ExecuteEvent()

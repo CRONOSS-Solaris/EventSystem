@@ -5,7 +5,7 @@ namespace EventSystem.Events
 {
     public abstract class EventsBase
     {
-        public string Name { get; set; }
+        public string EventName { get; set; }
         public bool IsEnabled { get; set; } = true;
         public List<DayOfWeek> ActiveDays { get; set; } = new List<DayOfWeek>();
         public TimeSpan StartTime { get; set; }

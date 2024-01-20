@@ -175,7 +175,7 @@ namespace EventSystem
             {
                 if (eventItem.IsActiveNow())
                 {
-                    _eventManager.ExecuteEvent(eventItem.Name);
+                    _eventManager.ExecuteEvent(eventItem.EventName);
                 }
             }
 
