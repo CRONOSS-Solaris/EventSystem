@@ -32,7 +32,7 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        public override async Task LoadEventSettings(EventSystemConfig config)
+        public override Task LoadEventSettings(EventSystemConfig config)
         {
             if (config.SpecialEventSettings == null)
             {
@@ -54,6 +54,8 @@ namespace EventSystem.Event
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
             LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+
+            return Task.CompletedTask;
         }
 
         public class SpecialEventConfig
