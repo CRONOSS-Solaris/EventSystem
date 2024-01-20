@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace EventSystem.Events
 {
@@ -12,7 +13,10 @@ namespace EventSystem.Events
         public TimeSpan EndTime { get; set; }
 
         // Metoda abstrakcyjna do wykonania konkretnego eventu
-        public abstract void ExecuteEvent();
+        public abstract Task ExecuteEvent();
+
+        // Metoda abstrakcyjna do zakończenia konkretnego eventu
+        public abstract Task EndEvent();
 
         // Metoda do sprawdzenia, czy event jest aktywny w danej chwili
         public bool IsActiveNow()
@@ -27,6 +31,24 @@ namespace EventSystem.Events
                    now.TimeOfDay <= EndTime;
         }
 
+        public TimeSpan GetNextStartTime(DateTime now)
+        {
+            var startOfDay = now.Date.Add(StartTime);
+            return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
+        }
+
+        public TimeSpan GetNextEndTime(DateTime now)
+        {
+            var endOfDay = now.Date.Add(EndTime);
+            return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
+        }
+
+        public bool IsActiveOnDay(DayOfWeek day)
+        {
+            // Zwraca true, jeśli wydarzenie jest aktywne codziennie lub w określonym dniu tygodnia
+            return ActiveDays.Count == 0 || ActiveDays.Contains(day);
+        }
+
         // Metoda do logowania szczegółów wydarzenia
         public void LogEventDetails()
         {
@@ -34,10 +56,12 @@ namespace EventSystem.Events
         }
 
         // Metoda do wczytania ustawień konkretnego eventu z konfiguracji
-        public virtual void LoadEventSettings(EventSystemConfig config)
+        public virtual Task LoadEventSettings(EventSystemConfig config)
         {
             // Tutaj możesz dodać logikę wczytywania ustawień z konfiguracji
             // Możesz użyć "config" do dostępu do ustawień i zaktualizowania pól klasy
+            return Task.CompletedTask;
         }
+
     }
 }

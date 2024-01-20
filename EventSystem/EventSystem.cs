@@ -75,9 +75,8 @@ namespace EventSystem
                 _databaseManager = new PostgresDatabaseManager(connectionString);
                 _databaseManager.InitializeDatabase();
             }
-
             // Events
-            _eventManager = new EventManager(_config?.Data);
+            _eventManager = new EventManager(_config?.Data, _lcdManager);
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
 
@@ -144,12 +143,6 @@ namespace EventSystem
                     //lcd
                     _lcdManager = new LCDManager(_eventManager, _config.Data);
 
-                    // Inicjalizacja timera do sprawdzania eventów
-                    _eventCheckTimer = new Timer(60000); // Sprawdzanie co 60000 ms (1 minuta)
-                    _eventCheckTimer.Elapsed += OnEventCheck; // Rejestracja metody OnEventCheck
-                    _eventCheckTimer.AutoReset = true; // Ustawienie, aby timer resetował się automatycznie
-                    _eventCheckTimer.Start(); // Rozpoczęcie timera
-
                     Log.Info("Session Loaded!");
                     break;
 
@@ -167,19 +160,6 @@ namespace EventSystem
                 case TorchSessionState.Unloaded:
                     break;
             }
-        }
-
-        private void OnEventCheck(object sender, ElapsedEventArgs e)
-        {
-            foreach (var eventItem in _eventManager.Events)
-            {
-                if (eventItem.IsActiveNow())
-                {
-                    _eventManager.ExecuteEvent(eventItem.EventName);
-                }
-            }
-
-            _lcdManager.UpdateMonitorBlocks();
         }
 
 
