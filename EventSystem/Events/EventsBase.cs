@@ -18,7 +18,7 @@ namespace EventSystem.Events
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
-            // Sprawdź, czy event jest aktywny codziennie, jeśli lista ActiveDays jest pusta
+
             bool isActiveEveryday = ActiveDays.Count == 0;
 
             return IsEnabled &&

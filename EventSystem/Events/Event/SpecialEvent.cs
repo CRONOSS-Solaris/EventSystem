@@ -26,14 +26,13 @@ namespace EventSystem.Event
 
         public override void LoadEventSettings(EventSystemConfig config)
         {
-            // Jeśli SpecialEventSettings nie jest zdefiniowany, ustaw domyślne wartości
             if (config.SpecialEventSettings == null)
             {
                 config.SpecialEventSettings = new SpecialEventConfig
                 {
                     IsEnabled = false,
                     ActiveDays = new List<DayOfWeek> { DayOfWeek.Friday, DayOfWeek.Saturday },
-                    StartTime = "18:00:00",
+                    StartTime = "00:00:00",
                     EndTime = "23:59:59"
                 };
             }
@@ -42,11 +41,11 @@ namespace EventSystem.Event
             IsEnabled = settings.IsEnabled;
             ActiveDays = settings.ActiveDays;
 
-            // Konwersja z string na TimeSpan
             StartTime = TimeSpan.Parse(settings.StartTime);
             EndTime = TimeSpan.Parse(settings.EndTime);
 
-            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, ActiveDays={string.Join(",", ActiveDays)}, StartTime={StartTime}, EndTime={EndTime}");
+            string activeDaysText = ActiveDays.Count > 0 ? string.Join(",", ActiveDays) : "Everyday";
+            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, ActiveDays={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
         }
 
         public class SpecialEventConfig
