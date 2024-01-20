@@ -53,7 +53,6 @@ namespace EventSystem
 
         //Events
         private EventManager _eventManager;
-        private Timer _eventCheckTimer;
 
         //lcd
         public LCDManager _lcdManager;
@@ -143,18 +142,14 @@ namespace EventSystem
                     //lcd
                     _lcdManager = new LCDManager(_eventManager, _config.Data);
 
+                    // Planowanie eventów po załadowaniu sesji
+                    ScheduleAllEvents();
+
                     Log.Info("Session Loaded!");
                     break;
 
                 case TorchSessionState.Unloading:
-
-                    // Zatrzymaj timer, jeśli jest aktywny
-                    if (_eventCheckTimer != null)
-                    {
-                        _eventCheckTimer.Stop();
-                        _eventCheckTimer.Dispose();
-                    }
-
+                    EndAllEvents();
                     Log.Info("Session Unloading!");
                     break;
                 case TorchSessionState.Unloaded:
@@ -162,6 +157,24 @@ namespace EventSystem
             }
         }
 
+        private void ScheduleAllEvents()
+        {
+            foreach (var eventItem in _eventManager.Events)
+            {
+                _eventManager.ScheduleEvent(eventItem);
+            }
+        }
+
+        private void EndAllEvents()
+        {
+            foreach (var eventItem in _eventManager.Events)
+            {
+                if (eventItem.IsActiveNow())
+                {
+                    eventItem.EndEvent().Wait(); // Wywołanie synchroniczne EndEvent
+                }
+            }
+        }
 
         private void OnPlayerJoined(IPlayer player)
         {
