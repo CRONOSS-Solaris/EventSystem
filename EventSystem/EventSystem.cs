@@ -11,7 +11,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
-using System.Timers;
 using System.Windows.Controls;
 using System.Xml.Serialization;
 using Torch;
