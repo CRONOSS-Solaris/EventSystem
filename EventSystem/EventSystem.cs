@@ -73,6 +73,7 @@ namespace EventSystem
                 _databaseManager = new PostgresDatabaseManager(connectionString);
                 _databaseManager.InitializeDatabase();
             }
+
             // Events
             _eventManager = new EventManager(_config?.Data, _lcdManager);
             // Automatyczna rejestracja eventów
@@ -140,6 +141,11 @@ namespace EventSystem
 
                     //lcd
                     _lcdManager = new LCDManager(_eventManager, _config.Data);
+
+                    // Events
+                    _eventManager = new EventManager(_config?.Data, _lcdManager);
+                    // Automatyczna rejestracja eventów
+                    RegisterAllEvents();
 
                     // Planowanie eventów po załadowaniu sesji
                     ScheduleAllEvents();
