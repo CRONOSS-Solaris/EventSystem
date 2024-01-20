@@ -16,7 +16,7 @@ namespace EventSystem
         public bool isLobby { get => _isLobby; set => SetValue(ref _isLobby, value); }
 
         //lcdTagName
-        private string _lcdTagName = "EVENT SYSTEM";
+        private string _lcdTagName = "ACTIVE EVENTS";
         public string lcdTagName { get => _lcdTagName; set => SetValue(ref _lcdTagName, value); }
 
         //prefix
