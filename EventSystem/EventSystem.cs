@@ -56,7 +56,7 @@ namespace EventSystem
         private Timer _eventCheckTimer;
 
         //lcd
-        private LCDManager _lcdManager;
+        public LCDManager _lcdManager;
 
         //Metody
         public override void Init(ITorchBase torch)

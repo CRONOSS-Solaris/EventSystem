@@ -9,6 +9,7 @@ using Torch.API.Managers;
 using VRageMath;
 using NLog.Fluent;
 using EventSystem.DataBase;
+using Sandbox.Engine.Utils;
 
 namespace EventSystem
 {
@@ -69,6 +70,22 @@ namespace EventSystem
                 }
 
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {playerNameOrSteamId}. New total: {playerAccount.Points}", Color.Green, Context.Player.SteamUserId);
+            }
+        }
+
+        [Command("refreshblocks", "Refreshes the list of screens for updates.")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void RefreshBlocks()
+        {
+            var monitor = Plugin._lcdManager;
+            if (monitor != null)
+            {
+                monitor.CacheBlocksForUpdate();
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Blocks to be updated have been refreshed.", Color.Green, Context.Player.SteamUserId);
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Server Load Monitor is not initialized.", Color.Green, Context.Player.SteamUserId);
             }
         }
     }
