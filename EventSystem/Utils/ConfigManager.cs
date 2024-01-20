@@ -44,7 +44,12 @@ namespace EventSystem.Utils
                 using (File.Create(filePath)) { }
                 Log.Info($"Created file: {filePath}");
             }
+            else
+            {
+                Log.Info($"File already exists: {filePath}");
+            }
         }
+
 
         public Persistent<T> SetupConfig<T>(string fileName, T defaultConfig) where T : new()
         {
