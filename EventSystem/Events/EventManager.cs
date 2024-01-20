@@ -28,8 +28,7 @@ namespace EventSystem.Events
             {
                 _events.Add(eventItem);
                 eventItem.LoadEventSettings(_config);
-                ScheduleEvent(eventItem);
-                LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered and scheduled.");
+                LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
             {
@@ -38,30 +37,46 @@ namespace EventSystem.Events
         }
 
 
-        private void ScheduleEvent(EventsBase eventItem)
+        public void ScheduleEvent(EventsBase eventItem)
         {
             var now = DateTime.Now;
             var dayOfMonth = now.Day;
 
-            // Sprawdza, czy event jest aktywny w określonym dniu miesiąca
             if (eventItem.IsActiveOnDayOfMonth(dayOfMonth))
             {
                 var startTime = eventItem.GetNextStartTime(now);
                 var endTime = eventItem.GetNextEndTime(now);
 
-                if (startTime > TimeSpan.Zero)
+                try
                 {
-                    var startTimer = new Timer(StartEvent, eventItem, startTime, Timeout.InfiniteTimeSpan);
-                    _startTimers[eventItem.EventName] = startTimer;
+                    // Sprawdź, czy czas rozpoczęcia jest w przeszłości, a czas zakończenia w przyszłości
+                    if (now > now.Date.Add(eventItem.StartTime) && now < now.Date.Add(eventItem.EndTime))
+                    {
+                        StartEvent(eventItem); // Uruchom event od razu
+                    }
+                    else
+                    {
+                        // Harmonogram rozpoczęcia eventu
+                        if (startTime > TimeSpan.Zero)
+                        {
+                            var startTimer = new Timer(StartEvent, eventItem, startTime, Timeout.InfiniteTimeSpan);
+                            _startTimers[eventItem.EventName] = startTimer;
+                        }
+                        // Harmonogram zakończenia eventu
+                        if (endTime > TimeSpan.Zero)
+                        {
+                            var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
+                            _endTimers[eventItem.EventName] = endTimer;
+                        }
+                    }
                 }
-
-                if (endTime > TimeSpan.Zero)
+                catch (Exception ex)
                 {
-                    var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
-                    _endTimers[eventItem.EventName] = endTimer;
+                    Log.Error(ex, $"Error while scheduling event '{eventItem.EventName}': {ex.Message}");
                 }
             }
         }
+
 
         private async void StartEvent(object state)
         {
