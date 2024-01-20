@@ -124,24 +124,46 @@ namespace EventSystem.Managers
             if (!_eventManager.Events.Any()) return "No scheduled events.";
 
             string text = "All Scheduled Events:\n";
-            var today = DateTime.Now.Date;
+            var now = DateTime.Now;
 
             foreach (var eventItem in _eventManager.Events)
             {
-                foreach (var day in eventItem.ActiveDaysOfMonth)
-                {
-                    var eventDate = new DateTime(today.Year, today.Month, day);
-                    var nextStartDate = eventDate.Add(eventItem.StartTime);
-                    var nextEndDate = eventDate.Add(eventItem.EndTime);
+                // Sprawdź najbliższą przyszłą datę eventu
+                var nextEventDate = FindNextEventDate(eventItem, now);
 
-                    // Sprawdzenie, czy data wydarzenia jest w przyszłości
-                    if (nextEndDate > DateTime.Now)
-                    {
-                        text += $"{eventItem.EventName} - Start: {nextStartDate.ToString("dd/MM/yyyy HH:mm:ss")}, End: {nextEndDate.ToString("dd/MM/yyyy HH:mm:ss")}\n";
-                    }
+                if (nextEventDate.HasValue)
+                {
+                    var nextStartDate = nextEventDate.Value;
+                    var nextEndDate = nextEventDate.Value.Date.Add(eventItem.EndTime);
+                    text += $"{eventItem.EventName} - Start: {nextStartDate.ToString("dd/MM/yyyy HH:mm:ss")}, End: {nextEndDate.ToString("dd/MM/yyyy HH:mm:ss")}\n";
                 }
             }
             return text;
+        }
+
+        private DateTime? FindNextEventDate(EventsBase eventItem, DateTime now)
+        {
+            DateTime? nextEventDate = null;
+
+            // Sprawdzanie dat w bieżącym miesiącu i następnym
+            for (int monthOffset = 0; monthOffset <= 1; monthOffset++)
+            {
+                int year = (now.Month + monthOffset > 12) ? now.Year + 1 : now.Year;
+                int month = (now.Month + monthOffset > 12) ? 1 : now.Month + monthOffset;
+
+                foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+                {
+                    var potentialNextDate = new DateTime(year, month, day,
+                                                         eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
+                    if (potentialNextDate > now)
+                    {
+                        nextEventDate = potentialNextDate;
+                        return nextEventDate;
+                    }
+                }
+            }
+
+            return nextEventDate;
         }
 
     }

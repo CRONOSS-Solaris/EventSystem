@@ -26,12 +26,10 @@ namespace EventSystem.Events
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
-            bool isActiveEveryday = ActiveDaysOfMonth.Count == 0;
+            bool isActiveToday = ActiveDaysOfMonth.Contains(now.Day);
+            bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
 
-            return IsEnabled &&
-                   (isActiveEveryday || ActiveDaysOfMonth.Contains(now.Day)) &&
-                   now.TimeOfDay >= StartTime &&
-                   now.TimeOfDay <= EndTime;
+            return IsEnabled && isActiveToday && isActiveTime;
         }
 
         // Oblicza czas, który pozostał do rozpoczęcia eventu.
@@ -56,12 +54,14 @@ namespace EventSystem.Events
         }
 
         // Loguje szczegółowe informacje o wydarzeniu, w tym nazwę, status, dni aktywne, oraz godziny startu i końca.
-        public void LogEventDetails()
+        public Task LogEventDetails()
         {
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
             string status = IsEnabled ? "Enabled" : "Disabled";
 
             Log.Error($"Event Details - Name: {EventName}, Status: {status}, Active Days of Month: {activeDaysText}, Start Time: {StartTime}, End Time: {EndTime}");
+
+            return Task.CompletedTask;
         }
     }
 }

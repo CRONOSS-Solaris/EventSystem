@@ -30,7 +30,7 @@ namespace EventSystem.Events
             {
                 _events.Add(eventItem);
                 eventItem.LoadEventSettings(_config);
-                _allEventsLcdManager.UpdateMonitorBlocks();
+                UpdateLCDs();
                 LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
@@ -77,8 +77,7 @@ namespace EventSystem.Events
                     Log.Error(ex, $"Error while scheduling event '{eventItem.EventName}': {ex.Message}");
                 }
             }
-
-            _allEventsLcdManager.UpdateMonitorBlocks();
+            UpdateLCDs();
         }
 
 
@@ -88,15 +87,13 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.ExecuteEvent();
-                eventItem.LogEventDetails();
+                await eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"Error during StartEvent for '{eventItem.EventName}': {ex.Message}");
             }
-
-            _allEventsLcdManager.UpdateMonitorBlocks();
         }
 
         private async void EndEvent(object state)
@@ -105,15 +102,13 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.EndEvent();
-                eventItem.LogEventDetails();
+                await eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)
             {
                 Log.Error(ex, $"Error during EndEvent for '{eventItem.EventName}': {ex.Message}");
             }
-
-            _allEventsLcdManager.UpdateMonitorBlocks();
         }
 
         private void UpdateLCDs()
@@ -121,6 +116,7 @@ namespace EventSystem.Events
             try
             {
                 _lcdManager.UpdateMonitorBlocks();
+                _allEventsLcdManager.UpdateMonitorBlocks();
             }
             catch (Exception ex)
             {

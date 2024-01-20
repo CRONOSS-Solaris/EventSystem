@@ -127,9 +127,13 @@ namespace EventSystem.Managers
             string text = "Active Events:\n";
             foreach (var eventItem in activeEvents)
             {
-                text += $"{eventItem.EventName} (from {eventItem.StartTime} to {eventItem.EndTime})\n";
+                text += $"{eventItem.EventName} - Start: {eventItem.StartTime.ToString(@"hh\:mm\:ss")}, End: {eventItem.EndTime.ToString(@"hh\:mm\:ss")}\n";
             }
+
             return text;
         }
+
+
+
     }
 }
