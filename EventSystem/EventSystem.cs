@@ -27,7 +27,7 @@ namespace EventSystem
     public class EventSystemMain : TorchPluginBase, IWpfPlugin
     {
 
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystemMain");
         public static EventSystemMain Instance;
         private IMultiplayerManagerBase _multiplayerManager;
         public static IChatManagerServer ChatManager => TorchBase.Instance.CurrentSession.Managers.GetManager<IChatManagerServer>();

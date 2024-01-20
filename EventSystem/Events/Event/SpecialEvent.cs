@@ -8,7 +8,7 @@ namespace EventSystem.Event
 {
     public class SpecialEvent : EventsBase
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/SpecialEvent");
         private readonly EventSystemConfig _config;
 
         public SpecialEvent(EventSystemConfig config)

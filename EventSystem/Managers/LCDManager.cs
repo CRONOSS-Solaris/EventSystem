@@ -19,7 +19,7 @@ namespace EventSystem.Managers
         private readonly EventManager _eventManager;
         private readonly EventSystemConfig _config;
         private MyConcurrentHashSet<IMyTerminalBlock> _blocksToUpdate = new MyConcurrentHashSet<IMyTerminalBlock>();
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/LCDManager");
 
         public LCDManager(EventManager eventManager, EventSystemConfig config)
         {

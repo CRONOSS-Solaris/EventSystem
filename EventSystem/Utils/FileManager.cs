@@ -7,7 +7,7 @@ namespace EventSystem.Utils
 {
     public class FileManager
     {
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/FileManager");
         private readonly string _rootPath;
 
 

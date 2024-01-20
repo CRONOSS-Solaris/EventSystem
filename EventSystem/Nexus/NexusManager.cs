@@ -8,7 +8,7 @@ namespace EventSystem.Nexus
 {
     public static partial class NexusManager
     {
-        public static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/NexusManager");
         private static EventSystemConfig? Config => EventSystemMain.Instance?.Config;
         private static NexusAPI.Server? LobbyServer;
         private static NexusAPI.Server? ThisServer;

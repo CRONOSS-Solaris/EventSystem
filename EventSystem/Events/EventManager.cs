@@ -9,7 +9,7 @@ namespace EventSystem.Events
 {
     public class EventManager
     {
-        private static readonly Logger Log = LogManager.GetCurrentClassLogger();
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventManager");
         private readonly List<EventsBase> _events = new List<EventsBase>();
         private readonly EventSystemConfig _config;
 
