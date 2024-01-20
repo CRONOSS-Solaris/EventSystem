@@ -9,64 +9,59 @@ namespace EventSystem.Events
     {
         public string EventName { get; set; }
         public bool IsEnabled { get; set; } = true;
-        public List<DayOfWeek> ActiveDays { get; set; } = new List<DayOfWeek>();
+        public List<int> ActiveDaysOfMonth { get; set; } = new List<int>();
         public TimeSpan StartTime { get; set; }
         public TimeSpan EndTime { get; set; }
 
-        // Metoda abstrakcyjna do wykonania konkretnego eventu
+        // Abstrakcyjna metoda do wykonania specyficznych działań związanych z danym eventem.
         public abstract Task ExecuteEvent();
 
-        // Metoda abstrakcyjna do zakończenia konkretnego eventu
+        // Abstrakcyjna metoda do realizacji działań związanych z zakończeniem eventu.
         public abstract Task EndEvent();
 
-        // Metoda do sprawdzenia, czy event jest aktywny w danej chwili
+        // Abstrakcyjna metoda do wczytania ustawień konkretnego eventu z konfiguracji.
+        public abstract Task LoadEventSettings(EventSystemConfig config);
+
+        // Sprawdza, czy event jest aktywny w danym momencie na podstawie aktualnej daty i godziny.
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
-
-            bool isActiveEveryday = ActiveDays.Count == 0;
+            bool isActiveEveryday = ActiveDaysOfMonth.Count == 0;
 
             return IsEnabled &&
-                   (isActiveEveryday || ActiveDays.Contains(now.DayOfWeek)) &&
+                   (isActiveEveryday || ActiveDaysOfMonth.Contains(now.Day)) &&
                    now.TimeOfDay >= StartTime &&
                    now.TimeOfDay <= EndTime;
         }
 
+        // Oblicza czas, który pozostał do rozpoczęcia eventu.
         public TimeSpan GetNextStartTime(DateTime now)
         {
             var startOfDay = now.Date.Add(StartTime);
             return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
         }
 
+        // Oblicza czas, który pozostał do zakończenia eventu.
         public TimeSpan GetNextEndTime(DateTime now)
         {
             var endOfDay = now.Date.Add(EndTime);
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
         }
 
-        public bool IsActiveOnDay(DayOfWeek day)
+        // Sprawdza, czy event jest aktywny w określonym dniu tygodnia.
+        public bool IsActiveOnDayOfMonth(int day)
         {
-            // Zwraca true, jeśli wydarzenie jest aktywne codziennie lub w określonym dniu tygodnia
-            return ActiveDays.Count == 0 || ActiveDays.Contains(day);
+            // Zwraca true, jeśli wydarzenie jest aktywne w określonym dniu miesiąca
+            return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
         }
 
-        // Metoda do logowania szczegółów wydarzenia
+        // Loguje szczegółowe informacje o wydarzeniu, w tym nazwę, status, dni aktywne, oraz godziny startu i końca.
         public void LogEventDetails()
         {
-            string activeDaysText = ActiveDays.Count > 0 ? string.Join(", ", ActiveDays) : "Every day";
+            string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
             string status = IsEnabled ? "Enabled" : "Disabled";
 
-            Log.Error($"Event Details - Name: {EventName}, Status: {status}, Active Days: {activeDaysText}, Start Time: {StartTime}, End Time: {EndTime}");
+            Log.Error($"Event Details - Name: {EventName}, Status: {status}, Active Days of Month: {activeDaysText}, Start Time: {StartTime}, End Time: {EndTime}");
         }
-
-
-        // Metoda do wczytania ustawień konkretnego eventu z konfiguracji
-        public virtual Task LoadEventSettings(EventSystemConfig config)
-        {
-            // Tutaj możesz dodać logikę wczytywania ustawień z konfiguracji
-            // Możesz użyć "config" do dostępu do ustawień i zaktualizowania pól klasy
-            return Task.CompletedTask;
-        }
-
     }
 }

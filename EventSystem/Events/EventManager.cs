@@ -41,8 +41,10 @@ namespace EventSystem.Events
         private void ScheduleEvent(EventsBase eventItem)
         {
             var now = DateTime.Now;
+            var dayOfMonth = now.Day;
 
-            if (eventItem.IsActiveOnDay(now.DayOfWeek))
+            // Sprawdza, czy event jest aktywny w określonym dniu miesiąca
+            if (eventItem.IsActiveOnDayOfMonth(dayOfMonth))
             {
                 var startTime = eventItem.GetNextStartTime(now);
                 var endTime = eventItem.GetNextEndTime(now);
