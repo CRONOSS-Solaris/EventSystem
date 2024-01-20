@@ -1,5 +1,4 @@
 ﻿using EventSystem.DataBase;
-using EventSystem.Event;
 using EventSystem.Events;
 using EventSystem.Nexus;
 using EventSystem.Utils;
@@ -61,8 +60,8 @@ namespace EventSystem
             base.Init(torch);
             Instance = this;
             //config
-            var configManager = new ConfigManager(Path.Combine(StoragePath, "EventSystem"));
-            _config = configManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
+            var fileManager = new FileManager(Path.Combine(StoragePath, "EventSystem"));
+            _config = fileManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
 
             //PostgresSQL
             if (_config.Data.UseDatabase)

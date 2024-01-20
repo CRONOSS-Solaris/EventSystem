@@ -5,13 +5,13 @@ using Torch;
 
 namespace EventSystem.Utils
 {
-    public class ConfigManager
+    public class FileManager
     {
         public static readonly Logger Log = LogManager.GetCurrentClassLogger();
         private readonly string _rootPath;
 
 
-        public ConfigManager(string rootPath)
+        public FileManager(string rootPath)
         {
             _rootPath = rootPath;
             CreateFolders(Path.Combine(_rootPath, "Config"),
