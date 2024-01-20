@@ -55,6 +55,7 @@ namespace EventSystem
 
         //lcd
         public LCDManager _lcdManager;
+        private AllEventsLCDManager _allEventsLcdManager;
 
         //Metody
         public override void Init(ITorchBase torch)
@@ -75,7 +76,7 @@ namespace EventSystem
             }
 
             // Events
-            _eventManager = new EventManager(_config?.Data, _lcdManager);
+            _eventManager = new EventManager(_config?.Data, _lcdManager, _allEventsLcdManager);
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
 
@@ -141,9 +142,10 @@ namespace EventSystem
 
                     //lcd
                     _lcdManager = new LCDManager(_eventManager, _config.Data);
+                    _allEventsLcdManager = new AllEventsLCDManager(_eventManager, _config.Data);
 
                     // Events
-                    _eventManager = new EventManager(_config?.Data, _lcdManager);
+                    _eventManager = new EventManager(_config?.Data, _lcdManager, _allEventsLcdManager);
                     // Automatyczna rejestracja eventów
                     RegisterAllEvents();
 

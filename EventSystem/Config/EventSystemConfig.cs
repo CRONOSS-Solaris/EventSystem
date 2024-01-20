@@ -18,6 +18,13 @@ namespace EventSystem
         //lcdTagName
         private string _lcdTagName = "ACTIVE EVENTS";
         public string lcdTagName { get => _lcdTagName; set => SetValue(ref _lcdTagName, value); }
+        
+        private string _allEventsLcdTagName = "ALL EVENTS";
+        public string AllEventsLcdTagName
+        {
+            get => _allEventsLcdTagName;
+            set => SetValue(ref _allEventsLcdTagName, value);
+        }
 
         //prefix
         private string _eventPrefix = "EVENT SYSTEM";

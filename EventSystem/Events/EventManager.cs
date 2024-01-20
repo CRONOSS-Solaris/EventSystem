@@ -15,11 +15,13 @@ namespace EventSystem.Events
         private readonly Dictionary<string, Timer> _endTimers = new Dictionary<string, Timer>();
         private readonly EventSystemConfig _config;
         private readonly LCDManager _lcdManager;
+        private AllEventsLCDManager _allEventsLcdManager;
 
-        public EventManager(EventSystemConfig config, LCDManager lcdManager)
+        public EventManager(EventSystemConfig config, LCDManager lcdManager, AllEventsLCDManager allEventsLcdManager)
         {
             _config = config;
             _lcdManager = lcdManager;
+            _allEventsLcdManager = allEventsLcdManager;
         }
 
         public void RegisterEvent(EventsBase eventItem)
@@ -28,6 +30,7 @@ namespace EventSystem.Events
             {
                 _events.Add(eventItem);
                 eventItem.LoadEventSettings(_config);
+                _allEventsLcdManager.UpdateMonitorBlocks();
                 LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
@@ -74,6 +77,8 @@ namespace EventSystem.Events
                     Log.Error(ex, $"Error while scheduling event '{eventItem.EventName}': {ex.Message}");
                 }
             }
+
+            _allEventsLcdManager.UpdateMonitorBlocks();
         }
 
 
@@ -90,6 +95,8 @@ namespace EventSystem.Events
             {
                 Log.Error(ex, $"Error during StartEvent for '{eventItem.EventName}': {ex.Message}");
             }
+
+            _allEventsLcdManager.UpdateMonitorBlocks();
         }
 
         private async void EndEvent(object state)
@@ -105,6 +112,8 @@ namespace EventSystem.Events
             {
                 Log.Error(ex, $"Error during EndEvent for '{eventItem.EventName}': {ex.Message}");
             }
+
+            _allEventsLcdManager.UpdateMonitorBlocks();
         }
 
         private void UpdateLCDs()
