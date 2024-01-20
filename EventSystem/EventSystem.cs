@@ -1,5 +1,6 @@
 ﻿using EventSystem.DataBase;
 using EventSystem.Events;
+using EventSystem.Managers;
 using EventSystem.Nexus;
 using EventSystem.Utils;
 using Nexus.API;
@@ -54,6 +55,9 @@ namespace EventSystem
         private EventManager _eventManager;
         private Timer _eventCheckTimer;
 
+        //lcd
+        private LCDManager _lcdManager;
+
         //Metody
         public override void Init(ITorchBase torch)
         {
@@ -76,6 +80,9 @@ namespace EventSystem
             _eventManager = new EventManager(_config?.Data);
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
+
+            //lcd
+            _lcdManager = new LCDManager(_eventManager, _config.Data);
 
             //inne
             var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
@@ -171,7 +178,10 @@ namespace EventSystem
                     _eventManager.ExecuteEvent(eventItem.Name);
                 }
             }
+
+            _lcdManager.UpdateMonitorBlocks();
         }
+
 
         private void OnPlayerJoined(IPlayer player)
         {

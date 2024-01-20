@@ -15,6 +15,10 @@ namespace EventSystem
         private bool _isLobby;
         public bool isLobby { get => _isLobby; set => SetValue(ref _isLobby, value); }
 
+        //lcdTagName
+        private string _lcdTagName = "EVENT SYSTEM";
+        public string lcdTagName { get => _lcdTagName; set => SetValue(ref _lcdTagName, value); }
+
         //prefix
         private string _eventPrefix = "EVENT SYSTEM";
         public string EventPrefix { get => _eventPrefix; set => SetValue(ref _eventPrefix, value); }
@@ -63,7 +67,6 @@ namespace EventSystem
         }
 
         //Events
-
         public SpecialEventConfig SpecialEventSettings { get; set; }
 
     }
