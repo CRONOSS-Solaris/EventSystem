@@ -81,9 +81,6 @@ namespace EventSystem
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
 
-            //lcd
-            _lcdManager = new LCDManager(_eventManager, _config.Data);
-
             //inne
             var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
@@ -143,6 +140,9 @@ namespace EventSystem
                         LoggerHelper.DebugLog(Log, _config.Data, "Multiplayer manager initialized.");
                         _multiplayerManager.PlayerJoined += OnPlayerJoined;
                     }
+
+                    //lcd
+                    _lcdManager = new LCDManager(_eventManager, _config.Data);
 
                     // Inicjalizacja timera do sprawdzania eventów
                     _eventCheckTimer = new Timer(60000); // Sprawdzanie co 60000 ms (1 minuta)

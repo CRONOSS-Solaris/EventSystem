@@ -18,13 +18,14 @@ namespace EventSystem.Events
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
+            // Sprawdź, czy event jest aktywny codziennie, jeśli lista ActiveDays jest pusta
+            bool isActiveEveryday = ActiveDays.Count == 0;
+
             return IsEnabled &&
-                   ActiveDays.Contains(now.DayOfWeek) &&
+                   (isActiveEveryday || ActiveDays.Contains(now.DayOfWeek)) &&
                    now.TimeOfDay >= StartTime &&
                    now.TimeOfDay <= EndTime;
         }
-
-
 
         // Metoda do logowania szczegółów wydarzenia
         public void LogEventDetails()
