@@ -67,6 +67,7 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.ExecuteEvent();
+                eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)
@@ -81,6 +82,7 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.EndEvent();
+                eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)

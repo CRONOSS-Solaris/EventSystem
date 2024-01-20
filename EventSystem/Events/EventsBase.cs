@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NLog.Fluent;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -52,8 +53,12 @@ namespace EventSystem.Events
         // Metoda do logowania szczegółów wydarzenia
         public void LogEventDetails()
         {
-            // Logika do logowania szczegółów wydarzenia
+            string activeDaysText = ActiveDays.Count > 0 ? string.Join(", ", ActiveDays) : "Every day";
+            string status = IsEnabled ? "Enabled" : "Disabled";
+
+            Log.Error($"Event Details - Name: {EventName}, Status: {status}, Active Days: {activeDaysText}, Start Time: {StartTime}, End Time: {EndTime}");
         }
+
 
         // Metoda do wczytania ustawień konkretnego eventu z konfiguracji
         public virtual Task LoadEventSettings(EventSystemConfig config)
