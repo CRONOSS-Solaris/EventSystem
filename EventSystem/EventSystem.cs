@@ -114,7 +114,6 @@ namespace EventSystem
             }
         }
 
-
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
 

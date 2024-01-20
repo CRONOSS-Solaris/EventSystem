@@ -25,11 +25,17 @@ namespace EventSystem.Utils
         {
             foreach (var path in folderPaths)
             {
-                Directory.CreateDirectory(path);
-                Log.Info($"Folder created: {path}");
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                    Log.Info($"Folder created: {path}");
+                }
+                else
+                {
+                    Log.Info($"Folder already exists: {path}");
+                }
             }
         }
-
 
         public void CreateFile(string filePath)
         {
