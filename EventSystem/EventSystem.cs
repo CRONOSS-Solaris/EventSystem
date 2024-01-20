@@ -55,7 +55,7 @@ namespace EventSystem
 
         //lcd
         public LCDManager _lcdManager;
-        private AllEventsLCDManager _allEventsLcdManager;
+        public AllEventsLCDManager _allEventsLcdManager;
 
         //Metody
         public override void Init(ITorchBase torch)

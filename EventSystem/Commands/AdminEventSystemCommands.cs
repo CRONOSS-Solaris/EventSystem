@@ -78,9 +78,11 @@ namespace EventSystem
         public void RefreshBlocks()
         {
             var monitor = Plugin._lcdManager;
-            if (monitor != null)
+            var monitortwo = Plugin._allEventsLcdManager;
+            if (monitor != null || monitortwo != null)
             {
                 monitor.CacheBlocksForUpdate();
+                monitortwo.CacheBlocksForUpdate();
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Blocks to be updated have been refreshed.", Color.Green, Context.Player.SteamUserId);
             }
             else

@@ -70,7 +70,7 @@ namespace EventSystem.Managers
             }
         }
 
-        private void CacheBlocksForUpdate()
+        public void CacheBlocksForUpdate()
         {
             _blocksToUpdate.Clear();
             var grids = GetAllGrids();
