@@ -1,4 +1,8 @@
-﻿using Torch;
+﻿using EventSystem.Utils;
+using System;
+using System.Collections.Generic;
+using Torch;
+using static EventSystem.Event.SpecialEvent;
 
 namespace EventSystem
 {
@@ -57,5 +61,10 @@ namespace EventSystem
             get => _databasePassword;
             set => SetValue(ref _databasePassword, value);
         }
+
+        //Events
+
+        public SpecialEventConfig SpecialEventSettings { get; set; }
+
     }
 }

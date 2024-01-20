@@ -186,6 +186,9 @@
   <ItemGroup>
     <Compile Include="EventSystem\Commands\PlayerEventSystemCommands.cs" />
     <Compile Include="EventSystem\DataBase\PostgresDatabaseManager.cs" />
+    <Compile Include="EventSystem\Events\EventManager.cs" />
+    <Compile Include="EventSystem\Events\EventsBase.cs" />
+    <Compile Include="EventSystem\Events\Event\SpecialEvent.cs" />
     <Compile Include="EventSystem\GUI\EventSystemControl.xaml.cs">
       <DependentUpon>EventSystemControl.xaml</DependentUpon>
     </Compile>
@@ -237,9 +240,7 @@
   <ItemGroup>
     <Content Include="manifest.xml" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="EventSystem\Events\" />
-  </ItemGroup>
+  <ItemGroup />
   <Target Name="Zip" BeforeTargets="AfterBuild">
     <MakeDir Directories="$(SolutionDir)\Build\" />
     <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(SolutionDir)\Build\$(MSBuildProjectName).zip" Overwrite="true" />

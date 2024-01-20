@@ -5,12 +5,12 @@ using System.Runtime.InteropServices;
 using System.Windows;
 
 [assembly: AssemblyTitle("EventSystem")]
-[assembly: AssemblyDescription("")]
+[assembly: AssemblyDescription("Event system management plugin")]
 [assembly: AssemblyConfiguration("")]
-[assembly: AssemblyCompany("")]
+[assembly: AssemblyCompany("CRONOSS")]
 [assembly: AssemblyProduct("EventSystem")]
 [assembly: AssemblyCopyright("Copyright ©  2024")]
-[assembly: AssemblyTrademark("")]
+[assembly: AssemblyTrademark("All rights reserved")]
 [assembly: AssemblyCulture("")]
 
 [assembly: ComVisible(false)]

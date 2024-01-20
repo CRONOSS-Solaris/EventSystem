@@ -1,4 +1,6 @@
 ﻿using EventSystem.DataBase;
+using EventSystem.Event;
+using EventSystem.Events;
 using EventSystem.Nexus;
 using EventSystem.Utils;
 using Nexus.API;
@@ -7,7 +9,9 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
+using System.Timers;
 using System.Windows.Controls;
 using System.Xml.Serialization;
 using Torch;
@@ -47,6 +51,10 @@ namespace EventSystem
         private PostgresDatabaseManager _databaseManager;
         public PostgresDatabaseManager DatabaseManager => _databaseManager;
 
+        //Events
+        private EventManager _eventManager;
+        private Timer _eventCheckTimer;
+
         //Metody
         public override void Init(ITorchBase torch)
         {
@@ -65,6 +73,11 @@ namespace EventSystem
                 _databaseManager.InitializeDatabase();
             }
 
+            // Events
+            _eventManager = new EventManager(_config?.Data);
+            // Automatyczna rejestracja eventów
+            RegisterAllEvents();
+
             //inne
             var sessionManager = Torch.Managers.GetManager<TorchSessionManager>();
             if (sessionManager != null)
@@ -74,6 +87,33 @@ namespace EventSystem
 
             Save();
         }
+
+        private void RegisterAllEvents()
+        {
+            // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
+            var eventTypes = Assembly.GetExecutingAssembly().GetTypes()
+                            .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract);
+
+            foreach (var eventType in eventTypes)
+            {
+                try
+                {
+                    // Tworzymy instancję każdego eventu
+                    var eventInstance = (EventsBase)Activator.CreateInstance(eventType, _config?.Data);
+                    if (eventInstance != null)
+                    {
+                        // Rejestrujemy event
+                        _eventManager.RegisterEvent(eventInstance);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Logowanie błędu podczas tworzenia lub rejestrowania eventu
+                    Log.Error($"Error registering event '{eventType.Name}': {ex.Message}");
+                }
+            }
+        }
+
 
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
@@ -99,14 +139,39 @@ namespace EventSystem
                         _multiplayerManager.PlayerJoined += OnPlayerJoined;
                     }
 
+                    // Inicjalizacja timera do sprawdzania eventów
+                    _eventCheckTimer = new Timer(60000); // Sprawdzanie co 60000 ms (1 minuta)
+                    _eventCheckTimer.Elapsed += OnEventCheck; // Rejestracja metody OnEventCheck
+                    _eventCheckTimer.AutoReset = true; // Ustawienie, aby timer resetował się automatycznie
+                    _eventCheckTimer.Start(); // Rozpoczęcie timera
+
                     Log.Info("Session Loaded!");
                     break;
 
                 case TorchSessionState.Unloading:
+
+                    // Zatrzymaj timer, jeśli jest aktywny
+                    if (_eventCheckTimer != null)
+                    {
+                        _eventCheckTimer.Stop();
+                        _eventCheckTimer.Dispose();
+                    }
+
                     Log.Info("Session Unloading!");
                     break;
                 case TorchSessionState.Unloaded:
                     break;
+            }
+        }
+
+        private void OnEventCheck(object sender, ElapsedEventArgs e)
+        {
+            foreach (var eventItem in _eventManager.Events)
+            {
+                if (eventItem.IsActiveNow())
+                {
+                    _eventManager.ExecuteEvent(eventItem.Name);
+                }
             }
         }
 
