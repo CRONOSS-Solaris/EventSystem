@@ -51,7 +51,7 @@ namespace EventSystem
         public PostgresDatabaseManager DatabaseManager => _databaseManager;
 
         //Events
-        private EventManager _eventManager;
+        public EventManager _eventManager;
 
         //lcd
         public ActiveEventsLCDManager _activeEventsLCDManager;
