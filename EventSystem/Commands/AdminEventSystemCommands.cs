@@ -6,7 +6,7 @@ using VRageMath;
 
 namespace EventSystem
 {
-    [Category("EventAdmin")]
+    [Category("eventAdmin")]
     public class AdminEventSystemCommands : CommandModule
     {
         public EventSystemMain Plugin => (EventSystemMain)Context.Plugin;

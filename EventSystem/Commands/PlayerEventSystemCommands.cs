@@ -10,7 +10,7 @@ using VRageMath;
 
 namespace EventSystem
 {
-    [Category("Event")]
+    [Category("event")]
     public class PlayerEventSystemCommands : CommandModule
     {
         public EventSystemMain Plugin => (EventSystemMain)Context.Plugin;
@@ -79,6 +79,7 @@ namespace EventSystem
             var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
+            response.AppendLine();
             response.AppendLine("Active Events:");
             if (activeEvents.Any())
             {

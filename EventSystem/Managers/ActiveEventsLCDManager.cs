@@ -133,7 +133,5 @@ namespace EventSystem.Managers
             return text;
         }
 
-
-
     }
 }
