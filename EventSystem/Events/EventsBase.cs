@@ -71,7 +71,7 @@ namespace EventSystem.Events
         public virtual Task CheckPlayerProgress(long steamId) { /* implementacja */  return Task.CompletedTask; }
 
         // Przyznaje nagrodę graczowi.
-        public virtual async Task AwardPlayer(long steamId, long points)
+        public virtual Task AwardPlayer(long steamId, long points)
         {
             // Pobierz menedżera bazy danych z głównego pluginu
             var databaseManager = EventSystemMain.Instance.DatabaseManager;
@@ -108,6 +108,8 @@ namespace EventSystem.Events
                     }
                 }
             }
+
+            return Task.CompletedTask;
         }
 
         // Metody do zarządzania dodatkowymi elementami eventu, np. siatkami, obiektami.
