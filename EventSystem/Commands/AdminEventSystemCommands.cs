@@ -21,8 +21,15 @@ namespace EventSystem
             if (Plugin.Config.UseDatabase)
             {
                 // Logika używania bazy danych
-                Plugin.DatabaseManager.UpdatePlayerPoints(steamId.ToString(), points);
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
+                bool updateResult = Plugin.DatabaseManager.UpdatePlayerPoints(steamId.ToString(), points);
+                if (updateResult)
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
+                }
+                else
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"No account found for {steamId}.", Color.Red, Context.Player.SteamUserId);
+                }
             }
             else
             {

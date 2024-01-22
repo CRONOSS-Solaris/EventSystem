@@ -50,7 +50,7 @@ namespace EventSystem.DataBase
             }
         }
 
-        public void UpdatePlayerPoints(string playerNameOrSteamId, long pointsToAdd)
+        public bool UpdatePlayerPoints(string playerNameOrSteamId, long pointsToAdd)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -59,26 +59,29 @@ namespace EventSystem.DataBase
                 {
                     cmd.Connection = connection;
 
+                    // Ustaw odpowiednie zapytanie SQL
+                    string sql;
                     if (long.TryParse(playerNameOrSteamId, out long steamId))
                     {
-                        // Aktualizacja punktów na podstawie Steam ID
-                        cmd.CommandText = "UPDATE player_accounts SET points = points + @pointsToAdd WHERE steam_id = @steamId";
+                        sql = "UPDATE player_accounts SET points = points + @pointsToAdd WHERE steam_id = @steamId";
                         cmd.Parameters.AddWithValue("@steamId", steamId);
                     }
                     else
                     {
-                        // Aktualizacja punktów na podstawie nickname
-                        cmd.CommandText = "UPDATE player_accounts SET points = points + @pointsToAdd WHERE nickname = @nickname";
+                        sql = "UPDATE player_accounts SET points = points + @pointsToAdd WHERE nickname = @nickname";
                         cmd.Parameters.AddWithValue("@nickname", playerNameOrSteamId);
                     }
-
+                    cmd.CommandText = sql;
                     cmd.Parameters.AddWithValue("@pointsToAdd", pointsToAdd);
-                    cmd.ExecuteNonQuery();
+
+                    // Wykonaj zapytanie i sprawdź, czy zostały wprowadzone zmiany
+                    return cmd.ExecuteNonQuery() > 0;
                 }
             }
         }
 
-        public long GetPlayerPoints(long steamId)
+
+        public long? GetPlayerPoints(long steamId)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
@@ -96,7 +99,7 @@ namespace EventSystem.DataBase
                 }
             }
 
-            return 0; // Jeśli gracz nie istnieje w bazie
+            return null; // Zwróć null, jeśli gracz nie istnieje w bazie
         }
 
         // Dodatkowe metody do obsługi zaawansowanych zapytań SQL

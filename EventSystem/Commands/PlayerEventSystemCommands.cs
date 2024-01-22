@@ -33,16 +33,23 @@ namespace EventSystem
             if (Plugin.Config.UseDatabase)
             {
                 // Logika używania bazy danych
-                long points = Plugin.DatabaseManager.GetPlayerPoints(steamId);
-                string response = new StringBuilder()
-                    .AppendLine()
-                    .AppendLine("---------------------")
-                    .AppendLine("Available pts")
-                    .AppendLine($"- {points}")
-                    .AppendLine("---------------------")
-                    .ToString();
+                var pointsResult = Plugin.DatabaseManager.GetPlayerPoints(steamId);
+                if (pointsResult.HasValue)
+                {
+                    string response = new StringBuilder()
+                        .AppendLine()
+                        .AppendLine("---------------------")
+                        .AppendLine("Available pts")
+                        .AppendLine($"- {pointsResult.Value}")
+                        .AppendLine("---------------------")
+                        .ToString();
 
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
+                }
+                else
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Your account was not found in the database.", Color.Red, Context.Player.SteamUserId);
+                }
             }
             else
             {
