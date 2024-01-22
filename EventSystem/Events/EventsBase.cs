@@ -73,7 +73,10 @@ namespace EventSystem.Events
         // Przyznaje nagrodę graczowi.
         public virtual async Task AwardPlayer(long steamId, long points)
         {
+            // Pobierz menedżera bazy danych z głównego pluginu
             var databaseManager = EventSystemMain.Instance.DatabaseManager;
+
+            // Pobierz konfigurację
             var config = EventSystemMain.Instance.Config;
 
             if (config.UseDatabase)
@@ -87,26 +90,22 @@ namespace EventSystem.Events
                 string playerFolder = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "PlayerAccounts");
                 string filePath = Path.Combine(playerFolder, $"{steamId}.xml");
 
-                PlayerAccount playerAccount;
                 if (File.Exists(filePath))
                 {
                     XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
+                    PlayerAccount playerAccount;
                     using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
                     {
                         playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
                     }
-                }
-                else
-                {
-                    playerAccount = new PlayerAccount(steamId, 0);
-                }
 
-                playerAccount.Points += points;
+                    playerAccount.Points += points;
 
-                XmlSerializer serializerWrite = new XmlSerializer(typeof(PlayerAccount));
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    serializerWrite.Serialize(fileStream, playerAccount);
+                    XmlSerializer serializerWrite = new XmlSerializer(typeof(PlayerAccount));
+                    using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                    {
+                        serializerWrite.Serialize(fileStream, playerAccount);
+                    }
                 }
             }
         }
