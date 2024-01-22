@@ -1,4 +1,4 @@
-﻿using EventSystem.Managers;
+﻿using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -13,7 +13,7 @@ namespace EventSystem
 
         [Command("modifypoints", "Add or remove points from a player's account.")]
         [Permission(MyPromoteLevel.Admin)]
-        public void ModifyPoints(ulong steamId, long points)
+        public async Task ModifyPoints(ulong steamId, long points)
         {
             if (Plugin.Config.UseDatabase)
             {
@@ -30,8 +30,8 @@ namespace EventSystem
             }
             else
             {
-                // Nowa logika używająca PlayerAccountXmlManager
-                bool updateResult = Plugin.PlayerAccountXmlManager.UpdatePlayerPoints((long)steamId, points);
+                // Logika używająca PlayerAccountXmlManager
+                bool updateResult = await Plugin.PlayerAccountXmlManager.UpdatePlayerPointsAsync((long)steamId, points).ConfigureAwait(false);
                 if (updateResult)
                 {
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
@@ -42,7 +42,6 @@ namespace EventSystem
                 }
             }
         }
-
 
         [Command("refreshblocks", "Refreshes the list of screens for updates.")]
         [Permission(MyPromoteLevel.Admin)]

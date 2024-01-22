@@ -2,6 +2,7 @@
 using NLog;
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
 
 namespace EventSystem.Managers
@@ -16,10 +17,7 @@ namespace EventSystem.Managers
             _playerAccountsFolder = Path.Combine(baseStoragePath, "EventSystem", "PlayerAccounts");
             try
             {
-                if (!Directory.Exists(_playerAccountsFolder))
-                {
-                    Directory.CreateDirectory(_playerAccountsFolder);
-                }
+                Directory.CreateDirectory(_playerAccountsFolder);
             }
             catch (Exception ex)
             {
@@ -27,49 +25,34 @@ namespace EventSystem.Managers
             }
         }
 
-        public void CreatePlayerAccount(long steamId)
+        public async Task CreatePlayerAccountAsync(long steamId)
         {
             string filePath = Path.Combine(_playerAccountsFolder, $"{steamId}.xml");
+            if (File.Exists(filePath)) return;
 
+            PlayerAccount playerAccount = new PlayerAccount(steamId, 0);
             try
             {
-                if (!File.Exists(filePath))
-                {
-                    PlayerAccount playerAccount = new PlayerAccount(steamId, 0);
-                    SavePlayerAccount(playerAccount);
-                }
+                await SavePlayerAccountAsync(playerAccount).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error creating/updating player account for SteamID: {steamId}");
+                Log.Error(ex, $"Error creating player account for SteamID: {steamId}");
             }
         }
 
-        public bool UpdatePlayerPoints(long steamId, long pointsToAdd)
+        public async Task<bool> UpdatePlayerPointsAsync(long steamId, long pointsToAdd)
         {
             string filePath = Path.Combine(_playerAccountsFolder, $"{steamId}.xml");
+            if (!File.Exists(filePath)) return false;
 
             try
             {
-                if (!File.Exists(filePath))
-                {
-                    return false;
-                }
-
-                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                PlayerAccount playerAccount;
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
-                {
-                    playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
-                }
+                PlayerAccount playerAccount = await GetPlayerAccountAsync(steamId).ConfigureAwait(false);
+                if (playerAccount == null) return false;
 
                 playerAccount.Points += pointsToAdd;
-
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    serializer.Serialize(fileStream, playerAccount);
-                }
-
+                await SavePlayerAccountAsync(playerAccount).ConfigureAwait(false);
                 return true;
             }
             catch (Exception ex)
@@ -79,21 +62,21 @@ namespace EventSystem.Managers
             }
         }
 
-        public PlayerAccount GetPlayerAccount(long steamId)
+        public async Task<PlayerAccount> GetPlayerAccountAsync(long steamId)
         {
             string filePath = Path.Combine(_playerAccountsFolder, $"{steamId}.xml");
-            if (!File.Exists(filePath))
-            {
-                return null; // Nie znaleziono konta gracza
-            }
+            if (!File.Exists(filePath)) return null;
 
             try
             {
-                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
+                return await Task.Run(() =>
                 {
-                    return (PlayerAccount)serializer.Deserialize(fileStream);
-                }
+                    XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
+                    using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                    {
+                        return (PlayerAccount)serializer.Deserialize(stream);
+                    }
+                }).ConfigureAwait(false);
             }
             catch (Exception ex)
             {
@@ -102,16 +85,17 @@ namespace EventSystem.Managers
             }
         }
 
-        private void SavePlayerAccount(PlayerAccount playerAccount)
+        private async Task SavePlayerAccountAsync(PlayerAccount playerAccount)
         {
             string filePath = Path.Combine(_playerAccountsFolder, $"{playerAccount.SteamID}.xml");
-
             try
             {
                 XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                using (var stream = new FileStream(filePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true))
                 {
-                    serializer.Serialize(fileStream, playerAccount);
+                    var writer = new StreamWriter(stream);
+                    serializer.Serialize(writer, playerAccount);
+                    await writer.FlushAsync().ConfigureAwait(false);
                 }
             }
             catch (Exception ex)

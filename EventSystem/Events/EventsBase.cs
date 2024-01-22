@@ -68,7 +68,7 @@ namespace EventSystem.Events
         public virtual Task CheckPlayerProgress(long steamId) { /* implementacja */  return Task.CompletedTask; }
 
         // Przyznaje nagrodę graczowi.
-        public virtual Task AwardPlayer(long steamId, long points)
+        public virtual async Task AwardPlayer(long steamId, long points)
         {
             // Pobierz menedżera bazy danych z głównego pluginu
             var databaseManager = EventSystemMain.Instance.DatabaseManager;
@@ -85,14 +85,12 @@ namespace EventSystem.Events
             {
                 // Pobierz menedżera kont graczy z głównego pluginu
                 var xmlManager = EventSystemMain.Instance.PlayerAccountXmlManager;
-                bool updateResult = xmlManager.UpdatePlayerPoints(steamId, points);
+                bool updateResult = await xmlManager.UpdatePlayerPointsAsync(steamId, points).ConfigureAwait(false);
                 if (!updateResult)
                 {
                     // Obsługa sytuacji, gdy konto gracza nie istnieje (jeśli to konieczne)
                 }
             }
-
-            return Task.CompletedTask;
         }
 
         // Metody do zarządzania dodatkowymi elementami eventu, np. siatkami, obiektami.

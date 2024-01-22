@@ -19,6 +19,7 @@ using Torch.API.Plugins;
 using Torch.API.Session;
 using Torch.Managers;
 using Torch.Session;
+//#nullable enable
 
 namespace EventSystem
 {
@@ -190,7 +191,7 @@ namespace EventSystem
             {
                 if (eventItem.IsActiveNow())
                 {
-                    eventItem.EndEvent().Wait(); // Wywołanie synchroniczne EndEvent
+                    eventItem.EndEvent().Wait();
                 }
             }
         }
@@ -205,7 +206,7 @@ namespace EventSystem
             }
             else
             {
-                _playerAccountXmlManager.CreatePlayerAccount((long)player.SteamId);
+                _playerAccountXmlManager.CreatePlayerAccountAsync((long)player.SteamId);
                 LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
             }
         }

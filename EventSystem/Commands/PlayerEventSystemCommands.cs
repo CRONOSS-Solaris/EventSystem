@@ -1,11 +1,8 @@
 ﻿using EventSystem.Events;
-using EventSystem.Utils;
-using NLog.Fluent;
+using NLog;
 using System;
-using System.IO;
 using System.Linq;
 using System.Text;
-using System.Xml.Serialization;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -17,6 +14,7 @@ namespace EventSystem
     public class PlayerEventSystemCommands : CommandModule
     {
         public EventSystemMain Plugin => (EventSystemMain)Context.Plugin;
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/PlayerEventSystemCommands");
 
         [Command("checkpoints", "Check your points.")]
         [Permission(MyPromoteLevel.None)]
@@ -53,14 +51,14 @@ namespace EventSystem
             }
             else
             {
-                var playerAccount = Plugin.PlayerAccountXmlManager.GetPlayerAccount(steamId);
+                var playerAccount = Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync(steamId);
                 if (playerAccount != null)
                 {
                     string response = new StringBuilder()
                         .AppendLine()
                         .AppendLine("---------------------")
                         .AppendLine("Available pts")
-                        .AppendLine($"- {playerAccount.Points}")
+                        .AppendLine($"- {playerAccount.Result}")
                         .AppendLine("---------------------")
                         .ToString();
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
