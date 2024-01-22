@@ -1,7 +1,4 @@
-﻿using EventSystem.Utils;
-using System.IO;
-using System.Xml.Serialization;
-using Torch.API.Managers;
+﻿using EventSystem.Managers;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -33,31 +30,16 @@ namespace EventSystem
             }
             else
             {
-                // Logika plików XML
-                string playerFolder = Path.Combine(Plugin.StoragePath, "EventSystem", "PlayerAccounts");
-                string filePath = Path.Combine(playerFolder, $"{steamId}.xml");
-
-                if (!File.Exists(filePath))
+                // Nowa logika używająca PlayerAccountXmlManager
+                bool updateResult = Plugin.PlayerAccountXmlManager.UpdatePlayerPoints((long)steamId, points);
+                if (updateResult)
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
+                }
+                else
                 {
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Player account file does not exist for {steamId}.", Color.Red, Context.Player.SteamUserId);
-                    return;
                 }
-
-                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                PlayerAccount playerAccount;
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
-                {
-                    playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
-                }
-
-                playerAccount.Points += points;
-
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                {
-                    serializer.Serialize(fileStream, playerAccount);
-                }
-
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}. New total: {playerAccount.Points}", Color.Green, Context.Player.SteamUserId);
             }
         }
 

@@ -53,33 +53,22 @@ namespace EventSystem
             }
             else
             {
-                // Logika plików XML
-                string fileName = $"{steamId}.xml";
-                string playerFolder = Path.Combine(Plugin.StoragePath, "EventSystem", "PlayerAccounts");
-                string filePath = Path.Combine(playerFolder, fileName);
-
-                if (!File.Exists(filePath))
+                var playerAccount = Plugin.PlayerAccountXmlManager.GetPlayerAccount(steamId);
+                if (playerAccount != null)
+                {
+                    string response = new StringBuilder()
+                        .AppendLine()
+                        .AppendLine("---------------------")
+                        .AppendLine("Available pts")
+                        .AppendLine($"- {playerAccount.Points}")
+                        .AppendLine("---------------------")
+                        .ToString();
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
+                }
+                else
                 {
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You do not have an account file.", Color.Red, Context.Player.SteamUserId);
-                    return;
                 }
-
-                XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                PlayerAccount playerAccount;
-                using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
-                {
-                    playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
-                }
-
-                string response = new StringBuilder()
-                    .AppendLine()
-                    .AppendLine("---------------------")
-                    .AppendLine("Available pts")
-                    .AppendLine($"- {playerAccount.Points}")
-                    .AppendLine("---------------------")
-                    .ToString();
-
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
             }
         }
 

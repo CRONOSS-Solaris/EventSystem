@@ -1,9 +1,7 @@
-﻿using EventSystem.Utils;
+﻿using EventSystem.Managers;
 using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 
 namespace EventSystem.Events
 {
@@ -85,26 +83,12 @@ namespace EventSystem.Events
             }
             else
             {
-                // Logika nagradzania w pliku XML
-                string playerFolder = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "PlayerAccounts");
-                string filePath = Path.Combine(playerFolder, $"{steamId}.xml");
-
-                if (File.Exists(filePath))
+                // Pobierz menedżera kont graczy z głównego pluginu
+                var xmlManager = EventSystemMain.Instance.PlayerAccountXmlManager;
+                bool updateResult = xmlManager.UpdatePlayerPoints(steamId, points);
+                if (!updateResult)
                 {
-                    XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                    PlayerAccount playerAccount;
-                    using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
-                    {
-                        playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
-                    }
-
-                    playerAccount.Points += points;
-
-                    XmlSerializer serializerWrite = new XmlSerializer(typeof(PlayerAccount));
-                    using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        serializerWrite.Serialize(fileStream, playerAccount);
-                    }
+                    // Obsługa sytuacji, gdy konto gracza nie istnieje (jeśli to konieczne)
                 }
             }
 

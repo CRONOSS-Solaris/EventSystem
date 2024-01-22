@@ -12,7 +12,6 @@ using System.IO;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Controls;
-using System.Xml.Serialization;
 using Torch;
 using Torch.API;
 using Torch.API.Managers;
@@ -50,6 +49,9 @@ namespace EventSystem
         private PostgresDatabaseManager _databaseManager;
         public PostgresDatabaseManager DatabaseManager => _databaseManager;
 
+        //PlayerAccountXmlManager
+        private PlayerAccountXmlManager _playerAccountXmlManager;
+        public PlayerAccountXmlManager PlayerAccountXmlManager => _playerAccountXmlManager;
         //Events
         public EventManager _eventManager;
 
@@ -74,6 +76,9 @@ namespace EventSystem
                 _databaseManager = new PostgresDatabaseManager(connectionString);
                 _databaseManager.InitializeDatabase();
             }
+
+            // Inicjalizacja menedżera kont XML
+            _playerAccountXmlManager = new PlayerAccountXmlManager(StoragePath);
 
             // Events
             _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
@@ -192,7 +197,6 @@ namespace EventSystem
 
         private void OnPlayerJoined(IPlayer player)
         {
-            // Sprawdź, czy korzystanie z bazy danych jest włączone
             if (_config.Data.UseDatabase && _databaseManager != null)
             {
                 // Logika zapisywania danych gracza w bazie danych
@@ -201,30 +205,10 @@ namespace EventSystem
             }
             else
             {
-                // Logika tworzenia pliku XML, jeśli baza danych nie jest używana
-                string playerFolder = Path.Combine(StoragePath, "EventSystem", "PlayerAccounts");
-                string fileName = $"{player.SteamId}.xml";
-                string filePath = Path.Combine(playerFolder, fileName);
-
-                if (!File.Exists(filePath))
-                {
-                    PlayerAccount playerAccount = new PlayerAccount((long)player.SteamId, 0);
-
-                    XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
-                    using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
-                    {
-                        serializer.Serialize(fileStream, playerAccount);
-                    }
-
-                    LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
-                }
-                else
-                {
-                    LoggerHelper.DebugLog(Log, _config.Data, $"Player account file already exists for {player.Name}");
-                }
+                _playerAccountXmlManager.CreatePlayerAccount((long)player.SteamId);
+                LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
             }
         }
-
 
         private void ConnectNexus()
         {
