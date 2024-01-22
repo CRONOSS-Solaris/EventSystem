@@ -1,10 +1,9 @@
-﻿using System;
+﻿using EventSystem.Utils;
+using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using System.IO;
+using System.Threading.Tasks;
 using System.Xml.Serialization;
-using EventSystem.DataBase;
-using EventSystem.Utils;
 
 namespace EventSystem.Events
 {
