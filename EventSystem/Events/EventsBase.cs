@@ -1,27 +1,43 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using System.IO;
+using System.Xml.Serialization;
+using EventSystem.DataBase;
+using EventSystem.Utils;
 
 namespace EventSystem.Events
 {
     public abstract class EventsBase
     {
+        // Nazwa eventu, można ją ustawić w klasach pochodnych.
         public string EventName { get; set; }
+
+        // Określa, czy event jest włączony.
         public bool IsEnabled { get; set; } = true;
+
+        // Lista dni miesiąca, w których event jest aktywny.
         public List<int> ActiveDaysOfMonth { get; set; } = new List<int>();
+
+        // Godzina rozpoczęcia eventu.
         public TimeSpan StartTime { get; set; }
+
+        // Godzina zakończenia eventu.
         public TimeSpan EndTime { get; set; }
 
-        // Abstrakcyjna metoda do wykonania specyficznych działań związanych z danym eventem.
+        // Lista graczy biorących udział w evencie (jeśli jest to konieczne).
+        protected List<long> ParticipatingPlayers { get; set; } = new List<long>();
+
+        // Metoda do wykonania specyficznych działań związanych z danym eventem.
         public abstract Task ExecuteEvent();
 
-        // Abstrakcyjna metoda do realizacji działań związanych z zakończeniem eventu.
+        // Metoda do realizacji działań związanych z zakończeniem eventu.
         public abstract Task EndEvent();
 
-        // Abstrakcyjna metoda do wczytania ustawień konkretnego eventu z konfiguracji.
+        // Metoda do wczytania ustawień konkretnego eventu z konfiguracji.
         public abstract Task LoadEventSettings(EventSystemConfig config);
 
-        // Sprawdza, czy event jest aktywny w danym momencie na podstawie aktualnej daty i godziny.
+        // Sprawdza, czy event jest aktywny w danym momencie.
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
@@ -45,7 +61,62 @@ namespace EventSystem.Events
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
         }
 
-        // Sprawdza, czy event jest aktywny w określonym dniu tygodnia.
+        // Dodaje gracza do listy uczestników eventu.
+        public virtual Task AddPlayer(long steamId) { /* implementacja */ return Task.CompletedTask; }
+
+        // Usuwa gracza z listy uczestników eventu.
+        public virtual Task RemovePlayer(long steamId) { /* implementacja */ return Task.CompletedTask; }
+
+        // Sprawdza postępy gracza w evencie.
+        public virtual Task CheckPlayerProgress(long steamId) { /* implementacja */  return Task.CompletedTask; }
+
+        // Przyznaje nagrodę graczowi.
+        public virtual async Task AwardPlayer(long steamId, long points)
+        {
+            var databaseManager = EventSystemMain.Instance.DatabaseManager;
+            var config = EventSystemMain.Instance.Config;
+
+            if (config.UseDatabase)
+            {
+                // Logika nagradzania w bazie danych
+                databaseManager.UpdatePlayerPoints(steamId.ToString(), points);
+            }
+            else
+            {
+                // Logika nagradzania w pliku XML
+                string playerFolder = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "PlayerAccounts");
+                string filePath = Path.Combine(playerFolder, $"{steamId}.xml");
+
+                PlayerAccount playerAccount;
+                if (File.Exists(filePath))
+                {
+                    XmlSerializer serializer = new XmlSerializer(typeof(PlayerAccount));
+                    using (FileStream fileStream = new FileStream(filePath, FileMode.Open))
+                    {
+                        playerAccount = (PlayerAccount)serializer.Deserialize(fileStream);
+                    }
+                }
+                else
+                {
+                    playerAccount = new PlayerAccount(steamId, 0);
+                }
+
+                playerAccount.Points += points;
+
+                XmlSerializer serializerWrite = new XmlSerializer(typeof(PlayerAccount));
+                using (FileStream fileStream = new FileStream(filePath, FileMode.Create))
+                {
+                    serializerWrite.Serialize(fileStream, playerAccount);
+                }
+            }
+        }
+
+        // Metody do zarządzania dodatkowymi elementami eventu, np. siatkami, obiektami.
+        public virtual Task SpawnGrid() { /* implementacja */ return Task.CompletedTask; }
+        public virtual Task ManageGrid() { /* implementacja */ return Task.CompletedTask; }
+        public virtual Task CleanupGrid() { /* implementacja */ return Task.CompletedTask; }
+
+        // Sprawdza, czy event jest aktywny w określonym dniu miesiąca.
         public bool IsActiveOnDayOfMonth(int day)
         {
             // Zwraca true, jeśli wydarzenie jest aktywne w określonym dniu miesiąca

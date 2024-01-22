@@ -1,15 +1,11 @@
-﻿using Torch.Commands;
-using Torch.Commands.Permissions;
-using VRage.Game.ModAPI;
-using System;
+﻿using EventSystem.Utils;
 using System.IO;
 using System.Xml.Serialization;
-using EventSystem.Utils;
 using Torch.API.Managers;
+using Torch.Commands;
+using Torch.Commands.Permissions;
+using VRage.Game.ModAPI;
 using VRageMath;
-using NLog.Fluent;
-using EventSystem.DataBase;
-using Sandbox.Engine.Utils;
 
 namespace EventSystem
 {
@@ -20,38 +16,23 @@ namespace EventSystem
 
         [Command("modifypoints", "Add or remove points from a player's account.")]
         [Permission(MyPromoteLevel.Admin)]
-        public void ModifyPoints(string playerNameOrSteamId, long points)
+        public void ModifyPoints(ulong steamId, long points)
         {
-            ulong steamId;
-            bool isNumeric = ulong.TryParse(playerNameOrSteamId, out steamId);
-
             if (Plugin.Config.UseDatabase)
             {
                 // Logika używania bazy danych
-                if (!isNumeric)
-                {
-                    var player = Context.Torch.CurrentSession.Managers.GetManager<IMultiplayerManagerBase>().GetPlayerByName(playerNameOrSteamId);
-                    if (player == null)
-                    {
-                        EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Player not found: {playerNameOrSteamId}.", Color.Red, Context.Player.SteamUserId);
-                        return;
-                    }
-                    steamId = player.SteamUserId;
-                }
-
-                Plugin.DatabaseManager.UpdatePlayerPoints(playerNameOrSteamId, points);
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {playerNameOrSteamId}.", Color.Green, Context.Player.SteamUserId);
+                Plugin.DatabaseManager.UpdatePlayerPoints(steamId.ToString(), points);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
             }
             else
             {
-                // Obecna logika plików XML
-                string fileName = isNumeric ? $"{playerNameOrSteamId}.xml" : $"{Context.Torch.CurrentSession.Managers.GetManager<IMultiplayerManagerBase>().GetPlayerBySteamId(steamId).DisplayName}-{steamId}.xml";
+                // Logika plików XML
                 string playerFolder = Path.Combine(Plugin.StoragePath, "EventSystem", "PlayerAccounts");
-                string filePath = Path.Combine(playerFolder, fileName);
+                string filePath = Path.Combine(playerFolder, $"{steamId}.xml");
 
                 if (!File.Exists(filePath))
                 {
-                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Player account file does not exist for {playerNameOrSteamId}.", Color.Red, Context.Player.SteamUserId);
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Player account file does not exist for {steamId}.", Color.Red, Context.Player.SteamUserId);
                     return;
                 }
 
@@ -69,9 +50,10 @@ namespace EventSystem
                     serializer.Serialize(fileStream, playerAccount);
                 }
 
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {playerNameOrSteamId}. New total: {playerAccount.Points}", Color.Green, Context.Player.SteamUserId);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}. New total: {playerAccount.Points}", Color.Green, Context.Player.SteamUserId);
             }
         }
+
 
         [Command("refreshblocks", "Refreshes the list of screens for updates.")]
         [Permission(MyPromoteLevel.Admin)]

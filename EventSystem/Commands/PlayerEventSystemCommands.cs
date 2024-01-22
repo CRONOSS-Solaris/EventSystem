@@ -46,8 +46,7 @@ namespace EventSystem
             else
             {
                 // Logika plików XML
-                string playerName = Context.Player.DisplayName;
-                string fileName = $"{playerName}-{steamId}.xml";
+                string fileName = $"{steamId}.xml";
                 string playerFolder = Path.Combine(Plugin.StoragePath, "EventSystem", "PlayerAccounts");
                 string filePath = Path.Combine(playerFolder, fileName);
 

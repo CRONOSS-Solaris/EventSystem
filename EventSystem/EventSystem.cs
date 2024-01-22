@@ -203,7 +203,7 @@ namespace EventSystem
             {
                 // Logika tworzenia pliku XML, jeśli baza danych nie jest używana
                 string playerFolder = Path.Combine(StoragePath, "EventSystem", "PlayerAccounts");
-                string fileName = $"{player.Name}-{player.SteamId}.xml";
+                string fileName = $"{player.SteamId}.xml";
                 string filePath = Path.Combine(playerFolder, fileName);
 
                 if (!File.Exists(filePath))
