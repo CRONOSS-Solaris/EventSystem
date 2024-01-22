@@ -14,14 +14,14 @@ using VRageMath;
 
 namespace EventSystem.Managers
 {
-    public class LCDManager
+    public class ActiveEventsLCDManager
     {
         private readonly EventManager _eventManager;
         private readonly EventSystemConfig _config;
         private MyConcurrentHashSet<IMyTerminalBlock> _blocksToUpdate = new MyConcurrentHashSet<IMyTerminalBlock>();
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/LCDManager");
 
-        public LCDManager(EventManager eventManager, EventSystemConfig config)
+        public ActiveEventsLCDManager(EventManager eventManager, EventSystemConfig config)
         {
             _eventManager = eventManager;
             _config = config;
@@ -79,7 +79,7 @@ namespace EventSystem.Managers
                 var blocks = GetAllBlocks(grid);
                 foreach (var block in blocks)
                 {
-                    if (block.CustomName.Contains(_config.lcdTagName))
+                    if (block.CustomName.Contains(_config.ActiveEventsLCDManagerTagName))
                     {
                         _blocksToUpdate.Add(block);
                         LoggerHelper.DebugLog(Log, _config, $"Added block '{block.CustomName}' to update list.");
@@ -99,7 +99,7 @@ namespace EventSystem.Managers
         {
             var terminalSystem = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             var blocks = new List<IMyTerminalBlock>();
-            terminalSystem?.GetBlocksOfType<IMyTerminalBlock>(blocks, block => block is IMyTextSurface || block is IMyTextSurfaceProvider && block.CustomName.Contains(_config.lcdTagName));
+            terminalSystem?.GetBlocksOfType<IMyTerminalBlock>(blocks, block => block is IMyTextSurface || block is IMyTextSurfaceProvider && block.CustomName.Contains(_config.ActiveEventsLCDManagerTagName));
             return blocks;
         }
 

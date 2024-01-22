@@ -77,7 +77,7 @@ namespace EventSystem
         [Permission(MyPromoteLevel.Admin)]
         public void RefreshBlocks()
         {
-            var monitor = Plugin._lcdManager;
+            var monitor = Plugin._activeEventsLCDManager;
             var monitortwo = Plugin._allEventsLcdManager;
             if (monitor != null || monitortwo != null)
             {

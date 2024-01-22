@@ -1,5 +1,4 @@
-﻿using NLog.Fluent;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -51,17 +50,6 @@ namespace EventSystem.Events
         {
             // Zwraca true, jeśli wydarzenie jest aktywne w określonym dniu miesiąca
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
-        }
-
-        // Loguje szczegółowe informacje o wydarzeniu, w tym nazwę, status, dni aktywne, oraz godziny startu i końca.
-        public Task LogEventDetails()
-        {
-            string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            string status = IsEnabled ? "Enabled" : "Disabled";
-
-            Log.Error($"Event Details - Name: {EventName}, Status: {status}, Active Days of Month: {activeDaysText}, Start Time: {StartTime}, End Time: {EndTime}");
-
-            return Task.CompletedTask;
         }
     }
 }

@@ -54,7 +54,7 @@ namespace EventSystem
         private EventManager _eventManager;
 
         //lcd
-        public LCDManager _lcdManager;
+        public ActiveEventsLCDManager _activeEventsLCDManager;
         public AllEventsLCDManager _allEventsLcdManager;
 
         //Metody
@@ -76,7 +76,7 @@ namespace EventSystem
             }
 
             // Events
-            _eventManager = new EventManager(_config?.Data, _lcdManager, _allEventsLcdManager);
+            _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
 
@@ -141,11 +141,18 @@ namespace EventSystem
                     }
 
                     //lcd
-                    _lcdManager = new LCDManager(_eventManager, _config.Data);
-                    _allEventsLcdManager = new AllEventsLCDManager(_eventManager, _config.Data);
+                    if (_config.Data.EnableActiveEventsLCDManager)
+                    {
+                        _activeEventsLCDManager = new ActiveEventsLCDManager(_eventManager, _config.Data);
+                    }
+
+                    if (_config.Data.EnableAllEventsLCDManager)
+                    {
+                        _allEventsLcdManager = new AllEventsLCDManager(_eventManager, _config.Data);
+                    }
 
                     // Events
-                    _eventManager = new EventManager(_config?.Data, _lcdManager, _allEventsLcdManager);
+                    _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
                     // Automatyczna rejestracja eventów
                     RegisterAllEvents();
 

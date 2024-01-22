@@ -14,13 +14,13 @@ namespace EventSystem.Events
         private readonly Dictionary<string, Timer> _startTimers = new Dictionary<string, Timer>();
         private readonly Dictionary<string, Timer> _endTimers = new Dictionary<string, Timer>();
         private readonly EventSystemConfig _config;
-        private readonly LCDManager _lcdManager;
+        private readonly ActiveEventsLCDManager _activeEventsLCDManager;
         private AllEventsLCDManager _allEventsLcdManager;
 
-        public EventManager(EventSystemConfig config, LCDManager lcdManager, AllEventsLCDManager allEventsLcdManager)
+        public EventManager(EventSystemConfig config, ActiveEventsLCDManager lcdManager, AllEventsLCDManager allEventsLcdManager)
         {
             _config = config;
-            _lcdManager = lcdManager;
+            _activeEventsLCDManager = lcdManager;
             _allEventsLcdManager = allEventsLcdManager;
         }
 
@@ -87,7 +87,6 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.ExecuteEvent();
-                await eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)
@@ -102,7 +101,6 @@ namespace EventSystem.Events
             try
             {
                 await eventItem.EndEvent();
-                await eventItem.LogEventDetails();
                 UpdateLCDs();
             }
             catch (Exception ex)
@@ -115,7 +113,7 @@ namespace EventSystem.Events
         {
             try
             {
-                _lcdManager.UpdateMonitorBlocks();
+                _activeEventsLCDManager.UpdateMonitorBlocks();
                 _allEventsLcdManager.UpdateMonitorBlocks();
             }
             catch (Exception ex)

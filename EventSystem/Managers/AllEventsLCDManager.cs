@@ -99,7 +99,7 @@ namespace EventSystem.Managers
         {
             var terminalSystem = MyAPIGateway.TerminalActionsHelper.GetTerminalSystemForGrid(grid);
             var blocks = new List<IMyTerminalBlock>();
-            terminalSystem?.GetBlocksOfType<IMyTerminalBlock>(blocks, block => block is IMyTextSurface || block is IMyTextSurfaceProvider && block.CustomName.Contains(_config.lcdTagName));
+            terminalSystem?.GetBlocksOfType<IMyTerminalBlock>(blocks, block => block is IMyTextSurface || block is IMyTextSurfaceProvider && block.CustomName.Contains(_config.ActiveEventsLCDManagerTagName));
             return blocks;
         }
 
