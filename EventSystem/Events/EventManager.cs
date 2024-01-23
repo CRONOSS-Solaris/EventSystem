@@ -41,6 +41,13 @@ namespace EventSystem.Events
 
         public void ScheduleEvent(EventsBase eventItem)
         {
+            // Sprawdź, czy event jest włączony
+            if (!eventItem.IsEnabled)
+            {
+                LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' is disabled and will not be scheduled.");
+                return;
+            }
+
             var now = DateTime.Now;
             var dayOfMonth = now.Day;
 

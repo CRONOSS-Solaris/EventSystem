@@ -15,10 +15,10 @@ namespace EventSystem.Events
         public string EventName { get; set; }
 
         // Określa, czy event jest włączony.
-        public bool IsEnabled { get; set; } = true;
+        public bool IsEnabled { get; set; }
 
         // Lista dni miesiąca, w których event jest aktywny.
-        public List<int> ActiveDaysOfMonth { get; set; } = new List<int>();
+        public List<int> ActiveDaysOfMonth { get; set; }
 
         // Godzina rozpoczęcia eventu.
         public TimeSpan StartTime { get; set; }
@@ -51,7 +51,7 @@ namespace EventSystem.Events
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
-            bool isActiveToday = ActiveDaysOfMonth.Contains(now.Day);
+            bool isActiveToday = ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(now.Day);
             bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
             bool isActive = IsEnabled && isActiveToday && isActiveTime;
 

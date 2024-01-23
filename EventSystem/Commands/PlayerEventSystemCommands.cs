@@ -81,9 +81,9 @@ namespace EventSystem
             var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
-            response.AppendLine();
             response.AppendLine("Active Events:");
             response.AppendLine();
+
             if (activeEvents.Any())
             {
                 foreach (var eventItem in activeEvents)
@@ -99,7 +99,16 @@ namespace EventSystem
             response.AppendLine();
             response.AppendLine("Upcoming Events:");
             response.AppendLine();
-            response.Append(GenerateUpcomingEventsScheduleText(eventManager, DateTime.Now));
+
+            var upcomingEventsText = GenerateUpcomingEventsScheduleText(eventManager, DateTime.Now);
+            if (string.IsNullOrEmpty(upcomingEventsText))
+            {
+                response.AppendLine("No upcoming events.");
+            }
+            else
+            {
+                response.Append(upcomingEventsText);
+            }
 
             EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response.ToString(), Color.Green, Context.Player.SteamUserId);
         }
@@ -112,16 +121,20 @@ namespace EventSystem
             {
                 (currentYear, currentMonth),
                 (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
-                (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
+             (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
             };
 
             var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
 
             foreach (var eventItem in eventManager.Events)
             {
+                // Pomiń wydarzenia, które są wyłączone
+                if (!eventItem.IsEnabled) continue;
+
                 foreach (var (year, month) in monthsToCheck)
                 {
-                    var nextEventDates = FindAllEventDatesInMonth(eventItem, year, month);
+                    
+                    var nextEventDates = Plugin._allEventsLcdManager.FindAllEventDatesInMonth(eventItem, year, month);
                     foreach (var nextEventDate in nextEventDates)
                     {
                         var nextStartDate = nextEventDate;
@@ -131,36 +144,20 @@ namespace EventSystem
                 }
             }
 
-            // Sort events and limit to the first 10
+            // Sortuj wydarzenia i ogranicz do pierwszych 10
             var text = new StringBuilder();
-            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(2))
+            if (!upcomingEvents.Any())
             {
-                text.AppendLine($"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n-End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n");
+                return "";
+            }
+
+            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(1)) // Możesz dostosować liczbę wyświetlanych nadchodzących wydarzeń
+            {
+                text.AppendLine($"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n- End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}");
             }
 
             return text.ToString();
         }
-
-        private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
-        {
-            var dates = new List<DateTime>();
-            int daysInMonth = DateTime.DaysInMonth(year, month);
-
-            foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
-            {
-                if (day <= daysInMonth)
-                {
-                    var potentialNextDate = new DateTime(year, month, day,
-                                                         eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
-                    if (potentialNextDate > DateTime.Now)
-                    {
-                        dates.Add(potentialNextDate);
-                    }
-                }
-            }
-            return dates;
-        }
-
 
         [Command("transfer", "Initiate a point transfer.")]
         [Permission(MyPromoteLevel.None)]

@@ -107,7 +107,7 @@ namespace EventSystem.Managers
         {
             try
             {
-                string displayText = GenerateFullScheduleTextForLCD();
+                string displayText = GenerateFullScheduleTextForLCD(out bool hasEvents);
                 textSurface.ContentType = ContentType.TEXT_AND_IMAGE;
                 textSurface.WriteText(displayText, false);
                 textSurface.FontColor = Color.White;
@@ -119,11 +119,9 @@ namespace EventSystem.Managers
             }
         }
 
-        private string GenerateFullScheduleTextForLCD()
+        private string GenerateFullScheduleTextForLCD(out bool hasEvents)
         {
-            if (!_eventManager.Events.Any()) return "No scheduled events.";
-
-            string text = "All Scheduled Events:\n";
+            string text = "";
             var now = DateTime.Now;
 
             int currentMonth = now.Month;
@@ -133,12 +131,15 @@ namespace EventSystem.Managers
                 (currentYear, currentMonth),
                 (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
                 (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
-             };
+            };
 
             var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
 
             foreach (var eventItem in _eventManager.Events)
             {
+                // Skip events that are disabled
+                if (!eventItem.IsEnabled) continue;
+
                 foreach (var (year, month) in monthsToCheck)
                 {
                     var nextEventDates = FindAllEventDatesInMonth(eventItem, year, month);
@@ -151,24 +152,33 @@ namespace EventSystem.Managers
                 }
             }
 
-            // Sortuj wydarzenia i ogranicz do pierwszych 10
-            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(10))
+            if (upcomingEvents.Any())
             {
-                text += $"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n- End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n\n";
+                text += "All Scheduled Events:\n";
+                foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(5))
+                {
+                    text += $"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n- End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n\n";
+                }
+                hasEvents = true;
+            }
+            else
+            {
+                text = "No scheduled events.";
+                hasEvents = false;
             }
 
             return text;
         }
 
-
-        private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
+        public IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
         {
             var dates = new List<DateTime>();
             int daysInMonth = DateTime.DaysInMonth(year, month);
 
-            foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+            if (eventItem.ActiveDaysOfMonth.Count == 0)
             {
-                if (day <= daysInMonth)
+                // If no specific days are defined, consider the event for every day of the month
+                for (int day = 1; day <= daysInMonth; day++)
                 {
                     var potentialNextDate = new DateTime(year, month, day,
                                                          eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
@@ -178,8 +188,24 @@ namespace EventSystem.Managers
                     }
                 }
             }
+            else
+            {
+                foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+                {
+                    if (day <= daysInMonth)
+                    {
+                        var potentialNextDate = new DateTime(year, month, day,
+                                                             eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
+                        if (potentialNextDate > DateTime.Now)
+                        {
+                            dates.Add(potentialNextDate);
+                        }
+                    }
+                }
+            }
             return dates;
         }
+
 
     }
 }
