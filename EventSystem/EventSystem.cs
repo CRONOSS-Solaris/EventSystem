@@ -107,32 +107,6 @@ namespace EventSystem
             Save();
         }
 
-        private void RegisterAllEvents()
-        {
-            // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
-            var eventTypes = Assembly.GetExecutingAssembly().GetTypes()
-                            .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract);
-
-            foreach (var eventType in eventTypes)
-            {
-                try
-                {
-                    // Tworzymy instancję każdego eventu
-                    var eventInstance = (EventsBase)Activator.CreateInstance(eventType, _config?.Data);
-                    if (eventInstance != null)
-                    {
-                        // Rejestrujemy event
-                        _eventManager.RegisterEvent(eventInstance);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    // Logowanie błędu podczas tworzenia lub rejestrowania eventu
-                    Log.Error($"Error registering event '{eventType.Name}': {ex.Message}");
-                }
-            }
-        }
-
         private void SessionChanged(ITorchSession session, TorchSessionState state)
         {
 
@@ -185,6 +159,32 @@ namespace EventSystem
                     break;
                 case TorchSessionState.Unloaded:
                     break;
+            }
+        }
+
+        private void RegisterAllEvents()
+        {
+            // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
+            var eventTypes = Assembly.GetExecutingAssembly().GetTypes()
+                            .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract);
+
+            foreach (var eventType in eventTypes)
+            {
+                try
+                {
+                    // Tworzymy instancję każdego eventu
+                    var eventInstance = (EventsBase)Activator.CreateInstance(eventType, _config?.Data);
+                    if (eventInstance != null)
+                    {
+                        // Rejestrujemy event
+                        _eventManager.RegisterEvent(eventInstance);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Logowanie błędu podczas tworzenia lub rejestrowania eventu
+                    Log.Error($"Error registering event '{eventType.Name}': {ex.Message}");
+                }
             }
         }
 
