@@ -22,9 +22,6 @@ namespace EventSystem.Events
         // Godzina zakończenia eventu.
         public TimeSpan EndTime { get; set; }
 
-        // Lista graczy biorących udział w evencie (jeśli jest to konieczne).
-        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
-
         // Metoda do wykonania specyficznych działań związanych z danym eventem.
         public abstract Task ExecuteEvent();
 
@@ -33,6 +30,15 @@ namespace EventSystem.Events
 
         // Metoda do wczytania ustawień konkretnego eventu z konfiguracji.
         public abstract Task LoadEventSettings(EventSystemConfig config);
+
+        // Dodaje gracza do listy uczestników eventu.
+        public abstract Task AddPlayer(long steamId);
+
+        // Usuwa gracza z listy uczestników eventu.
+        public abstract Task RemovePlayer(long steamId);
+
+        // Sprawdza, czy gracz jest w liście uczestników eventu.
+        public abstract Task<bool> IsPlayerParticipating(long steamId);
 
         // Sprawdza postępy gracza w evencie.
         public abstract Task CheckPlayerProgress(long steamId);
@@ -59,26 +65,6 @@ namespace EventSystem.Events
         {
             var endOfDay = now.Date.Add(EndTime);
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
-        }
-
-        // Dodaje gracza do listy uczestników eventu.
-        public virtual Task AddPlayer(long steamId)
-        {
-            ParticipatingPlayers.TryAdd(steamId, true);
-            return Task.CompletedTask;
-        }
-
-        // Usuwa gracza z listy uczestników eventu.
-        public virtual Task RemovePlayer(long steamId)
-        {
-            ParticipatingPlayers.TryRemove(steamId, out _);
-            return Task.CompletedTask;
-        }
-
-        // Sprawdza, czy gracz jest w liście uczestników eventu.
-        public bool IsPlayerParticipating(long steamId)
-        {
-            return ParticipatingPlayers.ContainsKey(steamId);
         }
 
         // Przyznaje nagrodę graczowi.

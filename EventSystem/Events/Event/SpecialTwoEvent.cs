@@ -8,30 +8,30 @@ using System.Threading.Tasks;
 
 namespace EventSystem.Event
 {
-    public class SpecialEvent : EventsBase
+    public class SpecialTwoEvent : EventsBase
     {
-        public static readonly Logger Log = LogManager.GetLogger("EventSystem/SpecialEvent");
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/SpecialTwoEvent");
         private readonly EventSystemConfig _config;
 
         protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
 
-        public SpecialEvent(EventSystemConfig config)
+        public SpecialTwoEvent(EventSystemConfig config)
         {
             _config = config;
-            EventName = "SpecialEvent";
+            EventName = "SpecialTwoEvent";
         }
 
         public override Task ExecuteEvent()
         {
             // Implementacja logiki wydarzenia
-            Log.Info($"Executing SpecialEvent.");
+            Log.Info($"Executing SpecialTwoEvent.");
             return Task.CompletedTask;
         }
 
         public override Task EndEvent()
         {
             // Implementacja logiki końca wydarzenia
-            Log.Info($"Ending SpecialEvent.");
+            Log.Info($"Ending SpecialTwoEvent.");
             return Task.CompletedTask;
         }
 
@@ -63,18 +63,19 @@ namespace EventSystem.Event
 
         public override Task LoadEventSettings(EventSystemConfig config)
         {
-            if (config.SpecialEventSettings == null)
+            if (config.SpecialTwoEventSettings == null)
             {
-                config.SpecialEventSettings = new SpecialEventConfig
+                config.SpecialTwoEventSettings = new SpecialTwoEventConfig
                 {
                     IsEnabled = false,
-                    ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
+                    ActiveDaysOfMonth = new List<int> { 16, 21, 30 },
                     StartTime = "00:00:00",
-                    EndTime = "23:59:59"
+                    EndTime = "23:59:59",
+                    Points = 1000
                 };
             }
 
-            var settings = config.SpecialEventSettings;
+            var settings = config.SpecialTwoEventSettings;
             IsEnabled = settings.IsEnabled;
             ActiveDaysOfMonth = settings.ActiveDaysOfMonth;
 
@@ -82,17 +83,18 @@ namespace EventSystem.Event
             EndTime = TimeSpan.Parse(settings.EndTime);
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialTwoEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
             return Task.CompletedTask;
         }
 
-        public class SpecialEventConfig
+        public class SpecialTwoEventConfig
         {
             public bool IsEnabled { get; set; }
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
             public string EndTime { get; set; }
+            public long Points { get; set; }
         }
     }
 }

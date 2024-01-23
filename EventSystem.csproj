@@ -189,6 +189,7 @@
     <Compile Include="EventSystem\Events\EventManager.cs" />
     <Compile Include="EventSystem\Events\EventsBase.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialEvent.cs" />
+    <Compile Include="EventSystem\Events\Event\SpecialTwoEvent.cs" />
     <Compile Include="EventSystem\Managers\AllEventsLCDManager.cs" />
     <Compile Include="EventSystem\Managers\ActiveEventsLCDManager.cs" />
     <Compile Include="EventSystem\GUI\EventSystemControl.xaml.cs">

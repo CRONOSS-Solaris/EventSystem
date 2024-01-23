@@ -1,5 +1,7 @@
 ﻿using static EventSystem.Event.SpecialEvent;
 using Torch;
+using EventSystem.Event;
+using static EventSystem.Event.SpecialTwoEvent;
 
 namespace EventSystem
 {
@@ -59,5 +61,6 @@ namespace EventSystem
 
         // SpecialEventSettings: Konfiguracja dla konkretnego rodzaju eventu.
         public SpecialEventConfig SpecialEventSettings { get; set; }
+        public SpecialTwoEventConfig SpecialTwoEventSettings { get; set; }
     }
 }
