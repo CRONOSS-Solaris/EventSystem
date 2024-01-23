@@ -28,41 +28,46 @@ namespace EventSystem
 
         public static readonly Logger Log = LogManager.GetLogger("EventSystemMain");
         public static EventSystemMain Instance;
+
+        // Manager odpowiedzialny za multiplayer
         private IMultiplayerManagerBase _multiplayerManager;
+
+        // Dostęp do ChatManager, aby wysyłać wiadomości do graczy
         public static IChatManagerServer ChatManager => TorchBase.Instance.CurrentSession.Managers.GetManager<IChatManagerServer>();
 
-        //GUI
+        // GUI
         private EventSystemControl _control;
         public UserControl GetControl() => _control ?? (_control = new EventSystemControl(this));
 
-        //Config
+        // Konfiguracja
         private Persistent<EventSystemConfig> _config;
         public EventSystemConfig Config => _config?.Data;
 
-        //Nexus
+        // Integracja z Nexus
         public static NexusAPI? nexusAPI { get; private set; }
         private static readonly Guid NexusGUID = new("28a12184-0422-43ba-a6e6-2e228611cca5");
         public static bool NexusInstalled { get; private set; } = false;
-
         public static bool NexusInited;
 
-        //PostgresSQL
+        // PostgresSQL
         private PostgresDatabaseManager _databaseManager;
         public PostgresDatabaseManager DatabaseManager => _databaseManager;
 
-        //PlayerAccountXmlManager
+        // PlayerAccountXmlManager
         private PlayerAccountXmlManager _playerAccountXmlManager;
         public PlayerAccountXmlManager PlayerAccountXmlManager => _playerAccountXmlManager;
 
-        //PointsTransferManager
+        // PointsTransferManager
         private PointsTransferManager _pointsTransferManager;
         public PointsTransferManager PointsTransferManager => _pointsTransferManager;
-        //Events
+
+        // Zarządzanie eventami
         public EventManager _eventManager;
 
-        //lcd
+        // Zarządzanie LCD
         public ActiveEventsLCDManager _activeEventsLCDManager;
         public AllEventsLCDManager _allEventsLcdManager;
+
 
         //Metody
         public override void Init(ITorchBase torch)

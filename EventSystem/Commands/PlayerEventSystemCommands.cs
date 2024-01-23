@@ -168,8 +168,17 @@ namespace EventSystem
 
             long steamId = (long)Context.Player.SteamUserId;
             string transferCode = Plugin.PointsTransferManager.InitiateTransfer(steamId, points);
-            EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Transfer initiated. Your transfer code: {transferCode}", Color.Green, Context.Player.SteamUserId);
+
+            if (transferCode != null)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Transfer initiated. Your transfer code: {transferCode}", Color.Green, Context.Player.SteamUserId);
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed. Insufficient points.", Color.Red, Context.Player.SteamUserId);
+            }
         }
+
 
         [Command("claim", "Complete a point transfer using a transfer code.")]
         [Permission(MyPromoteLevel.None)]
@@ -190,7 +199,7 @@ namespace EventSystem
             }
             else
             {
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed or code is invalid.", Color.Red, Context.Player.SteamUserId);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed, code is invalid or sender does not have enough points.", Color.Red, Context.Player.SteamUserId);
             }
         }
 
