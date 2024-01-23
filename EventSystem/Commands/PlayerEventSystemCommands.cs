@@ -4,6 +4,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -17,7 +18,7 @@ namespace EventSystem
         public EventSystemMain Plugin => (EventSystemMain)Context.Plugin;
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/PlayerEventSystemCommands");
 
-        [Command("checkpoints", "Check your points.")]
+        [Command("points", "Check your points.")]
         [Permission(MyPromoteLevel.None)]
         public void CheckPoints()
         {
@@ -71,7 +72,7 @@ namespace EventSystem
             }
         }
 
-        [Command("showevents", "Displays active and upcoming events.")]
+        [Command("events", "Displays active and upcoming events.")]
         [Permission(MyPromoteLevel.None)]
         public void ShowEvents()
         {
@@ -153,6 +154,44 @@ namespace EventSystem
                 }
             }
             return dates;
+        }
+
+        [Command("transfer", "Initiate a point transfer.")]
+        [Permission(MyPromoteLevel.None)]
+        public void InitiateTransfer(long points)
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            long steamId = (long)Context.Player.SteamUserId;
+            string transferCode = Plugin.PointsTransferManager.InitiateTransfer(steamId, points);
+            EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Transfer initiated. Your transfer code: {transferCode}", Color.Green, Context.Player.SteamUserId);
+        }
+
+        [Command("claim", "Complete a point transfer using a transfer code.")]
+        [Permission(MyPromoteLevel.None)]
+        public async Task CompleteTransfer(string transferCode)
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            long steamId = (long)Context.Player.SteamUserId;
+            var (success, points) = await Plugin.PointsTransferManager.CompleteTransfer(transferCode, steamId);
+
+            if (success)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Transfer completed successfully. You received {points} points.", Color.Green, Context.Player.SteamUserId);
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed or code is invalid.", Color.Red, Context.Player.SteamUserId);
+            }
         }
 
     }

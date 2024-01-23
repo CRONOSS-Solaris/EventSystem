@@ -53,6 +53,10 @@ namespace EventSystem
         //PlayerAccountXmlManager
         private PlayerAccountXmlManager _playerAccountXmlManager;
         public PlayerAccountXmlManager PlayerAccountXmlManager => _playerAccountXmlManager;
+
+        //PointsTransferManager
+        private PointsTransferManager _pointsTransferManager;
+        public PointsTransferManager PointsTransferManager => _pointsTransferManager;
         //Events
         public EventManager _eventManager;
 
@@ -80,6 +84,8 @@ namespace EventSystem
 
             // Inicjalizacja menedżera kont XML
             _playerAccountXmlManager = new PlayerAccountXmlManager(StoragePath);
+            // Inicjalizacja PointsTransferManager
+            _pointsTransferManager = new PointsTransferManager();
 
             // Events
             _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);

@@ -195,6 +195,7 @@
       <DependentUpon>EventSystemControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="EventSystem\Managers\PlayerAccountXmlManager.cs" />
+    <Compile Include="EventSystem\Managers\PointsTransferManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusAPI.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusMessage.cs" />
