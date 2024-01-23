@@ -15,7 +15,7 @@ namespace EventSystem.Utils
         {
             _rootPath = rootPath;
             CreateFolders(Path.Combine(_rootPath, "Config"),
-                          Path.Combine(_rootPath, "PlayerAccounts")
+                          Path.Combine(_rootPath, "PlayerAccounts"));
         }
 
 
