@@ -32,6 +32,11 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
+        public override Task CheckPlayerProgress(long steamId)
+        {
+            return Task.CompletedTask;
+        }
+
         public override Task LoadEventSettings(EventSystemConfig config)
         {
             if (config.SpecialEventSettings == null)

@@ -1,5 +1,5 @@
-﻿using EventSystem.Managers;
-using System;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -23,7 +23,7 @@ namespace EventSystem.Events
         public TimeSpan EndTime { get; set; }
 
         // Lista graczy biorących udział w evencie (jeśli jest to konieczne).
-        protected List<long> ParticipatingPlayers { get; set; } = new List<long>();
+        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
 
         // Metoda do wykonania specyficznych działań związanych z danym eventem.
         public abstract Task ExecuteEvent();
@@ -33,6 +33,9 @@ namespace EventSystem.Events
 
         // Metoda do wczytania ustawień konkretnego eventu z konfiguracji.
         public abstract Task LoadEventSettings(EventSystemConfig config);
+
+        // Sprawdza postępy gracza w evencie.
+        public abstract Task CheckPlayerProgress(long steamId);
 
         // Sprawdza, czy event jest aktywny w danym momencie.
         public bool IsActiveNow()
@@ -59,13 +62,24 @@ namespace EventSystem.Events
         }
 
         // Dodaje gracza do listy uczestników eventu.
-        public virtual Task AddPlayer(long steamId) { /* implementacja */ return Task.CompletedTask; }
+        public virtual Task AddPlayer(long steamId)
+        {
+            ParticipatingPlayers.TryAdd(steamId, true);
+            return Task.CompletedTask;
+        }
 
         // Usuwa gracza z listy uczestników eventu.
-        public virtual Task RemovePlayer(long steamId) { /* implementacja */ return Task.CompletedTask; }
+        public virtual Task RemovePlayer(long steamId)
+        {
+            ParticipatingPlayers.TryRemove(steamId, out _);
+            return Task.CompletedTask;
+        }
 
-        // Sprawdza postępy gracza w evencie.
-        public virtual Task CheckPlayerProgress(long steamId) { /* implementacja */  return Task.CompletedTask; }
+        // Sprawdza, czy gracz jest w liście uczestników eventu.
+        public bool IsPlayerParticipating(long steamId)
+        {
+            return ParticipatingPlayers.ContainsKey(steamId);
+        }
 
         // Przyznaje nagrodę graczowi.
         public virtual async Task AwardPlayer(long steamId, long points)
