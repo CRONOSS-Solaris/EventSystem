@@ -1,6 +1,4 @@
 ﻿using Npgsql;
-using System;
-using System.Data;
 
 namespace EventSystem.DataBase
 {

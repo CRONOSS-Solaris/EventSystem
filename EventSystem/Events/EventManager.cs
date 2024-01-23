@@ -81,12 +81,12 @@ namespace EventSystem.Events
         }
 
 
-        private async void StartEvent(object state)
+        private void StartEvent(object state)
         {
             var eventItem = (EventsBase)state;
             try
             {
-                await eventItem.ExecuteEvent();
+                eventItem.ExecuteEvent();
                 UpdateLCDs();
             }
             catch (Exception ex)
@@ -95,12 +95,12 @@ namespace EventSystem.Events
             }
         }
 
-        private async void EndEvent(object state)
+        private void EndEvent(object state)
         {
             var eventItem = (EventsBase)state;
             try
             {
-                await eventItem.EndEvent();
+                eventItem.EndEvent();
                 UpdateLCDs();
             }
             catch (Exception ex)

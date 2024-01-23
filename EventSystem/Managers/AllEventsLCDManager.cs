@@ -126,44 +126,53 @@ namespace EventSystem.Managers
             string text = "All Scheduled Events:\n";
             var now = DateTime.Now;
 
+            int currentMonth = now.Month;
+            int currentYear = now.Year;
+            var monthsToCheck = new List<(int year, int month)>
+            {
+                (currentYear, currentMonth),
+                (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
+                (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
+            };
+
+            var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
+
             foreach (var eventItem in _eventManager.Events)
             {
-                // Sprawdź najbliższą przyszłą datę eventu
-                var nextEventDate = FindNextEventDate(eventItem, now);
-
-                if (nextEventDate.HasValue)
+                foreach (var (year, month) in monthsToCheck)
                 {
-                    var nextStartDate = nextEventDate.Value;
-                    var nextEndDate = nextEventDate.Value.Date.Add(eventItem.EndTime);
-                    text += $"{eventItem.EventName} - Start: {nextStartDate.ToString("dd/MM/yyyy HH:mm:ss")}, End: {nextEndDate.ToString("dd/MM/yyyy HH:mm:ss")}\n";
-                }
-            }
-            return text;
-        }
-
-        private DateTime? FindNextEventDate(EventsBase eventItem, DateTime now)
-        {
-            DateTime? nextEventDate = null;
-
-            // Sprawdzanie dat w bieżącym miesiącu i następnym
-            for (int monthOffset = 0; monthOffset <= 1; monthOffset++)
-            {
-                int year = (now.Month + monthOffset > 12) ? now.Year + 1 : now.Year;
-                int month = (now.Month + monthOffset > 12) ? 1 : now.Month + monthOffset;
-
-                foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
-                {
-                    var potentialNextDate = new DateTime(year, month, day,
-                                                         eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
-                    if (potentialNextDate > now)
+                    var nextEventDates = FindAllEventDatesInMonth(eventItem, year, month);
+                    foreach (var nextEventDate in nextEventDates)
                     {
-                        nextEventDate = potentialNextDate;
-                        return nextEventDate;
+                        var nextStartDate = nextEventDate;
+                        var nextEndDate = nextEventDate.Date.Add(eventItem.EndTime);
+                        upcomingEvents.Add((nextStartDate, nextEndDate, eventItem.EventName));
                     }
                 }
             }
 
-            return nextEventDate;
+            // Sortuj wydarzenia i ogranicz do pierwszych 10
+            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(10))
+            {
+                text += $"{eventInfo.eventName} - Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}, End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n";
+            }
+
+            return text;
+        }
+
+        private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
+        {
+            var dates = new List<DateTime>();
+            foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+            {
+                var potentialNextDate = new DateTime(year, month, day,
+                                                     eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
+                if (potentialNextDate > DateTime.Now)
+                {
+                    dates.Add(potentialNextDate);
+                }
+            }
+            return dates;
         }
 
     }
