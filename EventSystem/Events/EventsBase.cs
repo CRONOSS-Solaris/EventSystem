@@ -1,5 +1,7 @@
-﻿using System;
-using System.Collections.Concurrent;
+﻿using EventSystem.Utils;
+using NLog;
+using Sandbox.Engine.Utils;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
@@ -7,6 +9,8 @@ namespace EventSystem.Events
 {
     public abstract class EventsBase
     {
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
+
         // Nazwa eventu, można ją ustawić w klasach pochodnych.
         public string EventName { get; set; }
 
@@ -49,9 +53,18 @@ namespace EventSystem.Events
             var now = DateTime.Now;
             bool isActiveToday = ActiveDaysOfMonth.Contains(now.Day);
             bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
+            bool isActive = IsEnabled && isActiveToday && isActiveTime;
 
-            return IsEnabled && isActiveToday && isActiveTime;
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Checking if '{EventName}' is active now:");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Current time: {now}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"IsEnabled: {IsEnabled}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active today ({now.Day}): {isActiveToday}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active time ({now.TimeOfDay}): {isActiveTime}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Is active: {isActive}");
+
+            return isActive;
         }
+
 
         // Oblicza czas, który pozostał do rozpoczęcia eventu.
         public TimeSpan GetNextStartTime(DateTime now)

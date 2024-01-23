@@ -68,10 +68,9 @@ namespace EventSystem.Event
                 config.SpecialTwoEventSettings = new SpecialTwoEventConfig
                 {
                     IsEnabled = false,
-                    ActiveDaysOfMonth = new List<int> { 16, 21, 30 },
+                    ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
-                    EndTime = "23:59:59",
-                    Points = 1000
+                    EndTime = "23:59:59"
                 };
             }
 
@@ -94,7 +93,6 @@ namespace EventSystem.Event
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
             public string EndTime { get; set; }
-            public long Points { get; set; }
         }
     }
 }

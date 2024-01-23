@@ -1,6 +1,5 @@
-﻿using static EventSystem.Event.SpecialEvent;
-using Torch;
-using EventSystem.Event;
+﻿using Torch;
+using static EventSystem.Event.SpecialEvent;
 using static EventSystem.Event.SpecialTwoEvent;
 
 namespace EventSystem

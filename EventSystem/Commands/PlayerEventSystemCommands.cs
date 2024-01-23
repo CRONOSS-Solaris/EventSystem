@@ -133,9 +133,9 @@ namespace EventSystem
 
             // Sort events and limit to the first 10
             var text = new StringBuilder();
-            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(5))
+            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(2))
             {
-                text.AppendLine($"{eventInfo.eventName} - Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}, End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}");
+                text.AppendLine($"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n-End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n");
             }
 
             return text.ToString();

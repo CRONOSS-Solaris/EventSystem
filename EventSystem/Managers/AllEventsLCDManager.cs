@@ -133,7 +133,7 @@ namespace EventSystem.Managers
                 (currentYear, currentMonth),
                 (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
                 (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
-            };
+             };
 
             var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
 
@@ -154,11 +154,12 @@ namespace EventSystem.Managers
             // Sortuj wydarzenia i ogranicz do pierwszych 10
             foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(10))
             {
-                text += $"{eventInfo.eventName} - Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}, End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n";
+                text += $"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n- End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}\n\n";
             }
 
             return text;
         }
+
 
         private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
         {
