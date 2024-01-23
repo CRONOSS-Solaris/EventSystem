@@ -1,6 +1,7 @@
 ﻿using EventSystem.Events;
 using NLog;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Torch.Commands;
@@ -81,6 +82,7 @@ namespace EventSystem
             var response = new StringBuilder();
             response.AppendLine();
             response.AppendLine("Active Events:");
+            response.AppendLine();
             if (activeEvents.Any())
             {
                 foreach (var eventItem in activeEvents)
@@ -95,42 +97,63 @@ namespace EventSystem
 
             response.AppendLine();
             response.AppendLine("Upcoming Events:");
-            foreach (var eventItem in upcomingEvents)
-            {
-                var nextEventDate = FindNextEventDate(eventItem, DateTime.Now);
-                if (nextEventDate.HasValue)
-                {
-                    var nextStartDate = nextEventDate.Value;
-                    var nextEndDate = nextEventDate.Value.Date.Add(eventItem.EndTime);
-                    response.AppendLine($"{eventItem.EventName} - Next Start: {nextStartDate:dd/MM/yyyy HH:mm:ss}, End: {nextEndDate:dd/MM/yyyy HH:mm:ss}");
-                }
-            }
+            response.AppendLine();
+            response.Append(GenerateUpcomingEventsScheduleText(eventManager, DateTime.Now));
 
             EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response.ToString(), Color.Green, Context.Player.SteamUserId);
         }
 
-        private DateTime? FindNextEventDate(EventsBase eventItem, DateTime now)
+        private string GenerateUpcomingEventsScheduleText(EventManager eventManager, DateTime now)
         {
-            DateTime? nextEventDate = null;
-
-            // Sprawdzanie dat w bieżącym miesiącu i następnym
-            for (int monthOffset = 0; monthOffset <= 1; monthOffset++)
+            int currentMonth = now.Month;
+            int currentYear = now.Year;
+            var monthsToCheck = new List<(int year, int month)>
             {
-                int year = (now.Month + monthOffset > 12) ? now.Year + 1 : now.Year;
-                int month = (now.Month + monthOffset > 12) ? 1 : now.Month + monthOffset;
+                (currentYear, currentMonth),
+                (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
+                (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
+            };
 
-                foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+            var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
+
+            foreach (var eventItem in eventManager.Events)
+            {
+                foreach (var (year, month) in monthsToCheck)
                 {
-                    var potentialNextDate = new DateTime(year, month, day, eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
-                    if (potentialNextDate > now)
+                    var nextEventDates = FindAllEventDatesInMonth(eventItem, year, month);
+                    foreach (var nextEventDate in nextEventDates)
                     {
-                        nextEventDate = potentialNextDate;
-                        return nextEventDate;
+                        var nextStartDate = nextEventDate;
+                        var nextEndDate = nextEventDate.Date.Add(eventItem.EndTime);
+                        upcomingEvents.Add((nextStartDate, nextEndDate, eventItem.EventName));
                     }
                 }
             }
 
-            return nextEventDate;
+            // Sort events and limit to the first 10
+            var text = new StringBuilder();
+            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(5))
+            {
+                text.AppendLine($"{eventInfo.eventName} - Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}, End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}");
+            }
+
+            return text.ToString();
         }
+
+        private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
+        {
+            var dates = new List<DateTime>();
+            foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
+            {
+                var potentialNextDate = new DateTime(year, month, day,
+                                                     eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
+                if (potentialNextDate > DateTime.Now)
+                {
+                    dates.Add(potentialNextDate);
+                }
+            }
+            return dates;
+        }
+
     }
 }
