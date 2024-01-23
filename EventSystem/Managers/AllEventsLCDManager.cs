@@ -163,13 +163,18 @@ namespace EventSystem.Managers
         private IEnumerable<DateTime> FindAllEventDatesInMonth(EventsBase eventItem, int year, int month)
         {
             var dates = new List<DateTime>();
+            int daysInMonth = DateTime.DaysInMonth(year, month);
+
             foreach (var day in eventItem.ActiveDaysOfMonth.OrderBy(d => d))
             {
-                var potentialNextDate = new DateTime(year, month, day,
-                                                     eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
-                if (potentialNextDate > DateTime.Now)
+                if (day <= daysInMonth)
                 {
-                    dates.Add(potentialNextDate);
+                    var potentialNextDate = new DateTime(year, month, day,
+                                                         eventItem.StartTime.Hours, eventItem.StartTime.Minutes, eventItem.StartTime.Seconds);
+                    if (potentialNextDate > DateTime.Now)
+                    {
+                        dates.Add(potentialNextDate);
+                    }
                 }
             }
             return dates;
