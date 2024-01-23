@@ -59,7 +59,7 @@ namespace EventSystem
         private string _databasePassword = "mypassword";
         public string DatabasePassword { get => _databasePassword; set => SetValue(ref _databasePassword, value); }
 
-        // SpecialEventSettings: Konfiguracja dla konkretnego rodzaju eventu.
+        // Konfiguracje Eventów
         public SpecialEventConfig SpecialEventSettings { get; set; }
         public SpecialTwoEventConfig SpecialTwoEventSettings { get; set; }
     }

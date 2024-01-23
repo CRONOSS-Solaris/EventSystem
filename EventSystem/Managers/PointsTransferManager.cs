@@ -10,9 +10,21 @@ namespace EventSystem.Managers
 
         public string InitiateTransfer(long senderSteamId, long points)
         {
-            // Sprawdzenie, czy gracz ma wystarczającą liczbę punktów
-            var senderAccount = EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(senderSteamId).Result;
-            if (senderAccount == null || senderAccount.Points < points)
+            long? senderPoints = null;
+            if (EventSystemMain.Instance.Config.UseDatabase)
+            {
+                senderPoints = EventSystemMain.Instance.DatabaseManager.GetPlayerPoints(senderSteamId);
+            }
+            else
+            {
+                var senderAccount = EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(senderSteamId).Result;
+                if (senderAccount != null)
+                {
+                    senderPoints = senderAccount.Points;
+                }
+            }
+
+            if (senderPoints == null || senderPoints < points)
             {
                 return null; // Gracz nie ma wystarczającej liczby punktów
             }
@@ -34,15 +46,26 @@ namespace EventSystem.Managers
                 return (false, 0); // Kod transferowy nie istnieje
             }
 
-            // Ponowne sprawdzenie punktów nadawcy
-            var senderAccount = await EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(transfer.SenderSteamId);
-            if (senderAccount == null || senderAccount.Points < transfer.Points)
+            long? senderPoints = null;
+            if (EventSystemMain.Instance.Config.UseDatabase)
+            {
+                senderPoints = EventSystemMain.Instance.DatabaseManager.GetPlayerPoints(transfer.SenderSteamId);
+            }
+            else
+            {
+                var senderAccount = await EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(transfer.SenderSteamId);
+                if (senderAccount != null)
+                {
+                    senderPoints = senderAccount.Points;
+                }
+            }
+
+            if (senderPoints == null || senderPoints < transfer.Points)
             {
                 _pendingTransfers.Remove(transferCode);
                 return (false, 0); // Nadawca wydał punkty przed zakończeniem transferu
             }
 
-            // Proces transferu punktów
             if (EventSystemMain.Instance.Config.UseDatabase)
             {
                 var dbManager = EventSystemMain.Instance.DatabaseManager;
