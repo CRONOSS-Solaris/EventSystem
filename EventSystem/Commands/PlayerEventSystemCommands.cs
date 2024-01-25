@@ -81,6 +81,7 @@ namespace EventSystem
             var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
+            response.AppendLine();
             response.AppendLine("Active Events:");
             response.AppendLine();
 
@@ -88,7 +89,7 @@ namespace EventSystem
             {
                 foreach (var eventItem in activeEvents)
                 {
-                    response.AppendLine($"{eventItem.EventName} - Start: {eventItem.StartTime:hh\\:mm\\:ss}, End: {eventItem.EndTime:hh\\:mm\\:ss}");
+                    response.AppendLine($"{eventItem.EventName} - End: {eventItem.EndTime:hh\\:mm\\:ss}");
                 }
             }
             else
