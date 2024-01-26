@@ -216,7 +216,8 @@
     <Compile Include="EventSystem\Commands\AdminEventSystemCommands.cs" />
     <Compile Include="EventSystem\Config\EventSystemConfig.cs" />
     <Compile Include="EventSystem\EventSystem.cs" />
-    <Compile Include="EventSystem\Utils\FileManager.cs" />
+    <Compile Include="EventSystem\Serialization\GridSerializer.cs" />
+    <Compile Include="EventSystem\Managers\FileManager.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
     <EmbeddedResource Include="EventSystem\Properties\Resources.resx">

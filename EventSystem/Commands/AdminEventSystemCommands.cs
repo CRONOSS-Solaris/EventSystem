@@ -1,4 +1,8 @@
-﻿using System.Threading.Tasks;
+﻿using EventSystem.Serialization;
+using Sandbox.Game.World;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
@@ -58,6 +62,53 @@ namespace EventSystem
             else
             {
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Server Load Monitor is not initialized.", Color.Green, Context.Player.SteamUserId);
+            }
+        }
+
+        //Test commands
+
+        [Command("spawngird", "Loads and spawns a grid from a specified file in the 'prefab' folder at a specified position.")]
+        [Permission(MyPromoteLevel.Admin)]
+        public async Task SpawnGrid(string gridName, double x, double y, double z)
+        {
+            // Użyj FileManager do uzyskania ścieżki do folderu "prefab"
+            var prefabFolderPath = Path.Combine(Plugin.StoragePath, "EventSystem", "prefab");
+
+            // Utwórz pełną ścieżkę do pliku siatki
+            var filePath = Path.Combine(prefabFolderPath, gridName + ".sbc");
+
+            Vector3D position = new Vector3D(x, y, z);
+            bool result = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+
+            if (result)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Grid {gridName} successfully spawned at {position}.", Color.Green, Context.Player.SteamUserId);
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Failed to spawn grid {gridName} at {position}.", Color.Red, Context.Player.SteamUserId);
+            }
+        }
+
+        [Command("listnpcs", "Displays information about all NPCs on the server.")]
+        [Permission(MyPromoteLevel.Admin)]
+        public void ListNpcs()
+        {
+            var npcIdentities = MySession.Static.Players.GetNPCIdentities();
+            if (npcIdentities.Count == 0)
+            {
+                Context.Respond("No NPCs found on the server.");
+                return;
+            }
+
+            foreach (var npcId in npcIdentities)
+            {
+                var npc = MySession.Static.Players.TryGetIdentity(npcId);
+                if (npc != null)
+                {
+                    Context.Respond($"NPC Name: {npc.DisplayName}, IdentityId: {npc.IdentityId}");
+                    // Dodatkowe informacje o NPC mogą być tutaj wyświetlone.
+                }
             }
         }
     }

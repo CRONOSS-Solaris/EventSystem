@@ -3,7 +3,7 @@ using System;
 using System.IO;
 using Torch;
 
-namespace EventSystem.Utils
+namespace EventSystem.Managers
 {
     public class FileManager
     {
@@ -15,7 +15,8 @@ namespace EventSystem.Utils
         {
             _rootPath = rootPath;
             CreateFolders(Path.Combine(_rootPath, "Config"),
-                          Path.Combine(_rootPath, "PlayerAccounts"));
+                          Path.Combine(_rootPath, "PlayerAccounts"),
+                          Path.Combine(_rootPath, "prefab"));
         }
 
 
