@@ -2,6 +2,7 @@
 using EventSystem.Events;
 using EventSystem.Managers;
 using EventSystem.Nexus;
+using EventSystem.Serialization;
 using EventSystem.Utils;
 using Nexus.API;
 using NLog;
@@ -67,6 +68,10 @@ namespace EventSystem
         // Zarządzanie LCD
         public ActiveEventsLCDManager _activeEventsLCDManager;
         public AllEventsLCDManager _allEventsLcdManager;
+
+        //GridSpawner
+        private GridSpawner _gridSpawner;
+
 
 
         //Metody
@@ -150,6 +155,8 @@ namespace EventSystem
                     // Planowanie eventów po załadowaniu sesji
                     ScheduleAllEvents();
 
+                    //GridSpawner
+                    _gridSpawner = new GridSpawner();
                     Log.Info("Session Loaded!");
                     break;
 
