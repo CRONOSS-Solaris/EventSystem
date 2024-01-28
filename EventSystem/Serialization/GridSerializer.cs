@@ -9,6 +9,8 @@ using System.IO;
 using System.Linq;
 using Sandbox.Common.ObjectBuilders;
 using EventSystem.Serialization;
+using EventSystem;
+using EventSystem.Utils;
 
 public static class GridSerializer
 {
@@ -17,6 +19,8 @@ public static class GridSerializer
     public static async Task<bool> LoadAndSpawnGrid(string folderPath, string gridName, Vector3D position)
     {
         string filePath = Path.Combine(folderPath, gridName + ".sbc");
+        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Loading grid file: {filePath}");
+
         if (!File.Exists(filePath))
         {
             Log.Error($"Grid file does not exist at path: {filePath}");
@@ -25,17 +29,22 @@ public static class GridSerializer
 
         try
         {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Deserializing grid file...");
             if (MyObjectBuilderSerializerKeen.DeserializeXML(filePath, out MyObjectBuilder_Definitions definitions))
             {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grid file deserialized successfully.");
+
                 if (!TryGetGridsFromDefinition(definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids))
                 {
                     Log.Error("Failed to get grids from definition.");
                     return false;
                 }
 
-                ResetGear(grids);
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawning grid(s) at position {position}");
                 GridSpawner spawner = new GridSpawner();
-                return await spawner.SpawnGrids(grids, position);
+                bool result = await spawner.SpawnGrids(grids, position);
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid(s) spawn at position {position} completed with status: {result}");
+                return result;
             }
         }
         catch (Exception ex)
@@ -52,28 +61,11 @@ public static class GridSerializer
         if (definitions.ShipBlueprints != null && definitions.ShipBlueprints.Any())
         {
             grids = definitions.ShipBlueprints.SelectMany(blueprint => blueprint.CubeGrids);
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids successfully extracted from ship blueprints.");
             return true;
         }
 
         Log.Error("Invalid MyObjectBuilder_Definitions, no ship blueprints found.");
         return false;
-    }
-
-    public static void ResetGear(IEnumerable<MyObjectBuilder_CubeGrid> grids)
-    {
-        foreach (var grid in grids)
-        {
-            foreach (var block in grid.CubeBlocks.OfType<MyObjectBuilder_LandingGear>())
-            {
-                block.IsLocked = false;
-                block.AutoLock = true;
-                block.FirstLockAttempt = false;
-                block.AttachedEntityId = null;
-                block.MasterToSlave = null;
-                block.GearPivotPosition = null;
-                block.OtherPivot = null;
-                block.LockMode = SpaceEngineers.Game.ModAPI.Ingame.LandingGearMode.Unlocked;
-            }
-        }
     }
 }
