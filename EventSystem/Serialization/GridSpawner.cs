@@ -2,15 +2,12 @@
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Torch;
 using VRage;
 using VRage.Game;
 using VRage.ModAPI;
-using VRage.ObjectBuilders;
 using VRageMath;
 
 namespace EventSystem.Serialization
@@ -20,8 +17,6 @@ namespace EventSystem.Serialization
         public readonly Logger Log = LogManager.GetLogger("EventSystem/GridSpawner");
         private long DefaultNewOwner = 144115188075855881;
         private HashSet<MyCubeGrid> _spawnedGrids = new HashSet<MyCubeGrid>();
-
-        private MyObjectBuilder_CubeGrid _currentGridBuilder;
 
         public GridSpawner()
         {
@@ -35,7 +30,8 @@ namespace EventSystem.Serialization
             position = CorrectSpawnPosition(position);
             if (position == Vector3D.Zero) return false;
 
-            await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position, out gridsSpawned));
+            ProcessGrids(grids, position);
+            await GameEvents.InvokeActionAsync(() => SpawnEntities(grids));
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid spawn process completed. Success: {gridsSpawned}");
             return gridsSpawned;
@@ -43,59 +39,52 @@ namespace EventSystem.Serialization
 
         private Vector3D CorrectSpawnPosition(Vector3D position)
         {
-            return CorrectPositionIfInsidePlanetOrVoxel(position, 100.0);
-        }
-
-        private void ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position, out bool gridsSpawned)
-        {
-            gridsSpawned = false;
-            var entityBaseGrids = grids.Cast<MyObjectBuilder_EntityBase>().ToList();
-            MyEntities.RemapObjectBuilderCollection(entityBaseGrids);
-
-            foreach (var gridBuilder in entityBaseGrids.Cast<MyObjectBuilder_CubeGrid>())
+            var naturalGravity = MyAPIGateway.Physics.CalculateNaturalGravityAt(position, out _);
+            if (naturalGravity.LengthSquared() < 0.01)
             {
-                _currentGridBuilder = gridBuilder;
-                if (!TrySpawnGrid(position)) return;
-                gridsSpawned = true;
+                return position; // W kosmosie
+            }
+            else
+            {
+                return CorrectPositionIfInsidePlanetOrVoxel(position, 100.0); // Na planecie
             }
         }
 
-        private bool TrySpawnGrid(Vector3D position)
+        private void ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
         {
-            try
+            var mainGrid = FindMainGrid(grids);
+            if (mainGrid == null) return;
+
+            // Obliczenie delty pozycji
+            var deltaPosition = newPosition - mainGrid.PositionAndOrientation.Value.Position;
+
+            foreach (var grid in grids)
             {
-                SetGridPositionAndOrientation(position);
-                TransferGridOwnership(new[] { _currentGridBuilder }, DefaultNewOwner);
-                EnableRequiredItemsOnLoad(_currentGridBuilder);
-                SpawnEntity(_currentGridBuilder);
-                return true;
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"Exception occurred while spawning grid: {ex.Message}");
-                return false;
+                UpdateGridPosition(grid, deltaPosition);
+                TransferGridOwnership(new[] { grid }, DefaultNewOwner);
+                EnableRequiredItemsOnLoad(grid);
             }
         }
 
-        private void SetGridPositionAndOrientation(Vector3D position)
+        private MyObjectBuilder_CubeGrid FindMainGrid(IEnumerable<MyObjectBuilder_CubeGrid> grids)
         {
-            float naturalGravityInterference;
-            var gravityVector = MyAPIGateway.Physics.CalculateNaturalGravityAt(position, out naturalGravityInterference);
-            gravityVector.Normalize();
-            var up = -gravityVector;
-            var forward = Vector3D.CalculatePerpendicularVector(gravityVector);
-
-            _currentGridBuilder.PositionAndOrientation = new MyPositionAndOrientation
-            {
-                Position = position,
-                Forward = (Vector3)forward,
-                Up = (Vector3)up
-            };
+            // Możesz dostosować to kryterium w zależności od tego, jak definiujesz "główną siatkę"
+            return grids.OrderByDescending(g => g.CubeBlocks.Count).FirstOrDefault();
         }
 
-        private void SpawnEntity(MyObjectBuilder_CubeGrid gridBuilder)
+        private void UpdateGridPosition(MyObjectBuilder_CubeGrid grid, Vector3D deltaPosition)
         {
-            IMyEntity entity = MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridBuilder, false, Increment);
+            // Dodanie delty do aktualnej pozycji siatki
+            var newPosition = grid.PositionAndOrientation.Value.Position + deltaPosition;
+            grid.PositionAndOrientation = new MyPositionAndOrientation(newPosition, grid.PositionAndOrientation.Value.Forward, grid.PositionAndOrientation.Value.Up);
+        }
+
+        private void SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids)
+        {
+            foreach (var grid in grids)
+            {
+                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(grid, false, Increment);
+            }
         }
 
         private Vector3D CorrectPositionIfInsidePlanetOrVoxel(Vector3D position, double safetyDistance)
@@ -147,8 +136,10 @@ namespace EventSystem.Serialization
             if (grid != null)
             {
                 _spawnedGrids.Add(grid);
-                grid.Physics.LinearVelocity = Vector3.Zero;
-                grid.Physics.AngularVelocity = Vector3.Zero;
+                if (grid.Physics != null)
+                {
+                    grid.Physics.SetSpeeds(Vector3.Zero, Vector3.Zero);
+                }
                 MyAPIGateway.Entities.AddEntity(grid, true);
             }
         }
