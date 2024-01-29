@@ -68,13 +68,12 @@ namespace EventSystem.Serialization
 
         private MyObjectBuilder_CubeGrid FindMainGrid(IEnumerable<MyObjectBuilder_CubeGrid> grids)
         {
-            // Możesz dostosować to kryterium w zależności od tego, jak definiujesz "główną siatkę"
             return grids.OrderByDescending(g => g.CubeBlocks.Count).FirstOrDefault();
         }
 
         private void UpdateGridPosition(MyObjectBuilder_CubeGrid grid, Vector3D deltaPosition)
         {
-            // Dodanie delty do aktualnej pozycji siatki
+
             var newPosition = grid.PositionAndOrientation.Value.Position + deltaPosition;
             grid.PositionAndOrientation = new MyPositionAndOrientation(newPosition, grid.PositionAndOrientation.Value.Forward, grid.PositionAndOrientation.Value.Up);
         }
