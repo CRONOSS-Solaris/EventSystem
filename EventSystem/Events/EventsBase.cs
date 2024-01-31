@@ -1,15 +1,18 @@
 ﻿using EventSystem.Utils;
 using NLog;
-using Sandbox.Engine.Utils;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using VRage.Plugins;
+using VRageMath;
 
 namespace EventSystem.Events
 {
     public abstract class EventsBase
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
+        protected virtual string PrefabStoragePath { get; set; }
 
         // Nazwa eventu, można ją ustawić w klasach pochodnych.
         public string EventName { get; set; }
@@ -107,9 +110,43 @@ namespace EventSystem.Events
         }
 
         // Metody do zarządzania dodatkowymi elementami eventu, np. siatkami, obiektami.
-        public virtual Task SpawnGrid() { /* implementacja */ return Task.CompletedTask; }
-        public virtual Task ManageGrid() { /* implementacja */ return Task.CompletedTask; }
-        public virtual Task CleanupGrid() { /* implementacja */ return Task.CompletedTask; }
+        public virtual async Task SpawnGrid(string gridName, Vector3D position)
+        {
+            // Teraz używamy PrefabStoragePath zamiast przekazywać storagePath jako argument
+            var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
+
+            var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
+
+            if (!File.Exists(filePath))
+            {
+                Log.Error($"File not found: {filePath}");
+                return;
+            }
+
+            bool result = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+
+            if (result)
+            {
+                Log.Info($"Grid {gridName} successfully spawned at {position}.");
+            }
+            else
+            {
+                Log.Error($"Failed to spawn grid {gridName} at {position}.");
+            }
+        }
+
+        public virtual Task ManageGrid()
+        {
+            Log.Info("Managing grid. Override this method in derived class.");
+            return Task.CompletedTask;
+        }
+
+        public virtual Task CleanupGrid()
+        {
+            Log.Info("Cleaning up grid. Override this method in derived class.");
+            return Task.CompletedTask;
+        }
+
 
         // Sprawdza, czy event jest aktywny w określonym dniu miesiąca.
         public bool IsActiveOnDayOfMonth(int day)

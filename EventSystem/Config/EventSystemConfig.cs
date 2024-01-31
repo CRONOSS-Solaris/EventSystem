@@ -14,6 +14,10 @@ namespace EventSystem
         private bool _isLobby;
         public bool isLobby { get => _isLobby; set => SetValue(ref _isLobby, value); }
 
+        //
+        private long _defaultOwnerGrid = 144115188075855881;
+        public long DefaultOwnerGrid { get => _defaultOwnerGrid; set => SetValue(ref _defaultOwnerGrid, value); }
+
         // EnableLCDManager: Włącza lub wyłącza zarządzanie LCD.
         private bool _enableActiveEventsLCDManager = true;
         public bool EnableActiveEventsLCDManager { get => _enableActiveEventsLCDManager; set => SetValue(ref _enableActiveEventsLCDManager, value); }

@@ -4,7 +4,9 @@ using NLog;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.IO;
 using System.Threading.Tasks;
+using VRageMath;
 
 namespace EventSystem.Event
 {
@@ -19,14 +21,20 @@ namespace EventSystem.Event
         {
             _config = config;
             EventName = "SpecialEvent";
+            PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventPrefabs");
         }
 
-        public override Task ExecuteEvent()
+        public async override Task ExecuteEvent()
         {
-            // Implementacja logiki wydarzenia
             Log.Info($"Executing SpecialEvent.");
-            return Task.CompletedTask;
+
+            // Spawn Grid
+            string gridName = _config.SpecialEventSettings.PrefabName;
+            Vector3D position = new Vector3D(_config.SpecialEventSettings.SpawnPositionX, _config.SpecialEventSettings.SpawnPositionY, _config.SpecialEventSettings.SpawnPositionZ);
+            await SpawnGrid(gridName, position);
+            //
         }
+
 
         public override Task EndEvent()
         {
@@ -70,22 +78,29 @@ namespace EventSystem.Event
                     IsEnabled = false,
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
-                    EndTime = "23:59:59"
+                    EndTime = "23:59:59",
+                    PrefabName = "MySpecialGrid",
+                    SpawnPositionX = 0,
+                    SpawnPositionY = 0,
+                    SpawnPositionZ = 0,
                 };
             }
 
             var settings = config.SpecialEventSettings;
             IsEnabled = settings.IsEnabled;
             ActiveDaysOfMonth = settings.ActiveDaysOfMonth;
-
             StartTime = TimeSpan.Parse(settings.StartTime);
             EndTime = TimeSpan.Parse(settings.EndTime);
 
+            // Ustawienie pozycji spawnu na podstawie konfiguracji
+            Vector3D spawnPosition = new Vector3D(settings.SpawnPositionX, settings.SpawnPositionY, settings.SpawnPositionZ);
+
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+            LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}, SpawnPosition={spawnPosition}");
 
             return Task.CompletedTask;
         }
+
 
         public class SpecialEventConfig
         {
@@ -93,6 +108,11 @@ namespace EventSystem.Event
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
             public string EndTime { get; set; }
+            public string PrefabName { get; set; }
+            public double SpawnPositionX { get; set; }
+            public double SpawnPositionY { get; set; }
+            public double SpawnPositionZ { get; set; }
         }
+
     }
 }

@@ -70,7 +70,7 @@ namespace EventSystem
         public async Task SpawnGrid(string gridName, double x, double y, double z)
         {
             // Użyj FileManager do uzyskania ścieżki do folderu "prefab"
-            var prefabFolderPath = Path.Combine(Plugin.StoragePath, "EventSystem", "prefab");
+            var prefabFolderPath = Path.Combine(Plugin.StoragePath, "EventSystem", "CommandPrefabTest");
 
             // Utwórz pełną ścieżkę do pliku siatki
             var filePath = Path.Combine(prefabFolderPath, gridName + ".sbc");

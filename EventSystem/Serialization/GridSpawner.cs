@@ -8,7 +8,6 @@ using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using VRage;
 using VRage.Game;
@@ -24,7 +23,6 @@ namespace EventSystem.Serialization
     public class GridSpawner
     {
         public readonly Logger Log = LogManager.GetLogger("EventSystem/GridSpawner");
-        private long DefaultNewOwner = 144115188075855881;
         private HashSet<MyCubeGrid> _spawnedGrids = new HashSet<MyCubeGrid>();
 
         //Bounds
@@ -79,7 +77,7 @@ namespace EventSystem.Serialization
             foreach (var grid in grids)
             {
                 UpdateGridPosition(grid, _delta3D, newPosition);
-                TransferGridOwnership(new[] { grid }, DefaultNewOwner);
+                TransferGridOwnership(new[] { grid });
                 EnableRequiredItemsOnLoad(grid);
             }
 
@@ -253,8 +251,9 @@ namespace EventSystem.Serialization
             return p;
         }
 
-        private void TransferGridOwnership(IEnumerable<MyObjectBuilder_CubeGrid> grids, long newOwner)
+        private void TransferGridOwnership(IEnumerable<MyObjectBuilder_CubeGrid> grids)
         {
+            long newOwner = EventSystemMain.Instance.Config.DefaultOwnerGrid;
             foreach (var grid in grids)
             {
                 foreach (var block in grid.CubeBlocks)
@@ -272,14 +271,19 @@ namespace EventSystem.Serialization
                 if (block is MyObjectBuilder_FunctionalBlock functionalBlock)
                 {
                     functionalBlock.Enabled = true;
-                    //functionalBlock.BlockGeneralDamageModifier
+
+                    //
+                    functionalBlock.BlockGeneralDamageModifier = 9999999.9f;
                 }
             }
 
             if (grid is MyObjectBuilder_CubeGrid gridBlock)
             {
                 gridBlock.DampenersEnabled = true;
-                //gridBlock.GridGeneralDamageModifier = 0.0f;
+
+                //
+                gridBlock.GridGeneralDamageModifier = 9999999.9f;
+                gridBlock.Editable = false;
             }
         }
 
