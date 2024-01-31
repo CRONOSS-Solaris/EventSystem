@@ -20,7 +20,7 @@ namespace EventSystem
 
         [Command("points", "Check your points.")]
         [Permission(MyPromoteLevel.None)]
-        public void CheckPoints()
+        public async void CheckPoints()
         {
             if (Context.Player == null)
             {
@@ -40,7 +40,7 @@ namespace EventSystem
                         .AppendLine()
                         .AppendLine("---------------------")
                         .AppendLine("Available pts")
-                        .AppendLine($"- {pointsResult.Value}")
+                        .AppendLine($"- {pointsResult.Value} PTS")
                         .AppendLine("---------------------")
                         .ToString();
 
@@ -53,14 +53,14 @@ namespace EventSystem
             }
             else
             {
-                var playerAccount = Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync(steamId);
+                var playerAccount = await Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync(steamId);
                 if (playerAccount != null)
                 {
                     string response = new StringBuilder()
                         .AppendLine()
                         .AppendLine("---------------------")
                         .AppendLine("Available pts")
-                        .AppendLine($"- {playerAccount.Result}")
+                        .AppendLine($"- {playerAccount.Points} PTS")
                         .AppendLine("---------------------")
                         .ToString();
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response, Color.Green, Context.Player.SteamUserId);
@@ -70,6 +70,7 @@ namespace EventSystem
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You do not have an account file.", Color.Red, Context.Player.SteamUserId);
                 }
             }
+
         }
 
         [Command("events", "Displays active and upcoming events.")]
@@ -81,6 +82,7 @@ namespace EventSystem
             var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
+            response.AppendLine();
             response.AppendLine("Active Events:");
 
             if (activeEvents.Any())
