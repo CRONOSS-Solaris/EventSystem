@@ -2,21 +2,25 @@
 using NLog;
 using Sandbox.Game.Entities;
 using Sandbox.Game.GameSystems;
-using Sandbox.Game.World.Generator;
 using Sandbox.Game.World;
+using Sandbox.Game.World.Generator;
 using Sandbox.ModAPI;
+using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
 using VRage.ModAPI;
 using VRageMath;
-using System;
 
 namespace EventSystem.Serialization
 {
+
+    //Using QuantumHangar by Casimir, I was inspired and used some valuable methods, which significantly accelerated the writing of this class.
+
     public class GridSpawner
     {
         public readonly Logger Log = LogManager.GetLogger("EventSystem/GridSpawner");
@@ -47,10 +51,12 @@ namespace EventSystem.Serialization
             return await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position));
         }
 
-
         private bool ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Processing grids for spawning.");
+
+            //Remap to fix entity conflicts
+            MyEntities.RemapObjectBuilderCollection(grids);
 
             var mainGrid = FindMainGrid(grids); // Find the main grid
             if (mainGrid == null)
@@ -93,7 +99,6 @@ namespace EventSystem.Serialization
                 return false;
             }
 
-            
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Grids processing completed successfully.");
             return true;
         }
