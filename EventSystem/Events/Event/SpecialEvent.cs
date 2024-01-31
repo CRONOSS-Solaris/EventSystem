@@ -21,7 +21,7 @@ namespace EventSystem.Event
         {
             _config = config;
             EventName = "SpecialEvent";
-            PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventPrefabs");
+            PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventBP");
         }
 
         public async override Task ExecuteEvent()
