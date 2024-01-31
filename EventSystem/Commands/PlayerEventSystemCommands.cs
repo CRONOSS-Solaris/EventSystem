@@ -183,7 +183,6 @@ namespace EventSystem
             }
         }
 
-
         [Command("claim", "Complete a point transfer using a transfer code.")]
         [Permission(MyPromoteLevel.None)]
         public async Task CompleteTransfer(string transferCode)
@@ -204,6 +203,64 @@ namespace EventSystem
             else
             {
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed, code is invalid or sender does not have enough points.", Color.Red, Context.Player.SteamUserId);
+            }
+        }
+
+        // Komenda do dołączania do eventu
+        [Command("join", "Join an active event.")]
+        [Permission(MyPromoteLevel.None)]
+        public void JoinEvent(string eventName)
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            long steamId = (long)Context.Player.SteamUserId;
+            var eventManager = Plugin._eventManager;
+            var eventToJoin = eventManager.Events.FirstOrDefault(e => e.EventName.Equals(eventName, StringComparison.OrdinalIgnoreCase) && e.IsActiveNow());
+
+            if (eventToJoin != null)
+            {
+                Task.Run(async () =>
+                {
+                    await eventToJoin.AddPlayer(steamId);
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You have joined the event: {eventName}", Color.Green, Context.Player.SteamUserId);
+                });
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Event '{eventName}' is not active or does not exist.", Color.Red, Context.Player.SteamUserId);
+            }
+        }
+
+        // Komenda do opuszczania eventu
+        [Command("leave", "Leave the current event.")]
+        [Permission(MyPromoteLevel.None)]
+        public void LeaveEvent()
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            long steamId = (long)Context.Player.SteamUserId;
+            var eventManager = Plugin._eventManager;
+            var activeEvent = eventManager.Events.FirstOrDefault(e => e.IsPlayerParticipating(steamId).Result && e.IsActiveNow());
+
+            if (activeEvent != null)
+            {
+                Task.Run(async () =>
+                {
+                    await activeEvent.RemovePlayer(steamId);
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You have left the event: {activeEvent.EventName}", Color.Green, Context.Player.SteamUserId);
+                });
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You are not participating in any active event.", Color.Red, Context.Player.SteamUserId);
             }
         }
 
