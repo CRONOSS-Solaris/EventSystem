@@ -35,48 +35,44 @@ namespace EventSystem.Serialization
 
         public async Task<bool> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
         {
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Starting to spawn grids at {position}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Starting to spawn grids at {position}");
 
             position = (Vector3D)FindPastePosition(position);
             if (position == Vector3D.Zero)
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Spawn position is Vector3D.Zero, returning false.");
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Spawn position is Vector3D.Zero, returning false.");
                 return false;
             }
 
-
-            bool gridsSpawned = await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position));
-
-            // Logowanie sukcesu lub niepowodzenia procesu spawnowania wewnątrz ProcessGrids
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid spawn process completed. Success: {gridsSpawned}");
-            return gridsSpawned;
+            return await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position));
         }
+
 
         private bool ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
         {
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Processing grids for spawning.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Processing grids for spawning.");
 
             var mainGrid = FindMainGrid(grids); // Find the main grid
             if (mainGrid == null)
             {
-                Log.Warn("Main grid not found.");
+                Log.Warn("(ProcessGrids) Main grid not found.");
                 return false;
             }
 
             bool isMainGridStatic = mainGrid.IsStatic;
-            Log.Debug($"Main grid static status: {isMainGridStatic}");
+            Log.Debug($"(ProcessGrids) Main grid static status: {isMainGridStatic}");
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"_sphereD.Center: X={_sphereD.Center.X}, Y={_sphereD.Center.Y}, Z={_sphereD.Center.Z}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(ProcessGrids) _sphereD.Center: X={_sphereD.Center.X}, Y={_sphereD.Center.Y}, Z={_sphereD.Center.Z}");
 
             _delta3D = _sphereD.Center - mainGrid.PositionAndOrientation.Value.Position;
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Delta calculated for grid positioning: {_delta3D}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(ProcessGrids) Delta calculated for grid positioning: {_delta3D}");
 
             bool spawnSuccess = true;
 
             // Apply delta to each grid (main and sub-grids)
             foreach (var grid in grids)
             {
-                UpdateGridPosition(grid, _delta3D);
+                UpdateGridPosition(grid, _delta3D, newPosition);
                 TransferGridOwnership(new[] { grid }, DefaultNewOwner);
                 EnableRequiredItemsOnLoad(grid);
             }
@@ -87,18 +83,18 @@ namespace EventSystem.Serialization
             }
             catch (Exception ex)
             {
-                Log.Error($"Error spawning entities: {ex.Message}");
+                Log.Error($"(ProcessGrids) Error spawning entities: {ex.Message}");
                 spawnSuccess = false;
             }
 
             if (!spawnSuccess)
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Error occurred during grid spawning.");
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Error occurred during grid spawning.");
                 return false;
             }
 
             
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids processing completed successfully.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Grids processing completed successfully.");
             return true;
         }
 
@@ -108,21 +104,28 @@ namespace EventSystem.Serialization
             return grids.OrderByDescending(g => g.CubeBlocks.Count).FirstOrDefault();
         }
 
-        private void UpdateGridPosition(MyObjectBuilder_CubeGrid grid, Vector3D deltaPosition)
+        private void UpdateGridPosition(MyObjectBuilder_CubeGrid grid, Vector3D deltaPosition, Vector3D targetPos)
         {
             // Log the initial position of the grid
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Initial grid position: X={grid.PositionAndOrientation.Value.Position.X}, Y={grid.PositionAndOrientation.Value.Position.Y}, Z={grid.PositionAndOrientation.Value.Position.Z}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(UpdateGridPosition) Initial grid position: X={targetPos.X}, Y={targetPos.Y}, Z={targetPos.Z}");
 
             // Log the delta being applied to the grid position
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Applying delta: X={deltaPosition.X}, Y={deltaPosition.Y}, Z={deltaPosition.Z}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(UpdateGridPosition) Applying delta: X={deltaPosition.X}, Y={deltaPosition.Y}, Z={deltaPosition.Z}");
 
             // Update grid position by delta
-            var newPosition = grid.PositionAndOrientation.Value.Position + deltaPosition;
+            var newPosition = targetPos - deltaPosition;
+
+            //Now need to create a delta change from the initial position to the target position
+            var delta = targetPos - grid.PositionAndOrientation.Value.Position;
 
             // Log the new position of the grid after applying delta
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"New grid position: X={newPosition.X}, Y={newPosition.Y}, Z={newPosition.Z}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(UpdateGridPosition) New grid position: X={newPosition.X}, Y={newPosition.Y}, Z={newPosition.Z}");
 
-            grid.PositionAndOrientation = new MyPositionAndOrientation(newPosition, grid.PositionAndOrientation.Value.Forward, grid.PositionAndOrientation.Value.Up);
+            Vector3D currentPos = grid.PositionAndOrientation.Value.Position;
+            //MatrixD worldMatrix = MatrixD.CreateWorld(CurrentPos + Delta, grid.PositionAndOrientation.Value.Orientation.Forward, grid.PositionAndOrientation.Value.Orientation.Up,);
+            grid.PositionAndOrientation = new MyPositionAndOrientation(currentPos + delta,
+                grid.PositionAndOrientation.Value.Orientation.Forward,
+                grid.PositionAndOrientation.Value.Orientation.Up);
         }
 
 
@@ -264,12 +267,14 @@ namespace EventSystem.Serialization
                 if (block is MyObjectBuilder_FunctionalBlock functionalBlock)
                 {
                     functionalBlock.Enabled = true;
+                    //functionalBlock.BlockGeneralDamageModifier
                 }
             }
 
             if (grid is MyObjectBuilder_CubeGrid gridBlock)
             {
                 gridBlock.DampenersEnabled = true;
+                //gridBlock.GridGeneralDamageModifier = 0.0f;
             }
         }
 
