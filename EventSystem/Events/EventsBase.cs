@@ -14,43 +14,43 @@ namespace EventSystem.Events
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
         protected virtual string PrefabStoragePath { get; set; }
 
-        // Nazwa eventu, można ją ustawić w klasach pochodnych.
+        // The name of the event, it can be set in derived classes.
         public string EventName { get; set; }
 
-        // Określa, czy event jest włączony.
+        // Determines whether the event is enabled.
         public bool IsEnabled { get; set; }
 
-        // Lista dni miesiąca, w których event jest aktywny.
+        // List of days of the month when the event is active.
         public List<int> ActiveDaysOfMonth { get; set; }
 
-        // Godzina rozpoczęcia eventu.
+        // Event start time.
         public TimeSpan StartTime { get; set; }
 
-        // Godzina zakończenia eventu.
+        // End time of the event.
         public TimeSpan EndTime { get; set; }
 
-        // Metoda do wykonania specyficznych działań związanych z danym eventem.
+        // Method to perform specific actions related to an event.
         public abstract Task ExecuteEvent();
 
-        // Metoda do realizacji działań związanych z zakończeniem eventu.
+        // Method to implement activities related to the end of the event.
         public abstract Task EndEvent();
 
-        // Metoda do wczytania ustawień konkretnego eventu z konfiguracji.
+        // Method to load the settings of a specific event from the configuration.
         public abstract Task LoadEventSettings(EventSystemConfig config);
 
-        // Dodaje gracza do listy uczestników eventu.
+        // Adds the player to the list of event participants.
         public abstract Task AddPlayer(long steamId);
 
-        // Usuwa gracza z listy uczestników eventu.
+        // Removes the player from the list of event participants.
         public abstract Task RemovePlayer(long steamId);
 
-        // Sprawdza, czy gracz jest w liście uczestników eventu.
+        // Checks if the player is in the list of event participants.
         public abstract Task<bool> IsPlayerParticipating(long steamId);
 
-        // Sprawdza postępy gracza w evencie.
+        // Checks the player's progress in the event.
         public abstract Task CheckPlayerProgress(long steamId);
 
-        // Sprawdza, czy event jest aktywny w danym momencie.
+        // Checks if the event is active at the moment.
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
@@ -69,47 +69,47 @@ namespace EventSystem.Events
         }
 
 
-        // Oblicza czas, który pozostał do rozpoczęcia eventu.
+        // Calculates the time left until the event starts.
         public TimeSpan GetNextStartTime(DateTime now)
         {
             var startOfDay = now.Date.Add(StartTime);
             return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
         }
 
-        // Oblicza czas, który pozostał do zakończenia eventu.
+        // Calculates the time remaining in the event.
         public TimeSpan GetNextEndTime(DateTime now)
         {
             var endOfDay = now.Date.Add(EndTime);
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
         }
 
-        // Przyznaje nagrodę graczowi.
+        // Calculates the time remaining in the event.
         public virtual async Task AwardPlayer(long steamId, long points)
         {
-            // Pobierz menedżera bazy danych z głównego pluginu
+            // Get the database manager from the main plugin
             var databaseManager = EventSystemMain.Instance.DatabaseManager;
 
-            // Pobierz konfigurację
+            // Get the configuration
             var config = EventSystemMain.Instance.Config;
 
             if (config.UseDatabase)
             {
-                // Logika nagradzania w bazie danych
+                // Reward logic in the database
                 databaseManager.UpdatePlayerPoints(steamId.ToString(), points);
             }
             else
             {
-                // Pobierz menedżera kont graczy z głównego pluginu
+                // Get the player account manager from the main plugin
                 var xmlManager = EventSystemMain.Instance.PlayerAccountXmlManager;
                 bool updateResult = await xmlManager.UpdatePlayerPointsAsync(steamId, points).ConfigureAwait(false);
                 if (!updateResult)
                 {
-                    // Obsługa sytuacji, gdy konto gracza nie istnieje (jeśli to konieczne)
+                    // Handling the situation when the player account does not exist (if necessary).
                 }
             }
         }
 
-        // Metody do zarządzania dodatkowymi elementami eventu, np. siatkami, obiektami.
+        // Methods to manage additional event elements, e.g. grids, objects.
         public virtual async Task SpawnGrid(string gridName, Vector3D position)
         {
             // Teraz używamy PrefabStoragePath zamiast przekazywać storagePath jako argument
@@ -148,10 +148,10 @@ namespace EventSystem.Events
         }
 
 
-        // Sprawdza, czy event jest aktywny w określonym dniu miesiąca.
+        // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)
         {
-            // Zwraca true, jeśli wydarzenie jest aktywne w określonym dniu miesiąca
+            // Returns true if the event is active on the specified day of the month
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
         }
     }

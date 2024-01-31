@@ -105,7 +105,6 @@ namespace EventSystem
                 if (npc != null)
                 {
                     Context.Respond($"NPC Name: {npc.DisplayName}, IdentityId: {npc.IdentityId}");
-                    // Dodatkowe informacje o NPC mogą być tutaj wyświetlone.
                 }
             }
         }

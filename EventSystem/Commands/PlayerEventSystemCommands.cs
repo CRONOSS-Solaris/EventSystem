@@ -152,7 +152,7 @@ namespace EventSystem
                 return "";
             }
 
-            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(1)) // Możesz dostosować liczbę wyświetlanych nadchodzących wydarzeń
+            foreach (var eventInfo in upcomingEvents.OrderBy(e => e.start).Take(1))
             {
                 text.AppendLine($"{eventInfo.eventName}\n- Start: {eventInfo.start:dd/MM/yyyy HH:mm:ss}\n- End: {eventInfo.end:dd/MM/yyyy HH:mm:ss}");
             }
