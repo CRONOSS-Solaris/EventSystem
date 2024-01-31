@@ -8,16 +8,16 @@ namespace EventSystem.Managers
     {
         private Dictionary<string, PointsTransfer> _pendingTransfers = new Dictionary<string, PointsTransfer>();
 
-        public string InitiateTransfer(long senderSteamId, long points)
+        public async Task<string> InitiateTransfer(long senderSteamId, long points)
         {
             long? senderPoints = null;
             if (EventSystemMain.Instance.Config.UseDatabase)
             {
-                senderPoints = EventSystemMain.Instance.DatabaseManager.GetPlayerPoints(senderSteamId);
+                senderPoints = await EventSystemMain.Instance.DatabaseManager.GetPlayerPointsAsync(senderSteamId);
             }
             else
             {
-                var senderAccount = EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(senderSteamId).Result;
+                var senderAccount = await EventSystemMain.Instance.PlayerAccountXmlManager.GetPlayerAccountAsync(senderSteamId);
                 if (senderAccount != null)
                 {
                     senderPoints = senderAccount.Points;
@@ -49,7 +49,7 @@ namespace EventSystem.Managers
             long? senderPoints = null;
             if (EventSystemMain.Instance.Config.UseDatabase)
             {
-                senderPoints = EventSystemMain.Instance.DatabaseManager.GetPlayerPoints(transfer.SenderSteamId);
+                senderPoints = await EventSystemMain.Instance.DatabaseManager.GetPlayerPointsAsync(transfer.SenderSteamId);
             }
             else
             {
@@ -69,8 +69,10 @@ namespace EventSystem.Managers
             if (EventSystemMain.Instance.Config.UseDatabase)
             {
                 var dbManager = EventSystemMain.Instance.DatabaseManager;
-                if (dbManager.UpdatePlayerPoints(transfer.SenderSteamId.ToString(), -transfer.Points) &&
-                    dbManager.UpdatePlayerPoints(receiverSteamId.ToString(), transfer.Points))
+                var result1 = await dbManager.UpdatePlayerPointsAsync(transfer.SenderSteamId.ToString(), -transfer.Points);
+                var result2 = await dbManager.UpdatePlayerPointsAsync(receiverSteamId.ToString(), transfer.Points);
+
+                if (result1 && result2)
                 {
                     _pendingTransfers.Remove(transferCode);
                     return (true, transfer.Points); // Transfer zakończony pomyślnie w bazie danych
@@ -79,8 +81,10 @@ namespace EventSystem.Managers
             else
             {
                 var xmlManager = EventSystemMain.Instance.PlayerAccountXmlManager;
-                if (await xmlManager.UpdatePlayerPointsAsync(transfer.SenderSteamId, -transfer.Points).ConfigureAwait(false) &&
-                    await xmlManager.UpdatePlayerPointsAsync(receiverSteamId, transfer.Points).ConfigureAwait(false))
+                var result1 = await xmlManager.UpdatePlayerPointsAsync(transfer.SenderSteamId, -transfer.Points).ConfigureAwait(false);
+                var result2 = await xmlManager.UpdatePlayerPointsAsync(receiverSteamId, transfer.Points).ConfigureAwait(false);
+
+                if (result1 && result2)
                 {
                     _pendingTransfers.Remove(transferCode);
                     return (true, transfer.Points); // Transfer zakończony pomyślnie w pliku XML
@@ -89,6 +93,7 @@ namespace EventSystem.Managers
 
             return (false, 0); // Nie udało się zrealizować transferu
         }
+
     }
 
     public class PointsTransfer

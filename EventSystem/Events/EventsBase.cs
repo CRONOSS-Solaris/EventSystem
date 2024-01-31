@@ -98,7 +98,7 @@ namespace EventSystem.Events
             if (config.UseDatabase)
             {
                 // Reward logic in the database
-                databaseManager.UpdatePlayerPoints(steamId.ToString(), points);
+                await databaseManager.UpdatePlayerPointsAsync(steamId.ToString(), points);
             }
             else
             {

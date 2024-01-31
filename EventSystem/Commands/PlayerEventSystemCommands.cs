@@ -20,7 +20,7 @@ namespace EventSystem
 
         [Command("points", "Check your points.")]
         [Permission(MyPromoteLevel.None)]
-        public async void CheckPoints()
+        public async Task CheckPoints()
         {
             if (Context.Player == null)
             {
@@ -33,7 +33,7 @@ namespace EventSystem
             if (Plugin.Config.UseDatabase)
             {
                 // Logika używania bazy danych
-                var pointsResult = Plugin.DatabaseManager.GetPlayerPoints(steamId);
+                var pointsResult = await Plugin.DatabaseManager.GetPlayerPointsAsync(steamId);
                 if (pointsResult.HasValue)
                 {
                     string response = new StringBuilder()
@@ -70,8 +70,8 @@ namespace EventSystem
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You do not have an account file.", Color.Red, Context.Player.SteamUserId);
                 }
             }
-
         }
+
 
         [Command("events", "Displays active and upcoming events.")]
         [Permission(MyPromoteLevel.None)]
@@ -162,7 +162,7 @@ namespace EventSystem
 
         [Command("transfer", "Initiate a point transfer.")]
         [Permission(MyPromoteLevel.None)]
-        public void InitiateTransfer(long points)
+        public async Task InitiateTransfer(long points)
         {
             if (Context.Player == null)
             {
@@ -171,7 +171,7 @@ namespace EventSystem
             }
 
             long steamId = (long)Context.Player.SteamUserId;
-            string transferCode = Plugin.PointsTransferManager.InitiateTransfer(steamId, points);
+            string transferCode = await Plugin.PointsTransferManager.InitiateTransfer(steamId, points);
 
             if (transferCode != null)
             {
@@ -182,6 +182,7 @@ namespace EventSystem
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Transfer failed. Insufficient points.", Color.Red, Context.Player.SteamUserId);
             }
         }
+
 
         [Command("claim", "Complete a point transfer using a transfer code.")]
         [Permission(MyPromoteLevel.None)]

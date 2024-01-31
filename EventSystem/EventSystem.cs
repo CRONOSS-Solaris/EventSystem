@@ -214,17 +214,17 @@ namespace EventSystem
             }
         }
 
-        private void OnPlayerJoined(IPlayer player)
+        private async void OnPlayerJoined(IPlayer player)
         {
             if (_config.Data.UseDatabase && _databaseManager != null)
             {
                 // Logika zapisywania danych gracza w bazie danych
-                _databaseManager.CreatePlayerAccount(player.Name, (long)player.SteamId);
+                await _databaseManager.CreatePlayerAccountAsync(player.Name, (long)player.SteamId);
                 LoggerHelper.DebugLog(Log, _config.Data, $"Player data saved in database for {player.Name}");
             }
             else
             {
-                _playerAccountXmlManager.CreatePlayerAccountAsync((long)player.SteamId);
+                await _playerAccountXmlManager.CreatePlayerAccountAsync((long)player.SteamId);
                 LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
             }
         }

@@ -1,4 +1,5 @@
 ﻿using Npgsql;
+using System.Threading.Tasks;
 
 namespace EventSystem.DataBase
 {
@@ -31,11 +32,11 @@ namespace EventSystem.DataBase
             }
         }
 
-        public void CreatePlayerAccount(string nickname, long steamId, long initialPoints = 0)
+        public async Task CreatePlayerAccountAsync(string nickname, long steamId, long initialPoints = 0)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = new NpgsqlCommand())
                 {
                     cmd.Connection = connection;
@@ -43,21 +44,20 @@ namespace EventSystem.DataBase
                     cmd.Parameters.AddWithValue("@nickname", nickname);
                     cmd.Parameters.AddWithValue("@steamId", steamId);
                     cmd.Parameters.AddWithValue("@points", initialPoints);
-                    cmd.ExecuteNonQuery();
+                    await cmd.ExecuteNonQueryAsync();
                 }
             }
         }
 
-        public bool UpdatePlayerPoints(string playerNameOrSteamId, long pointsToAdd)
+        public async Task<bool> UpdatePlayerPointsAsync(string playerNameOrSteamId, long pointsToAdd)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = new NpgsqlCommand())
                 {
                     cmd.Connection = connection;
 
-                    // Ustaw odpowiednie zapytanie SQL
                     string sql;
                     if (long.TryParse(playerNameOrSteamId, out long steamId))
                     {
@@ -72,33 +72,32 @@ namespace EventSystem.DataBase
                     cmd.CommandText = sql;
                     cmd.Parameters.AddWithValue("@pointsToAdd", pointsToAdd);
 
-                    // Wykonaj zapytanie i sprawdź, czy zostały wprowadzone zmiany
-                    return cmd.ExecuteNonQuery() > 0;
+                    return await cmd.ExecuteNonQueryAsync() > 0;
                 }
             }
         }
 
 
-        public long? GetPlayerPoints(long steamId)
+        public async Task<long?> GetPlayerPointsAsync(long steamId)
         {
             using (var connection = new NpgsqlConnection(_connectionString))
             {
-                connection.Open();
+                await connection.OpenAsync();
                 using (var cmd = new NpgsqlCommand("SELECT points FROM eventsystem_player_accounts WHERE steam_id = @steamId", connection))
                 {
                     cmd.Parameters.AddWithValue("@steamId", steamId);
-                    using (var reader = cmd.ExecuteReader())
+                    using (var reader = await cmd.ExecuteReaderAsync())
                     {
-                        if (reader.Read())
+                        if (await reader.ReadAsync())
                         {
                             return reader.GetInt64(0);
                         }
                     }
                 }
             }
-
-            return null; // Zwróć null, jeśli gracz nie istnieje w bazie
+            return null;
         }
+
 
         // Dodatkowe metody do obsługi zaawansowanych zapytań SQL
     }

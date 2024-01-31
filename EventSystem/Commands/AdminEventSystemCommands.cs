@@ -20,7 +20,7 @@ namespace EventSystem
             if (Plugin.Config.UseDatabase)
             {
                 // Logika używania bazy danych
-                bool updateResult = Plugin.DatabaseManager.UpdatePlayerPoints(steamId.ToString(), points);
+                bool updateResult = await Plugin.DatabaseManager.UpdatePlayerPointsAsync(steamId.ToString(), points);
                 if (updateResult)
                 {
                     EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Modified points for {steamId}.", Color.Green, Context.Player.SteamUserId);
