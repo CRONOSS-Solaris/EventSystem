@@ -123,16 +123,7 @@ namespace EventSystem.Events
                 return;
             }
 
-            bool result = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
-
-            if (result)
-            {
-                Log.Info($"Grid {gridName} successfully spawned at {position}.");
-            }
-            else
-            {
-                Log.Error($"Failed to spawn grid {gridName} at {position}.");
-            }
+            await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
         }
 
         public virtual Task ManageGrid()
