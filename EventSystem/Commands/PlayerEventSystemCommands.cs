@@ -81,15 +81,14 @@ namespace EventSystem
             var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
-            response.AppendLine();
             response.AppendLine("Active Events:");
-            response.AppendLine();
 
             if (activeEvents.Any())
             {
                 foreach (var eventItem in activeEvents)
                 {
-                    response.AppendLine($"{eventItem.EventName} - End: {eventItem.EndTime:hh\\:mm\\:ss}");
+                    int participantsCount = eventItem.GetParticipantsCount();
+                    response.AppendLine($"{eventItem.EventName} - End: {eventItem.EndTime:hh\\:mm\\:ss} - Participants: {participantsCount}");
                 }
             }
             else
@@ -99,7 +98,6 @@ namespace EventSystem
 
             response.AppendLine();
             response.AppendLine("Upcoming Events:");
-            response.AppendLine();
 
             var upcomingEventsText = GenerateUpcomingEventsScheduleText(eventManager, DateTime.Now);
             if (string.IsNullOrEmpty(upcomingEventsText))
@@ -122,7 +120,7 @@ namespace EventSystem
             {
                 (currentYear, currentMonth),
                 (currentMonth == 12 ? currentYear + 1 : currentYear, (currentMonth % 12) + 1),
-             (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
+                (currentMonth >= 11 ? currentYear + 1 : currentYear, (currentMonth + 1) % 12 + 1)
             };
 
             var upcomingEvents = new List<(DateTime start, DateTime end, string eventName)>();
@@ -223,6 +221,13 @@ namespace EventSystem
 
             if (eventToJoin != null)
             {
+                // Sprawdź, czy gracz uczestniczy już w innym evencie, który nie zezwala na uczestnictwo w innych eventach
+                if (eventManager.Events.Any(e => e != eventToJoin && e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result && !e.AllowParticipationInOtherEvents))
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You cannot join this event because you are participating in another event that does not allow multiple event participation.", Color.Red, Context.Player.SteamUserId);
+                    return;
+                }
+
                 Task.Run(async () =>
                 {
                     await eventToJoin.AddPlayer(steamId);

@@ -18,6 +18,7 @@ namespace EventSystem.Event
         public SpecialTwoEvent(EventSystemConfig config)
         {
             _config = config;
+            AllowParticipationInOtherEvents = true;
             EventName = "SpecialTwoEvent";
         }
 
@@ -85,6 +86,11 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialTwoEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
             return Task.CompletedTask;
+        }
+
+        public override int GetParticipantsCount()
+        {
+            return ParticipatingPlayers.Count;
         }
 
         public class SpecialTwoEventConfig

@@ -21,6 +21,7 @@ namespace EventSystem.Event
         {
             _config = config;
             EventName = "SpecialEvent";
+            AllowParticipationInOtherEvents = false;
             PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventBP");
         }
 
@@ -101,6 +102,10 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
+        public override int GetParticipantsCount()
+        {
+            return ParticipatingPlayers.Count;
+        }
 
         public class SpecialEventConfig
         {

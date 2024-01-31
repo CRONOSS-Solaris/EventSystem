@@ -14,6 +14,9 @@ namespace EventSystem.Events
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
         protected virtual string PrefabStoragePath { get; set; }
 
+        //Determines whether an event requires that a player not be in another event to join it 
+        public bool AllowParticipationInOtherEvents { get; set; }
+
         // The name of the event, it can be set in derived classes.
         public string EventName { get; set; }
 
@@ -112,7 +115,6 @@ namespace EventSystem.Events
         // Methods to manage additional event elements, e.g. grids, objects.
         public virtual async Task SpawnGrid(string gridName, Vector3D position)
         {
-            // Teraz używamy PrefabStoragePath zamiast przekazywać storagePath jako argument
             var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
 
             var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
@@ -144,6 +146,11 @@ namespace EventSystem.Events
         {
             // Returns true if the event is active on the specified day of the month
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
+        }
+
+        public virtual int GetParticipantsCount()
+        {
+            return 0;
         }
     }
 }
