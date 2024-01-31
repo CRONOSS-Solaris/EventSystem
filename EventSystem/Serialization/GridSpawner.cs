@@ -13,6 +13,7 @@ using VRage.Game;
 using VRage.Game.Entity;
 using VRage.ModAPI;
 using VRageMath;
+using System;
 
 namespace EventSystem.Serialization
 {
@@ -34,7 +35,6 @@ namespace EventSystem.Serialization
 
         public async Task<bool> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
         {
-            bool gridsSpawned = false;
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Starting to spawn grids at {position}");
 
             position = (Vector3D)FindPastePosition(position);
@@ -44,14 +44,15 @@ namespace EventSystem.Serialization
                 return false;
             }
 
-            ProcessGrids(grids, position);
-            await GameEvents.InvokeActionAsync(() => SpawnEntities(grids));
 
+            bool gridsSpawned = await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position));
+
+            // Logowanie sukcesu lub niepowodzenia procesu spawnowania wewnątrz ProcessGrids
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid spawn process completed. Success: {gridsSpawned}");
             return gridsSpawned;
         }
 
-        private void ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
+        private bool ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Processing grids for spawning.");
 
@@ -59,14 +60,18 @@ namespace EventSystem.Serialization
             if (mainGrid == null)
             {
                 Log.Warn("Main grid not found.");
-                return;
+                return false;
             }
 
-            // Oblicz deltę pozycji dla głównej siatki
+            bool isMainGridStatic = mainGrid.IsStatic;
+            Log.Debug($"Main grid static status: {isMainGridStatic}");
+
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"_sphereD.Center: X={_sphereD.Center.X}, Y={_sphereD.Center.Y}, Z={_sphereD.Center.Z}");
 
             _delta3D = _sphereD.Center - mainGrid.PositionAndOrientation.Value.Position;
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Delta calculated for grid positioning: {_delta3D}");
+
+            bool spawnSuccess = true;
 
             // Apply delta to each grid (main and sub-grids)
             foreach (var grid in grids)
@@ -75,7 +80,28 @@ namespace EventSystem.Serialization
                 TransferGridOwnership(new[] { grid }, DefaultNewOwner);
                 EnableRequiredItemsOnLoad(grid);
             }
+
+            try
+            {
+                SpawnEntities(grids, isMainGridStatic);
+            }
+            catch (Exception ex)
+            {
+                Log.Error($"Error spawning entities: {ex.Message}");
+                spawnSuccess = false;
+            }
+
+            if (!spawnSuccess)
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Error occurred during grid spawning.");
+                return false;
+            }
+
+            
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids processing completed successfully.");
+            return true;
         }
+
 
         private MyObjectBuilder_CubeGrid FindMainGrid(IEnumerable<MyObjectBuilder_CubeGrid> grids)
         {
@@ -100,13 +126,20 @@ namespace EventSystem.Serialization
         }
 
 
-        private void SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids)
+        private void SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids, bool makeStatic)
         {
-            foreach (var grid in grids)
+            foreach (var gridBuilder in grids)
             {
-                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(grid, false, Increment);
+                
+                if (makeStatic)
+                {
+                    gridBuilder.IsStatic = true;
+                }
+
+                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridBuilder, false, Increment);
             }
         }
+
 
         private Vector3D? FindPastePosition(Vector3D target)
         {
