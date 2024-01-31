@@ -37,7 +37,7 @@ namespace EventSystem.Serialization
             bool gridsSpawned = false;
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Starting to spawn grids at {position}");
 
-            position = CorrectSpawnPosition(position);
+            position = (Vector3D)FindPastePosition(position);
             if (position == Vector3D.Zero)
             {
                 LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Spawn position is Vector3D.Zero, returning false.");
@@ -49,22 +49,6 @@ namespace EventSystem.Serialization
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid spawn process completed. Success: {gridsSpawned}");
             return gridsSpawned;
-        }
-
-        private Vector3D CorrectSpawnPosition(Vector3D position)
-        {
-            var naturalGravity = MyAPIGateway.Physics.CalculateNaturalGravityAt(position, out _);
-            if (naturalGravity.LengthSquared() < 0.01)
-            {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Position is in space.");
-                return position; // In space
-            }
-            else
-            {
-                var correctedPosition = FindPastePosition(position);
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Position corrected for planetary conditions: {correctedPosition}");
-                return (Vector3D)correctedPosition; // On the planet
-            }
         }
 
         private void ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
@@ -100,10 +84,21 @@ namespace EventSystem.Serialization
 
         private void UpdateGridPosition(MyObjectBuilder_CubeGrid grid, Vector3D deltaPosition)
         {
+            // Log the initial position of the grid
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Initial grid position: X={grid.PositionAndOrientation.Value.Position.X}, Y={grid.PositionAndOrientation.Value.Position.Y}, Z={grid.PositionAndOrientation.Value.Position.Z}");
+
+            // Log the delta being applied to the grid position
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Applying delta: X={deltaPosition.X}, Y={deltaPosition.Y}, Z={deltaPosition.Z}");
+
             // Update grid position by delta
             var newPosition = grid.PositionAndOrientation.Value.Position + deltaPosition;
+
+            // Log the new position of the grid after applying delta
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"New grid position: X={newPosition.X}, Y={newPosition.Y}, Z={newPosition.Z}");
+
             grid.PositionAndOrientation = new MyPositionAndOrientation(newPosition, grid.PositionAndOrientation.Value.Forward, grid.PositionAndOrientation.Value.Up);
         }
+
 
         private void SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids)
         {
