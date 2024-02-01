@@ -125,31 +125,43 @@ namespace EventSystem.Events
         // Methods to manage additional event elements, e.g. grids, objects.
         public virtual async Task<HashSet<long>> SpawnGrid(string gridName, Vector3D position)
         {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to spawn grid '{gridName}' at position {position}.");
+
             var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
             var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
 
             if (!File.Exists(filePath))
             {
-                Log.Error($"File not found: {filePath}");
+                Log.Error($"File not found: {filePath}. Unable to spawn grid '{gridName}'.");
                 return new HashSet<long>();
             }
 
-            HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+            try
+            {
+                HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
 
-            if (entityIds != null && entityIds.Count > 0)
-            {
-                foreach (var entityId in entityIds)
+                if (entityIds != null && entityIds.Count > 0)
                 {
-                    SpawnedGridsEntityIds.Add(entityId);
+                    foreach (var entityId in entityIds)
+                    {
+                        SpawnedGridsEntityIds.Add(entityId);
+                    }
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully spawned grid '{gridName}' with entity IDs: {string.Join(", ", entityIds)}.");
+                    return entityIds;
                 }
-                return entityIds;
+                else
+                {
+                    Log.Warn($"Grid '{gridName}' was not spawned. No entities were created.");
+                    return new HashSet<long>();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Log.Warn("No entities were spawned.");
+                Log.Error(ex, $"An error occurred while attempting to spawn grid '{gridName}': {ex.Message}");
                 return new HashSet<long>();
             }
         }
+
 
         public virtual Task ManageGrid()
         {

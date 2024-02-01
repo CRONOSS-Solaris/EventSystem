@@ -23,17 +23,25 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventBP");
         }
 
-        public async override Task ExecuteEvent()
+        public override async Task ExecuteEvent()
         {
             Log.Info($"Executing SpecialEvent.");
 
-            // Spawn Grid
-            string gridName = _config.SpecialEventSettings.PrefabName;
-            Vector3D position = new Vector3D(_config.SpecialEventSettings.SpawnPositionX, _config.SpecialEventSettings.SpawnPositionY, _config.SpecialEventSettings.SpawnPositionZ);
-            await SpawnGrid(gridName, position);
-            //
+            // Nowa metoda do spawn siatki
+            await SpawnEventGrid();
         }
 
+        private async Task SpawnEventGrid()
+        {
+            string gridName = _config.SpecialEventSettings.PrefabName;
+            Vector3D position = new Vector3D(
+                _config.SpecialEventSettings.SpawnPositionX,
+                _config.SpecialEventSettings.SpawnPositionY,
+                _config.SpecialEventSettings.SpawnPositionZ);
+
+            var spawnedEntityIds = await SpawnGrid(gridName, position);
+            Log.Info($"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
+        }
 
         public override async Task EndEvent()
         {
