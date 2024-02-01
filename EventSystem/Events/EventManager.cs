@@ -1,9 +1,11 @@
 ﻿using EventSystem.Managers;
 using EventSystem.Utils;
 using NLog;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Threading.Tasks;
 
 namespace EventSystem.Events
 {
@@ -74,8 +76,15 @@ namespace EventSystem.Events
                         // Harmonogram zakończenia eventu
                         if (endTime > TimeSpan.Zero)
                         {
-                            var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
-                            _endTimers[eventItem.EventName] = endTimer;
+                            if (_endTimers.ContainsKey(eventItem.EventName))
+                            {
+                                _endTimers[eventItem.EventName].Change(endTime, Timeout.InfiniteTimeSpan);
+                            }
+                            else
+                            {
+                                var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
+                                _endTimers[eventItem.EventName] = endTimer;
+                            }
                         }
                     }
                 }
@@ -87,46 +96,74 @@ namespace EventSystem.Events
             UpdateLCDs();
         }
 
-
         private void StartEvent(object state)
         {
             var eventItem = (EventsBase)state;
-            try
+            LoggerHelper.DebugLog(Log, _config, $"Attempting to start event '{eventItem.EventName}'.");
+
+            // Asynchroniczne wywołanie ExecuteEvent z obsługą callback
+            Task.Run(() => eventItem.ExecuteEvent()).ContinueWith(task =>
             {
-                eventItem.ExecuteEvent();
+                // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
+                if (task.IsFaulted)
+                {
+                    // Logowanie błędów, jeśli takie wystąpiły
+                    var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
+                    LoggerHelper.DebugLog(Log, _config, $"Error during starting event '{eventItem.EventName}': {exception}");
+                }
+                else
+                {
+                    // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' started successfully.");
+                }
+
                 UpdateLCDs();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"Error during StartEvent for '{eventItem.EventName}': {ex.Message}");
-            }
+            });
         }
+
 
         private void EndEvent(object state)
         {
             var eventItem = (EventsBase)state;
-            try
+            LoggerHelper.DebugLog(Log, _config, $"Attempting to end event '{eventItem.EventName}'.");
+
+            // Asynchroniczne wywołanie EndEvent z obsługą callback
+            Task.Run(() => eventItem.EndEvent()).ContinueWith(task =>
             {
-                eventItem.EndEvent();
+                // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
+                if (task.IsFaulted)
+                {
+                    // Logowanie błędów, jeśli takie wystąpiły
+                    var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
+                    LoggerHelper.DebugLog(Log, _config, $"Error during ending event '{eventItem.EventName}': {exception}");
+                }
+                else
+                {
+                    // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' ended successfully.");
+                }
+
                 UpdateLCDs();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"Error during EndEvent for '{eventItem.EventName}': {ex.Message}");
-            }
+            });
         }
 
         private void UpdateLCDs()
         {
-            try
+            // Wywołanie metody na głównym wątku gry
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
-                _activeEventsLCDManager.UpdateMonitorBlocks();
-                _allEventsLcdManager.UpdateMonitorBlocks();
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"Error while updating LCDs: {ex.Message}");
-            }
+                try
+                {
+                    _activeEventsLCDManager.UpdateMonitorBlocks();
+                    _allEventsLcdManager.UpdateMonitorBlocks();
+                    LoggerHelper.DebugLog(Log, _config, "LCDs updated successfully.");
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"Error while updating LCDs: {ex.Message}");
+                    LoggerHelper.DebugLog(Log, _config, $"Error while updating LCDs: {ex.Message}");
+                }
+            });
         }
 
         public IEnumerable<EventsBase> Events => _events;

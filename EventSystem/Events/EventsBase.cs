@@ -1,11 +1,13 @@
 ﻿using EventSystem.Utils;
 using NLog;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
+using VRage.Game.ModAPI;
 using VRage.Plugins;
 using VRageMath;
 
@@ -22,7 +24,8 @@ namespace EventSystem.Events
         protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
 
         //list of grids created by event
-        protected List<long> SpawnedGridsEntityIds { get; set; } = new List<long>();
+        protected ConcurrentDictionary<long, bool> SpawnedGridsEntityIds { get; } = new ConcurrentDictionary<long, bool>();
+
 
         //Determines whether an event requires that a player not be in another event to join it 
         public bool AllowParticipationInOtherEvents { get; set; }
@@ -125,31 +128,43 @@ namespace EventSystem.Events
         // Methods to manage additional event elements, e.g. grids, objects.
         public virtual async Task<HashSet<long>> SpawnGrid(string gridName, Vector3D position)
         {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to spawn grid '{gridName}' at position {position}.");
+
             var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
             var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
 
             if (!File.Exists(filePath))
             {
-                Log.Error($"File not found: {filePath}");
+                Log.Error($"File not found: {filePath}. Unable to spawn grid '{gridName}'.");
                 return new HashSet<long>();
             }
 
-            HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+            try
+            {
+                HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
 
-            if (entityIds != null && entityIds.Count > 0)
-            {
-                foreach (var entityId in entityIds)
+                if (entityIds != null && entityIds.Count > 0)
                 {
-                    SpawnedGridsEntityIds.Add(entityId);
+                    foreach (var entityId in entityIds)
+                    {
+                        SpawnedGridsEntityIds.TryAdd(entityId, true);
+                    }
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully spawned grid '{gridName}' with entity IDs: {string.Join(", ", entityIds)}.");
+                    return entityIds;
                 }
-                return entityIds;
+                else
+                {
+                    Log.Warn($"Grid '{gridName}' was not spawned. No entities were created.");
+                    return new HashSet<long>();
+                }
             }
-            else
+            catch (Exception ex)
             {
-                Log.Warn("No entities were spawned.");
+                Log.Error(ex, $"An error occurred while attempting to spawn grid '{gridName}': {ex.Message}");
                 return new HashSet<long>();
             }
         }
+
 
         public virtual Task ManageGrid()
         {
@@ -161,28 +176,50 @@ namespace EventSystem.Events
         {
             var removalTasks = new List<Task>();
 
-            foreach (var entityId in SpawnedGridsEntityIds)
+            foreach (var keyValuePair in SpawnedGridsEntityIds)
             {
+                long entityId = keyValuePair.Key;
                 removalTasks.Add(RemoveEntityAsync(entityId));
             }
 
             await Task.WhenAll(removalTasks);
-
             SpawnedGridsEntityIds.Clear();
         }
 
-        private async Task RemoveEntityAsync(long entityId)
+
+        private Task RemoveEntityAsync(long gridId)
         {
-            if (MyAPIGateway.Entities.EntityExists(entityId))
+            var tcs = new TaskCompletionSource<bool>();
+
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
-                var entity = MyAPIGateway.Entities.GetEntityById(entityId);
-                if (entity != null)
+                try
                 {
-                    Log.Info($"Removing grid with EntityId: {entityId}");
-                    await Task.Run(() => MyAPIGateway.Entities.RemoveEntity(entity));
+                    var entity = MyAPIGateway.Entities.GetEntityById(gridId);
+                    var grid = entity as MyCubeGrid;
+                    if (grid != null)
+                    {
+                        grid.Close();
+                        MyAPIGateway.Entities.RemoveEntity(entity);
+                        Log.Info($"Grid with EntityId: {gridId} closed and removed successfully.");
+                        tcs.SetResult(true);
+                    }
+                    else
+                    {
+                        Log.Warn($"Grid with EntityId: {gridId} not found.");
+                        tcs.SetResult(false);
+                    }
                 }
-            }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, "Error removing grid.");
+                    tcs.SetException(ex);
+                }
+            });
+
+            return tcs.Task;
         }
+
 
         // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)

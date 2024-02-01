@@ -35,28 +35,48 @@ namespace EventSystem.Serialization
         {
         }
 
-        public async Task<HashSet<long>> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
+        public Task<HashSet<long>> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
         {
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Starting to spawn grids at {position}");
+            var tcs = new TaskCompletionSource<HashSet<long>>();
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Attempting to spawn grids. Initial position: {position}");
 
-            HashSet<long> currentSpawnedGridsEntityIds = new HashSet<long>();
-
-            position = (Vector3D)FindPastePosition(position);
-            if (position == Vector3D.Zero)
+            MyAPIGateway.Utilities.InvokeOnGameThread(async () =>
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Spawn position is Vector3D.Zero.");
-                return currentSpawnedGridsEntityIds;
-            }
+                try
+                {
+                    position = (Vector3D)FindPastePosition(position);
+                    if (position == Vector3D.Zero)
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Unable to find spawn position. Position is Vector3D.Zero.");
+                        tcs.SetResult(new HashSet<long>());
+                        return;
+                    }
 
-            bool success = await ProcessGrids(grids, position, currentSpawnedGridsEntityIds);
-            if (!success)
-            {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Error occurred during grid spawning.");
-            }
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Found spawn position: {position}");
 
-            return currentSpawnedGridsEntityIds;
+                    var currentSpawnedGridsEntityIds = new HashSet<long>();
+                    var success = await ProcessGrids(grids, position, currentSpawnedGridsEntityIds);
+
+                    if (success)
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Successfully spawned grids. Entity IDs: {string.Join(", ", currentSpawnedGridsEntityIds)}");
+                        tcs.SetResult(currentSpawnedGridsEntityIds);
+                    }
+                    else
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Failed to spawn grids.");
+                        tcs.SetResult(new HashSet<long>());
+                    }
+                }
+                catch (Exception ex)
+                {
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Exception occurred: {ex.Message}");
+                    tcs.SetException(ex);
+                }
+            });
+
+            return tcs.Task;
         }
-
 
         private async Task<bool> ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition, HashSet<long> currentSpawnedGridsEntityIds)
         {
@@ -282,7 +302,7 @@ namespace EventSystem.Serialization
                     functionalBlock.Enabled = true;
 
                     //
-                    functionalBlock.BlockGeneralDamageModifier = 9999999.9f;
+                    //functionalBlock.BlockGeneralDamageModifier = 9999999.9f;
                 }
             }
 
@@ -291,8 +311,8 @@ namespace EventSystem.Serialization
                 gridBlock.DampenersEnabled = true;
 
                 //
-                gridBlock.GridGeneralDamageModifier = 9999999.9f;
-                gridBlock.Editable = false;
+                //gridBlock.GridGeneralDamageModifier = 9999999.9f;
+                //gridBlock.Editable = false;
             }
         }
 
