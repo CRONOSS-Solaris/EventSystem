@@ -15,8 +15,6 @@ namespace EventSystem.Event
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/SpecialEvent");
         private readonly EventSystemConfig _config;
 
-        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
-
         public SpecialEvent(EventSystemConfig config)
         {
             _config = config;
@@ -37,11 +35,11 @@ namespace EventSystem.Event
         }
 
 
-        public override Task EndEvent()
+        public override async Task EndEvent()
         {
             // Implementacja logiki końca wydarzenia
             Log.Info($"Ending SpecialEvent.");
-            return Task.CompletedTask;
+            await CleanupGrids();
         }
 
         // Dodaje gracza do listy uczestników eventu.
@@ -80,10 +78,10 @@ namespace EventSystem.Event
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
                     EndTime = "23:59:59",
-                    PrefabName = "MySpecialGrid",
-                    SpawnPositionX = 0,
-                    SpawnPositionY = 0,
-                    SpawnPositionZ = 0,
+                    PrefabName = "arenapvp",
+                    SpawnPositionX = -42596.88,
+                    SpawnPositionY = 40764.17,
+                    SpawnPositionZ = -16674.06,
                 };
             }
 

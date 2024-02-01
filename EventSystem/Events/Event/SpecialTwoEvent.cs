@@ -13,8 +13,6 @@ namespace EventSystem.Event
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/SpecialTwoEvent");
         private readonly EventSystemConfig _config;
 
-        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
-
         public SpecialTwoEvent(EventSystemConfig config)
         {
             _config = config;

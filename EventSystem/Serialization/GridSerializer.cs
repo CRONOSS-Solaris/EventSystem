@@ -1,22 +1,21 @@
-﻿using NLog;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+﻿using EventSystem;
+using EventSystem.Serialization;
+using EventSystem.Utils;
+using NLog;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Threading.Tasks;
 using VRage.Game;
 using VRage.ObjectBuilders.Private;
 using VRageMath;
-using System.IO;
-using System.Linq;
-using Sandbox.Common.ObjectBuilders;
-using EventSystem.Serialization;
-using EventSystem;
-using EventSystem.Utils;
 
 public static class GridSerializer
 {
     public static readonly Logger Log = LogManager.GetLogger("EventSystem/GridSerializer");
 
-    public static async Task<bool> LoadAndSpawnGrid(string folderPath, string gridName, Vector3D position)
+    public static async Task<HashSet<long>> LoadAndSpawnGrid(string folderPath, string gridName, Vector3D position)
     {
         string filePath = Path.Combine(folderPath, gridName + ".sbc");
         LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Loading grid file: {filePath}");
@@ -24,7 +23,7 @@ public static class GridSerializer
         if (!File.Exists(filePath))
         {
             Log.Error($"Grid file does not exist at path: {filePath}");
-            return false;
+            return new HashSet<long>();
         }
 
         try
@@ -34,17 +33,17 @@ public static class GridSerializer
             {
                 LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grid file deserialized successfully.");
 
-                if (!TryGetGridsFromDefinition(definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids))
+                if (TryGetGridsFromDefinition(definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids))
+                {
+                    GridSpawner spawner = new GridSpawner();
+                    var entityIds = await spawner.SpawnGrids(grids, position);
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid(s) spawn at position {position} completed.");
+                    return entityIds;
+                }
+                else
                 {
                     Log.Error("Failed to get grids from definition.");
-                    return false;
                 }
-
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawning grid(s) at position {position}");
-                GridSpawner spawner = new GridSpawner();
-                bool result = await spawner.SpawnGrids(grids, position);
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid(s) spawn at position {position} completed with status: {result}");
-                return result;
             }
         }
         catch (Exception ex)
@@ -52,7 +51,7 @@ public static class GridSerializer
             Log.Error(ex, $"Failed to deserialize grid file at path: {filePath}");
         }
 
-        return false;
+        return new HashSet<long>();
     }
 
     private static bool TryGetGridsFromDefinition(MyObjectBuilder_Definitions definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids)

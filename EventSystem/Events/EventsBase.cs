@@ -1,6 +1,8 @@
 ﻿using EventSystem.Utils;
 using NLog;
+using Sandbox.ModAPI;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
@@ -12,7 +14,15 @@ namespace EventSystem.Events
     public abstract class EventsBase
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
+        
+        //location of the profile with bluepirnt grids
         protected virtual string PrefabStoragePath { get; set; }
+        
+        //list of players who joined the event
+        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
+
+        //list of grids created by event
+        protected List<long> SpawnedGridsEntityIds { get; set; } = new List<long>();
 
         //Determines whether an event requires that a player not be in another event to join it 
         public bool AllowParticipationInOtherEvents { get; set; }
@@ -113,19 +123,32 @@ namespace EventSystem.Events
         }
 
         // Methods to manage additional event elements, e.g. grids, objects.
-        public virtual async Task SpawnGrid(string gridName, Vector3D position)
+        public virtual async Task<HashSet<long>> SpawnGrid(string gridName, Vector3D position)
         {
             var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
-
             var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
 
             if (!File.Exists(filePath))
             {
                 Log.Error($"File not found: {filePath}");
-                return;
+                return new HashSet<long>();
             }
 
-            await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+            HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+
+            if (entityIds != null && entityIds.Count > 0)
+            {
+                foreach (var entityId in entityIds)
+                {
+                    SpawnedGridsEntityIds.Add(entityId);
+                }
+                return entityIds;
+            }
+            else
+            {
+                Log.Warn("No entities were spawned.");
+                return new HashSet<long>();
+            }
         }
 
         public virtual Task ManageGrid()
@@ -134,12 +157,32 @@ namespace EventSystem.Events
             return Task.CompletedTask;
         }
 
-        public virtual Task CleanupGrid()
+        public virtual async Task CleanupGrids()
         {
-            Log.Info("Cleaning up grid. Override this method in derived class.");
-            return Task.CompletedTask;
+            var removalTasks = new List<Task>();
+
+            foreach (var entityId in SpawnedGridsEntityIds)
+            {
+                removalTasks.Add(RemoveEntityAsync(entityId));
+            }
+
+            await Task.WhenAll(removalTasks);
+
+            SpawnedGridsEntityIds.Clear();
         }
 
+        private async Task RemoveEntityAsync(long entityId)
+        {
+            if (MyAPIGateway.Entities.EntityExists(entityId))
+            {
+                var entity = MyAPIGateway.Entities.GetEntityById(entityId);
+                if (entity != null)
+                {
+                    Log.Info($"Removing grid with EntityId: {entityId}");
+                    await Task.Run(() => MyAPIGateway.Entities.RemoveEntity(entity));
+                }
+            }
+        }
 
         // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)

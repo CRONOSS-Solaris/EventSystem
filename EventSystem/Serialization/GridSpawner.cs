@@ -35,25 +35,34 @@ namespace EventSystem.Serialization
         {
         }
 
-        public async Task<bool> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
+        public async Task<HashSet<long>> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Starting to spawn grids at {position}");
+
+            HashSet<long> currentSpawnedGridsEntityIds = new HashSet<long>();
 
             position = (Vector3D)FindPastePosition(position);
             if (position == Vector3D.Zero)
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Spawn position is Vector3D.Zero, returning false.");
-                return false;
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Spawn position is Vector3D.Zero.");
+                return currentSpawnedGridsEntityIds;
             }
 
-            return await GameEvents.InvokeActionAsync(() => ProcessGrids(grids, position));
+            bool success = await ProcessGrids(grids, position, currentSpawnedGridsEntityIds);
+            if (!success)
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(SpawnGrids) Error occurred during grid spawning.");
+            }
+
+            return currentSpawnedGridsEntityIds;
         }
 
-        private bool ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition)
+
+        private async Task<bool> ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition, HashSet<long> currentSpawnedGridsEntityIds)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Processing grids for spawning.");
 
-            //Remap to fix entity conflicts
+            // Remap to fix entity conflicts
             MyEntities.RemapObjectBuilderCollection(grids);
 
             var mainGrid = FindMainGrid(grids); // Find the main grid
@@ -66,14 +75,11 @@ namespace EventSystem.Serialization
             bool isMainGridStatic = mainGrid.IsStatic;
             Log.Debug($"(ProcessGrids) Main grid static status: {isMainGridStatic}");
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(ProcessGrids) _sphereD.Center: X={_sphereD.Center.X}, Y={_sphereD.Center.Y}, Z={_sphereD.Center.Z}");
-
             _delta3D = _sphereD.Center - mainGrid.PositionAndOrientation.Value.Position;
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(ProcessGrids) Delta calculated for grid positioning: {_delta3D}");
 
             bool spawnSuccess = true;
 
-            // Apply delta to each grid (main and sub-grids)
             foreach (var grid in grids)
             {
                 UpdateGridPosition(grid, _delta3D, newPosition);
@@ -83,7 +89,7 @@ namespace EventSystem.Serialization
 
             try
             {
-                SpawnEntities(grids, isMainGridStatic);
+                await SpawnEntities(grids, isMainGridStatic, currentSpawnedGridsEntityIds);
             }
             catch (Exception ex)
             {
@@ -91,14 +97,7 @@ namespace EventSystem.Serialization
                 spawnSuccess = false;
             }
 
-            if (!spawnSuccess)
-            {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Error occurred during grid spawning.");
-                return false;
-            }
-
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Grids processing completed successfully.");
-            return true;
+            return spawnSuccess;
         }
 
 
@@ -132,20 +131,30 @@ namespace EventSystem.Serialization
         }
 
 
-        private void SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids, bool makeStatic)
+        private async Task SpawnEntities(IEnumerable<MyObjectBuilder_CubeGrid> grids, bool makeStatic, HashSet<long> currentSpawnedGridsEntityIds)
         {
+            var tasks = new List<Task>();
+
             foreach (var gridBuilder in grids)
             {
-                
                 if (makeStatic)
                 {
                     gridBuilder.IsStatic = true;
                 }
 
-                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridBuilder, false, Increment);
-            }
-        }
+                var tcs = new TaskCompletionSource<bool>();
+                Action<IMyEntity> completionCallback = (spawnedEntity) =>
+                {
+                    Increment(spawnedEntity, currentSpawnedGridsEntityIds);
+                    tcs.SetResult(true);
+                };
 
+                MyAPIGateway.Entities.CreateFromObjectBuilderParallel(gridBuilder, true, completionCallback);
+                tasks.Add(tcs.Task);
+            }
+
+            await Task.WhenAll(tasks);
+        }
 
         private Vector3D? FindPastePosition(Vector3D target)
         {
@@ -287,12 +296,15 @@ namespace EventSystem.Serialization
             }
         }
 
-        public void Increment(IMyEntity entity)
+        public void Increment(IMyEntity entity, HashSet<long> currentSpawnedGridsEntityIds)
         {
             var grid = entity as MyCubeGrid;
             if (grid != null)
             {
                 _spawnedGrids.Add(grid);
+                currentSpawnedGridsEntityIds.Add(grid.EntityId);
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid spawned: EntityId {grid.EntityId}");
+
                 if (grid.Physics != null)
                 {
                     grid.Physics.SetSpeeds(Vector3.Zero, Vector3.Zero);

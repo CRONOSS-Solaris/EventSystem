@@ -1,4 +1,5 @@
 ﻿using Sandbox.Game.World;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Torch.Commands;
@@ -69,18 +70,17 @@ namespace EventSystem
         [Permission(MyPromoteLevel.Admin)]
         public async Task SpawnGrid(string gridName, double x, double y, double z)
         {
-            // Użyj FileManager do uzyskania ścieżki do folderu "prefab"
             var prefabFolderPath = Path.Combine(Plugin.StoragePath, "EventSystem", "CommandPrefabTest");
-
-            // Utwórz pełną ścieżkę do pliku siatki
             var filePath = Path.Combine(prefabFolderPath, gridName + ".sbc");
 
             Vector3D position = new Vector3D(x, y, z);
-            bool result = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+            HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
 
-            if (result)
+
+            if (entityIds.Count > 0)
             {
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Grid {gridName} successfully spawned at {position}.", Color.Green, Context.Player.SteamUserId);
+                string entityIdsString = string.Join(", ", entityIds);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Grid {gridName} successfully spawned at {position}. Entity IDs: {entityIdsString}", Color.Green, Context.Player.SteamUserId);
             }
             else
             {
