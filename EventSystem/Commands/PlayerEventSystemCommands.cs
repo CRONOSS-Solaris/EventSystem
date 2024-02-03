@@ -210,7 +210,7 @@ namespace EventSystem
         // Komenda do dołączania do eventu
         [Command("join", "Join an active event.")]
         [Permission(MyPromoteLevel.None)]
-        public void JoinEvent(string eventName)
+        public async Task JoinEvent(string eventName)
         {
             if (Context.Player == null)
             {
@@ -224,18 +224,8 @@ namespace EventSystem
 
             if (eventToJoin != null)
             {
-                // Sprawdź, czy gracz uczestniczy już w innym evencie, który nie zezwala na uczestnictwo w innych eventach
-                if (eventManager.Events.Any(e => e != eventToJoin && e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result && !e.AllowParticipationInOtherEvents))
-                {
-                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You cannot join this event because you are participating in another event that does not allow multiple event participation.", Color.Red, Context.Player.SteamUserId);
-                    return;
-                }
-
-                Task.Run(async () =>
-                {
-                    await eventToJoin.AddPlayer(steamId);
-                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You have joined the event: {eventName}", Color.Green, Context.Player.SteamUserId);
-                });
+                var (success, message) = await eventToJoin.AddPlayer(steamId);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", message, success ? Color.Green : Color.Red, Context.Player.SteamUserId);
             }
             else
             {

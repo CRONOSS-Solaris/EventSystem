@@ -33,13 +33,6 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        // Dodaje gracza do listy uczestników eventu.
-        public override Task AddPlayer(long steamId)
-        {
-            ParticipatingPlayers.TryAdd(steamId, true);
-            return Task.CompletedTask;
-        }
-
         // Usuwa gracza z listy uczestników eventu.
         public override Task RemovePlayer(long steamId)
         {

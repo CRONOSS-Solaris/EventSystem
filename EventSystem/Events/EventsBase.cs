@@ -6,6 +6,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using VRageMath;
 
@@ -53,7 +54,38 @@ namespace EventSystem.Events
         public abstract Task LoadEventSettings(EventSystemConfig config);
 
         // Adds the player to the list of event participants.
-        public abstract Task AddPlayer(long steamId);
+        public virtual async Task<(bool, string)> AddPlayer(long steamId)
+        {
+            // Check if the player is already participating in the event
+            if (ParticipatingPlayers.ContainsKey(steamId))
+            {
+                return (false, "You are already participating in this event.");
+            }
+
+            // If the event does not allow participation in other events, check if the player is already participating in another event
+            if (!AllowParticipationInOtherEvents)
+            {
+                var otherEvent = EventSystemMain.Instance._eventManager.Events
+                    .FirstOrDefault(e => e != this && e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result);
+
+                if (otherEvent != null)
+                {
+                    // Return the name of the event that prohibits participation
+                    return (false, $"You are already participating in the event '{otherEvent.EventName}' that does not allow participation in multiple events.");
+                }
+            }
+
+            // Add the player to the list of participants
+            var added = ParticipatingPlayers.TryAdd(steamId, true);
+            if (added)
+            {
+                return (true, $"You have successfully joined the event: {EventName}.");
+            }
+            else
+            {
+                return (false, "An error occurred. Please try again.");
+            }
+        }
 
         // Removes the player from the list of event participants.
         public abstract Task RemovePlayer(long steamId);
