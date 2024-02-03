@@ -103,43 +103,14 @@ namespace EventSystem.Events
 
 
         // Checks if the player is in the list of event participants.
-        public abstract Task<bool> IsPlayerParticipating(long steamId);
+        public virtual Task<bool> IsPlayerParticipating(long steamId)
+        {
+            bool isParticipating = ParticipatingPlayers.ContainsKey(steamId);
+            return Task.FromResult(isParticipating);
+        }
 
         // Checks the player's progress in the event.
         public abstract Task CheckPlayerProgress(long steamId);
-
-        // Checks if the event is active at the moment.
-        public bool IsActiveNow()
-        {
-            var now = DateTime.Now;
-            bool isActiveToday = ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(now.Day);
-            bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
-            bool isActive = IsEnabled && isActiveToday && isActiveTime;
-
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Checking if '{EventName}' is active now:");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Current time: {now}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"IsEnabled: {IsEnabled}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active today ({now.Day}): {isActiveToday}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active time ({now.TimeOfDay}): {isActiveTime}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Is active: {isActive}");
-
-            return isActive;
-        }
-
-
-        // Calculates the time left until the event starts.
-        public TimeSpan GetNextStartTime(DateTime now)
-        {
-            var startOfDay = now.Date.Add(StartTime);
-            return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
-        }
-
-        // Calculates the time remaining in the event.
-        public TimeSpan GetNextEndTime(DateTime now)
-        {
-            var endOfDay = now.Date.Add(EndTime);
-            return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
-        }
 
         // Calculates the time remaining in the event.
         public virtual async Task AwardPlayer(long steamId, long points)
@@ -262,7 +233,6 @@ namespace EventSystem.Events
             return tcs.Task;
         }
 
-
         // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)
         {
@@ -270,9 +240,42 @@ namespace EventSystem.Events
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
         }
 
+        // Checks if the event is active at the moment.
+        public bool IsActiveNow()
+        {
+            var now = DateTime.Now;
+            bool isActiveToday = ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(now.Day);
+            bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
+            bool isActive = IsEnabled && isActiveToday && isActiveTime;
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Checking if '{EventName}' is active now:");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Current time: {now}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"IsEnabled: {IsEnabled}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active today ({now.Day}): {isActiveToday}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active time ({now.TimeOfDay}): {isActiveTime}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Is active: {isActive}");
+
+            return isActive;
+        }
+
+
+        // Calculates the time left until the event starts.
+        public TimeSpan GetNextStartTime(DateTime now)
+        {
+            var startOfDay = now.Date.Add(StartTime);
+            return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
+        }
+
+        // Calculates the time remaining in the event.
+        public TimeSpan GetNextEndTime(DateTime now)
+        {
+            var endOfDay = now.Date.Add(EndTime);
+            return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
+        }
+
         public virtual int GetParticipantsCount()
         {
-            return 0;
+            return ParticipatingPlayers.Count;
         }
     }
 }

@@ -26,7 +26,6 @@ namespace EventSystem.Event
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing SpecialEvent.");
 
-            // Nowa metoda do spawn siatki
             await SpawnEventGrid();
         }
 
@@ -39,7 +38,7 @@ namespace EventSystem.Event
                 _config.SpecialEventSettings.SpawnPositionZ);
 
             var spawnedEntityIds = await SpawnGrid(gridName, position);
-            Log.Info($"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
         }
 
         public override async Task EndEvent()
@@ -47,13 +46,6 @@ namespace EventSystem.Event
             // Implementacja logiki końca wydarzenia
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending SpecialEvent.");
             await CleanupGrids();
-        }
-
-        // Sprawdza, czy gracz jest w liście uczestników eventu.
-        public override Task<bool> IsPlayerParticipating(long steamId)
-        {
-            bool isParticipating = ParticipatingPlayers.ContainsKey(steamId);
-            return Task.FromResult(isParticipating);
         }
 
         public override Task CheckPlayerProgress(long steamId)
@@ -91,11 +83,6 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}, SpawnPosition={spawnPosition}");
 
             return Task.CompletedTask;
-        }
-
-        public override int GetParticipantsCount()
-        {
-            return ParticipatingPlayers.Count;
         }
 
         public class SpecialEventConfig
