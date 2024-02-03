@@ -6,6 +6,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Torch;
+using Torch.API.Managers;
+using Torch.Commands;
 
 namespace EventSystem.Events
 {
@@ -113,6 +116,7 @@ namespace EventSystem.Events
                 }
                 else
                 {
+                    SendNotification($"{eventItem.EventName} is starting now!", "Green");
                     // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
                     LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' started successfully.");
                 }
@@ -139,6 +143,7 @@ namespace EventSystem.Events
                 }
                 else
                 {
+                    SendNotification($"{eventItem.EventName} has ended. Thank you for participating!", "Red");
                     // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
                     LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' ended successfully.");
                 }
@@ -164,6 +169,20 @@ namespace EventSystem.Events
                     LoggerHelper.DebugLog(Log, _config, $"Error while updating LCDs: {ex.Message}");
                 }
             });
+        }
+
+        private void SendNotification(string message, string color)
+        {
+            var torch = TorchBase.Instance;
+            if (torch != null)
+            {
+                var commandManager = torch.CurrentSession.Managers.GetManager<CommandManager>();
+                if (commandManager != null)
+                {
+                    string notificationCommand = $"!notify \"{message}\" 3000 {color}";
+                    commandManager.HandleCommandFromServer(notificationCommand);
+                }
+            }
         }
 
         public IEnumerable<EventsBase> Events => _events;

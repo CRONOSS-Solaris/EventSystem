@@ -88,7 +88,19 @@ namespace EventSystem.Events
         }
 
         // Removes the player from the list of event participants.
-        public abstract Task RemovePlayer(long steamId);
+        public virtual async Task<(bool, string)> LeavePlayer(long steamId)
+        {
+            bool removed = ParticipatingPlayers.TryRemove(steamId, out _);
+            if (removed)
+            {
+                return (true, $"You have successfully left the event: {EventName}.");
+            }
+            else
+            {
+                return (false, "You were not participating in this event or an error occurred.");
+            }
+        }
+
 
         // Checks if the player is in the list of event participants.
         public abstract Task<bool> IsPlayerParticipating(long steamId);

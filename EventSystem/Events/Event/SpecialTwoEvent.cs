@@ -33,13 +33,6 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        // Usuwa gracza z listy uczestników eventu.
-        public override Task RemovePlayer(long steamId)
-        {
-            ParticipatingPlayers.TryRemove(steamId, out _);
-            return Task.CompletedTask;
-        }
-
         // Sprawdza, czy gracz jest w liście uczestników eventu.
         public override Task<bool> IsPlayerParticipating(long steamId)
         {

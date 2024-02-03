@@ -236,7 +236,7 @@ namespace EventSystem
         // Komenda do opuszczania eventu
         [Command("leave", "Leave the current event.")]
         [Permission(MyPromoteLevel.None)]
-        public void LeaveEvent()
+        public async Task LeaveEvent()
         {
             if (Context.Player == null)
             {
@@ -246,21 +246,19 @@ namespace EventSystem
 
             long steamId = (long)Context.Player.SteamUserId;
             var eventManager = Plugin._eventManager;
-            var activeEvent = eventManager.Events.FirstOrDefault(e => e.IsPlayerParticipating(steamId).Result && e.IsActiveNow());
+            var activeEvent = eventManager.Events.FirstOrDefault(e => e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result);
 
             if (activeEvent != null)
             {
-                Task.Run(async () =>
-                {
-                    await activeEvent.RemovePlayer(steamId);
-                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You have left the event: {activeEvent.EventName}", Color.Green, Context.Player.SteamUserId);
-                });
+                var (success, message) = await activeEvent.LeavePlayer(steamId);
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", message, success ? Color.Green : Color.Red, Context.Player.SteamUserId);
             }
             else
             {
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You are not participating in any active event.", Color.Red, Context.Player.SteamUserId);
             }
         }
+
 
     }
 }
