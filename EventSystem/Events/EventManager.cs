@@ -35,7 +35,6 @@ namespace EventSystem.Events
             {
                 _events.Add(eventItem);
                 eventItem.LoadEventSettings(_config);
-                UpdateLCDs();
                 LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
