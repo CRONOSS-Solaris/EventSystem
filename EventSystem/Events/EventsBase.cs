@@ -7,8 +7,6 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
-using VRage.Game.ModAPI;
-using VRage.Plugins;
 using VRageMath;
 
 namespace EventSystem.Events
