@@ -1,4 +1,5 @@
-﻿using Sandbox.Game.Entities;
+﻿using EventSystem.Utils;
+using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
 using System;
 using System.Threading.Tasks;
@@ -22,7 +23,7 @@ namespace EventSystem.Events
                     {
                         grid.Close();
                         MyAPIGateway.Entities.RemoveEntity(entity);
-                        Log.Info($"Grid with EntityId: {gridId} closed and removed successfully.");
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid with EntityId: {gridId} closed and removed successfully.");
                         tcs.SetResult(true);
                     }
                     else

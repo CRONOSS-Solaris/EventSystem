@@ -56,7 +56,7 @@ namespace EventSystem.Events
 
         public virtual Task ManageGrid()
         {
-            Log.Info("Managing grid. Override this method in derived class.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Managing grid. Override this method in derived class.");
             return Task.CompletedTask;
         }
 

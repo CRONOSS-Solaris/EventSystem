@@ -22,14 +22,14 @@ namespace EventSystem.Event
         public override Task ExecuteEvent()
         {
             // Implementacja logiki wydarzenia
-            Log.Info($"Executing SpecialTwoEvent.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing SpecialTwoEvent.");
             return Task.CompletedTask;
         }
 
         public override Task EndEvent()
         {
             // Implementacja logiki końca wydarzenia
-            Log.Info($"Ending SpecialTwoEvent.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending SpecialTwoEvent.");
             return Task.CompletedTask;
         }
 

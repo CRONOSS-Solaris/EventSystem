@@ -180,7 +180,7 @@ namespace EventSystem.Events
             MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
                 player.Character.SetPosition(targetPos.Value);
-                Log.Info($"Teleported player {player.DisplayName} to free place near spawn point at {targetPos.Value}.");
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleported player {player.DisplayName} to free place near spawn point at {targetPos.Value}.");
             });
         }
 
@@ -202,7 +202,7 @@ namespace EventSystem.Events
                 MyAPIGateway.Utilities.InvokeOnGameThread(() =>
                 {
                     player.Character.SetPosition(originalPosition);
-                    Log.Info($"Teleported player {player.DisplayName} back to original position at {originalPosition}.");
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleported player {player.DisplayName} back to original position at {originalPosition}.");
                 });
             }
 
@@ -210,7 +210,7 @@ namespace EventSystem.Events
             originalPlayerPositions.Clear();
         }
 
-
+        // Removal of player's items, e.g. during the start of the event and moving the player to the starting point
         protected bool RemoveAllItemsFromPlayer(long steamId)
         {
             if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
@@ -226,29 +226,29 @@ namespace EventSystem.Events
                 return false;
             }
 
-            // Zapisz obecny stan przedmiotów w ekwipunku przed jego wyczyszczeniem
+            // Save the current state of the items in the inventory before clearing it
             List<MyInventoryItem> itemsBeforeClear = new List<MyInventoryItem>();
             inventory.GetItems(itemsBeforeClear);
 
-            // Słownik do przechowywania usuniętych przedmiotów i ich ilości
+            // Save the current state of the items in the inventory before clearing it
             Dictionary<MyDefinitionId, MyFixedPoint> removedItemsDetails = new Dictionary<MyDefinitionId, MyFixedPoint>();
 
-            // Usuń wszystkie przedmioty z ekwipunku
+            // Remove all items from the inventory
             foreach (var item in itemsBeforeClear)
             {
                 var definitionId = MyDefinitionId.Parse($"{item.Type.TypeId}/{item.Type.SubtypeId}");
                 inventory.RemoveItemsOfType(item.Amount, definitionId, spawn: false);
                 if (removedItemsDetails.ContainsKey(definitionId))
                 {
-                    removedItemsDetails[definitionId] += item.Amount; // Dodaj ilość, jeśli przedmiot już istnieje
+                    removedItemsDetails[definitionId] += item.Amount; // Add the quantity if the item already exists
                 }
                 else
                 {
-                    removedItemsDetails.Add(definitionId, item.Amount); // Dodaj nowy wpis, jeśli przedmiotu nie ma na liście
+                    removedItemsDetails.Add(definitionId, item.Amount); // Add a new entry if the item is not listed
                 }
             }
 
-            // Zapisz informacje o usuniętych przedmiotach, aby móc je zwrócić później
+            // Save the information about the deleted items so that they can be returned later
             if (removedItemsDetails.Count > 0)
             {
                 _itemsRemovedFromPlayers.AddOrUpdate(steamId, removedItemsDetails, (key, existingDict) =>
@@ -268,10 +268,11 @@ namespace EventSystem.Events
                 });
             }
 
-            Log.Info($"Removed all items from player with SteamID {steamId}.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Removed all items from player with SteamID {steamId}.");
             return true;
         }
 
+        // Adding required items to the inventory by an event e.g. fighting arena
         protected bool AddItemToPlayer(long steamId, string typeID, string subtypeID, int quantity)
         {
             if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
@@ -290,6 +291,7 @@ namespace EventSystem.Events
             return true;
         }
 
+        //Returning removed items to a player, e.g. at the end of an event and teleporting to the previous position
         protected void ReturnItemsToPlayers()
         {
             foreach (var entry in _itemsRemovedFromPlayers)
