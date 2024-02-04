@@ -12,22 +12,12 @@ using VRageMath;
 
 namespace EventSystem.Events
 {
-    public abstract class EventsBase
+    public abstract partial class EventsBase
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
-        
+
         //location of the profile with bluepirnt grids
         protected virtual string PrefabStoragePath { get; set; }
-        
-        //list of players who joined the event
-        protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
-
-        //list of grids created by event
-        protected ConcurrentDictionary<long, bool> SpawnedGridsEntityIds { get; } = new ConcurrentDictionary<long, bool>();
-
-
-        //Determines whether an event requires that a player not be in another event to join it 
-        public bool AllowParticipationInOtherEvents { get; set; }
 
         // The name of the event, it can be set in derived classes.
         public string EventName { get; set; }
@@ -53,185 +43,6 @@ namespace EventSystem.Events
         // Method to load the settings of a specific event from the configuration.
         public abstract Task LoadEventSettings(EventSystemConfig config);
 
-        // Adds the player to the list of event participants.
-        public virtual async Task<(bool, string)> AddPlayer(long steamId)
-        {
-            // Check if the player is already participating in the event
-            if (ParticipatingPlayers.ContainsKey(steamId))
-            {
-                return (false, "You are already participating in this event.");
-            }
-
-            // If the event does not allow participation in other events, check if the player is already participating in another event
-            if (!AllowParticipationInOtherEvents)
-            {
-                var otherEvent = EventSystemMain.Instance._eventManager.Events
-                    .FirstOrDefault(e => e != this && e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result);
-
-                if (otherEvent != null)
-                {
-                    // Return the name of the event that prohibits participation
-                    return (false, $"You are already participating in the event '{otherEvent.EventName}' that does not allow participation in multiple events.");
-                }
-            }
-
-            // Add the player to the list of participants
-            var added = ParticipatingPlayers.TryAdd(steamId, true);
-            if (added)
-            {
-                return (true, $"You have successfully joined the event: {EventName}.");
-            }
-            else
-            {
-                return (false, "An error occurred. Please try again.");
-            }
-        }
-
-        // Removes the player from the list of event participants.
-        public virtual async Task<(bool, string)> LeavePlayer(long steamId)
-        {
-            bool removed = ParticipatingPlayers.TryRemove(steamId, out _);
-            if (removed)
-            {
-                return (true, $"You have successfully left the event: {EventName}.");
-            }
-            else
-            {
-                return (false, "You were not participating in this event or an error occurred.");
-            }
-        }
-
-
-        // Checks if the player is in the list of event participants.
-        public virtual Task<bool> IsPlayerParticipating(long steamId)
-        {
-            bool isParticipating = ParticipatingPlayers.ContainsKey(steamId);
-            return Task.FromResult(isParticipating);
-        }
-
-        // Checks the player's progress in the event.
-        public abstract Task CheckPlayerProgress(long steamId);
-
-        // Calculates the time remaining in the event.
-        public virtual async Task AwardPlayer(long steamId, long points)
-        {
-            // Get the database manager from the main plugin
-            var databaseManager = EventSystemMain.Instance.DatabaseManager;
-
-            // Get the configuration
-            var config = EventSystemMain.Instance.Config;
-
-            if (config.UseDatabase)
-            {
-                // Reward logic in the database
-                await databaseManager.UpdatePlayerPointsAsync(steamId.ToString(), points);
-            }
-            else
-            {
-                // Get the player account manager from the main plugin
-                var xmlManager = EventSystemMain.Instance.PlayerAccountXmlManager;
-                bool updateResult = await xmlManager.UpdatePlayerPointsAsync(steamId, points).ConfigureAwait(false);
-                if (!updateResult)
-                {
-                    // Handling the situation when the player account does not exist (if necessary).
-                }
-            }
-        }
-
-        // Methods to manage additional event elements, e.g. grids, objects.
-        public virtual async Task<HashSet<long>> SpawnGrid(string gridName, Vector3D position)
-        {
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to spawn grid '{gridName}' at position {position}.");
-
-            var prefabFolderPath = Path.Combine(EventSystemMain.Instance.StoragePath, PrefabStoragePath);
-            var filePath = Path.Combine(prefabFolderPath, $"{gridName}.sbc");
-
-            if (!File.Exists(filePath))
-            {
-                Log.Error($"File not found: {filePath}. Unable to spawn grid '{gridName}'.");
-                return new HashSet<long>();
-            }
-
-            try
-            {
-                HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
-
-                if (entityIds != null && entityIds.Count > 0)
-                {
-                    foreach (var entityId in entityIds)
-                    {
-                        SpawnedGridsEntityIds.TryAdd(entityId, true);
-                    }
-                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully spawned grid '{gridName}' with entity IDs: {string.Join(", ", entityIds)}.");
-                    return entityIds;
-                }
-                else
-                {
-                    Log.Warn($"Grid '{gridName}' was not spawned. No entities were created.");
-                    return new HashSet<long>();
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"An error occurred while attempting to spawn grid '{gridName}': {ex.Message}");
-                return new HashSet<long>();
-            }
-        }
-
-
-        public virtual Task ManageGrid()
-        {
-            Log.Info("Managing grid. Override this method in derived class.");
-            return Task.CompletedTask;
-        }
-
-        public virtual async Task CleanupGrids()
-        {
-            var removalTasks = new List<Task>();
-
-            foreach (var keyValuePair in SpawnedGridsEntityIds)
-            {
-                long entityId = keyValuePair.Key;
-                removalTasks.Add(RemoveEntityAsync(entityId));
-            }
-
-            await Task.WhenAll(removalTasks);
-            SpawnedGridsEntityIds.Clear();
-        }
-
-
-        private Task RemoveEntityAsync(long gridId)
-        {
-            var tcs = new TaskCompletionSource<bool>();
-
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                try
-                {
-                    var entity = MyAPIGateway.Entities.GetEntityById(gridId);
-                    var grid = entity as MyCubeGrid;
-                    if (grid != null)
-                    {
-                        grid.Close();
-                        MyAPIGateway.Entities.RemoveEntity(entity);
-                        Log.Info($"Grid with EntityId: {gridId} closed and removed successfully.");
-                        tcs.SetResult(true);
-                    }
-                    else
-                    {
-                        Log.Warn($"Grid with EntityId: {gridId} not found.");
-                        tcs.SetResult(false);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error removing grid.");
-                    tcs.SetException(ex);
-                }
-            });
-
-            return tcs.Task;
-        }
 
         // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)
@@ -271,11 +82,6 @@ namespace EventSystem.Events
         {
             var endOfDay = now.Date.Add(EndTime);
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
-        }
-
-        public virtual int GetParticipantsCount()
-        {
-            return ParticipatingPlayers.Count;
         }
     }
 }
