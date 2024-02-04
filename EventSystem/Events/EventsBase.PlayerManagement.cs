@@ -313,5 +313,23 @@ namespace EventSystem.Events
             _itemsRemovedFromPlayers.Clear();
         }
 
+        protected void ClearPlayerInventory(long steamId)
+        {
+            if (Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) && player.Character != null)
+            {
+                var inventory = player.Character.GetInventory();
+                if (inventory != null)
+                {
+                    inventory.Clear();
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Cleared inventory for player with SteamID {steamId}.");
+                }
+            }
+            else
+            {
+                Log.Error($"Player with SteamID {steamId} not found or does not have a character.");
+            }
+        }
+
+
     }
 }
