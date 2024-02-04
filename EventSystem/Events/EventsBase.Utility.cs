@@ -9,7 +9,7 @@ namespace EventSystem.Events
     public abstract partial class EventsBase
     {
         //Removal of nets from the world via event
-        private Task RemoveEntityAsync(long gridId)
+        protected Task RemoveEntityAsync(long gridId)
         {
             var tcs = new TaskCompletionSource<bool>();
 

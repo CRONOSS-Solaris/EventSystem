@@ -58,7 +58,7 @@ namespace EventSystem.Events
         }
 
         // Check if the player is already participating in an event and if he allows to join another one
-        public async Task<(bool, string)> CanPlayerJoinEvent(long steamId)
+        protected async Task<(bool, string)> CanPlayerJoinEvent(long steamId)
         {
             // Check if the player is already participating in this event
             if (ParticipatingPlayers.ContainsKey(steamId))
@@ -114,7 +114,7 @@ namespace EventSystem.Events
         }
 
         // Checks if the player is in the list of event participants.
-        protected virtual Task<bool> IsPlayerParticipating(long steamId)
+        public virtual Task<bool> IsPlayerParticipating(long steamId)
         {
             bool isParticipating = ParticipatingPlayers.ContainsKey(steamId);
             return Task.FromResult(isParticipating);

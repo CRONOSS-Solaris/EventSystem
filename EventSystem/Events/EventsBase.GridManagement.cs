@@ -60,7 +60,7 @@ namespace EventSystem.Events
             return Task.CompletedTask;
         }
 
-        public virtual async Task CleanupGrids()
+        protected virtual async Task CleanupGrids()
         {
             var removalTasks = new List<Task>();
 
