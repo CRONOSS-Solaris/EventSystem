@@ -1,9 +1,12 @@
 ﻿using EventSystem.Utils;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
+using VRage.Game.ModAPI;
 using VRageMath;
 
 namespace EventSystem.Events
@@ -53,13 +56,14 @@ namespace EventSystem.Events
             }
         }
 
-
+        //Grid management
         public virtual Task ManageGrid()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Managing grid. Override this method in derived class.");
             return Task.CompletedTask;
         }
 
+        // Cleaning the grids of the world
         protected virtual async Task CleanupGrids()
         {
             var removalTasks = new List<Task>();
@@ -73,5 +77,35 @@ namespace EventSystem.Events
             await Task.WhenAll(removalTasks);
             SpawnedGridsEntityIds.Clear();
         }
+
+        // Method to search for a block by custom name in grids created by an event.
+        protected async Task<Vector3D?> FindBlockPositionByName(string blockName)
+        {
+            Vector3D? foundPosition = null;
+
+            // Searching each grid created by the event.
+            foreach (var entityId in SpawnedGridsEntityIds.Keys)
+            {
+                var grid = MyAPIGateway.Entities.GetEntityById(entityId) as IMyCubeGrid;
+                if (grid != null)
+                {
+                    // Search the blocks in the grid for a block with the appropriate custom name.
+                    var blocks = new List<IMySlimBlock>();
+                    grid.GetBlocks(blocks, b => b.FatBlock != null && (b.FatBlock as IMyTerminalBlock)?.CustomName.Contains(blockName) == true);
+
+                    var block = blocks.FirstOrDefault()?.FatBlock as IMyTerminalBlock;
+                    if (block != null)
+                    {
+                        // If a block is found, return its position.
+                        foundPosition = block.GetPosition();
+                        break; // Break the loop if a block is found.
+                    }
+                }
+            }
+
+            return await Task.FromResult(foundPosition);
+        }
+
+
     }
 }
