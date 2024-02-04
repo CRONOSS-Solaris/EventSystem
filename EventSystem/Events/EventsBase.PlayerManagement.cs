@@ -13,8 +13,8 @@ namespace EventSystem.Events
         protected ConcurrentDictionary<long, bool> ParticipatingPlayers { get; } = new ConcurrentDictionary<long, bool>();
 
         //Determines whether an event requires that a player not be in another event to join it 
-        //True - Does not allow you to join another event
-        //False - Allows you to join another event
+        //True -  Allows you to join another event
+        //False - Does not allow you to join another event
         public bool AllowParticipationInOtherEvents { get; set; }
 
         // Adds the player to the list of event participants.
@@ -45,30 +45,47 @@ namespace EventSystem.Events
             }
         }
 
+        // Check if the player is already participating in an event and if he allows to join another one
         public async Task<(bool, string)> CanPlayerJoinEvent(long steamId)
         {
-            // Sprawdź, czy gracz już uczestniczy w tym evencie
+            // Check if the player is already participating in this event
             if (ParticipatingPlayers.ContainsKey(steamId))
             {
                 return (false, "You are already participating in this event.");
             }
 
-            // Sprawdź, czy gracz uczestniczy w innym evencie, jeśli bieżący event nie zezwala na wielokrotne uczestnictwo
-            if (!AllowParticipationInOtherEvents)
-            {
-                var otherEventParticipating = await Task.Run(() =>
-                    EventSystemMain.Instance._eventManager.Events
-                        .FirstOrDefault(e => e != this && e.IsActiveNow() && e.IsPlayerParticipating(steamId).Result));
+            // Retrieve all events in which the player is currently participating
+            var participatingEvents = await Task.Run(() =>
+                EventSystemMain.Instance._eventManager.Events
+                    .Where(e => e.IsPlayerParticipating(steamId).Result)
+                    .Select(e => e.EventName)
+                    .ToList());
 
-                if (otherEventParticipating != null)
+            // If participating in any events
+            if (participatingEvents.Any())
+            {
+                // If not allowed to participate in other events
+                if (!AllowParticipationInOtherEvents)
                 {
-                    return (false, $"You are already participating in the event '{otherEventParticipating.EventName}' that does not allow participation in multiple events.");
+                    var eventNames = string.Join(", ", participatingEvents);
+                    return (false, $"You cannot join this event because you are already participating in other event(s): {eventNames}.");
+                }
+
+                // If other events do not allow participation in multiple events
+                var otherEventDisallowing = participatingEvents.FirstOrDefault(e =>
+                    EventSystemMain.Instance._eventManager.Events
+                        .FirstOrDefault(ev => ev.EventName == e && !ev.AllowParticipationInOtherEvents) != null);
+
+                if (otherEventDisallowing != null)
+                {
+                    return (false, $"You are already participating in the event '{otherEventDisallowing}' that does not allow participation in multiple events.");
                 }
             }
 
-            // Gracz może dołączyć do eventu
+            // Player can join the event
             return (true, "");
         }
+
 
         // Removes the player from the list of event participants.
         public virtual async Task<(bool, string)> LeavePlayer(long steamId)
