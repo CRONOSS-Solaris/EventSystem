@@ -312,7 +312,7 @@ namespace EventSystem.Serialization
 
                 //
                 //gridBlock.GridGeneralDamageModifier = 9999999.9f;
-                //gridBlock.Editable = false;
+                gridBlock.Editable = false;
             }
         }
 
