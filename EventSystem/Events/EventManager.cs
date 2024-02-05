@@ -104,7 +104,7 @@ namespace EventSystem.Events
             LoggerHelper.DebugLog(Log, _config, $"Attempting to start event '{eventItem.EventName}'.");
 
             // Asynchroniczne wywołanie ExecuteEvent z obsługą callback
-            Task.Run(() => eventItem.ExecuteEvent()).ContinueWith(task =>
+            Task.Run(() => eventItem.SystemStartEvent()).ContinueWith(task =>
             {
                 // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
                 if (task.IsFaulted)
@@ -131,7 +131,7 @@ namespace EventSystem.Events
             LoggerHelper.DebugLog(Log, _config, $"Attempting to end event '{eventItem.EventName}'.");
 
             // Asynchroniczne wywołanie EndEvent z obsługą callback
-            Task.Run(() => eventItem.EndEvent()).ContinueWith(task =>
+            Task.Run(() => eventItem.SystemEndEvent()).ContinueWith(task =>
             {
                 // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
                 if (task.IsFaulted)

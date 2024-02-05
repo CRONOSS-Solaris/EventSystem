@@ -35,10 +35,13 @@ namespace EventSystem.Events
         public TimeSpan EndTime { get; set; }
 
         // Method to perform specific actions related to an event.
-        public abstract Task ExecuteEvent();
+        public abstract Task SystemStartEvent();
+
+        //Method of starting an event
+        public abstract Task StartEvent();
 
         // Method to implement activities related to the end of the event.
-        public abstract Task EndEvent();
+        public abstract Task SystemEndEvent();
 
         // Method to load the settings of a specific event from the configuration.
         public abstract Task LoadEventSettings(EventSystemConfig config);
