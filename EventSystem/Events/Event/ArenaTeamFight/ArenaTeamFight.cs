@@ -29,17 +29,14 @@ namespace EventSystem.Event
         }
 
 
-        public override async Task ExecuteEvent()
+        public override async Task SystemStartEvent()
         {
+            await InitializeArena();
             string team1Name = _config.ArenaTeamFightSettings.Team1Name ?? "Team 1";
             string team2Name = _config.ArenaTeamFightSettings.Team2Name ?? "Team 2";
 
-            Teams.TryAdd(1, new Team { Name = team1Name, SpawnPoint = new Vector3D(-42596.88, 40764.17, -16674.06) });
-            Teams.TryAdd(2, new Team { Name = team2Name, SpawnPoint = new Vector3D(42596.88, -40764.17, 16674.06) });
-
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing ArenaTeamFight.");
 
-            await InitializeArena();
         }
 
         private async Task InitializeArena()
@@ -54,7 +51,21 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
         }
 
-        public override async Task EndEvent()
+        public override async Task StartEvent()
+        {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Starting ArenaTeamFight Event.");
+
+            foreach (var teamId in Teams.Keys)
+            {
+                var team = Teams[teamId];
+                foreach (var playerId in team.Members.Keys)
+                {
+                    await TeleportPlayerToSpecificSpawnPoint(playerId, teamId);
+                }
+            }
+        }
+
+        public override async Task SystemEndEvent()
         {
             // Implementacja logiki końca wydarzenia
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending ArenaTeamFight.");
@@ -119,15 +130,14 @@ namespace EventSystem.Event
                 {
                     EventStarted = true;
                     LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "All teams are full. Event starting.");
-                    // Tutaj można wywołać StartEvent() jeśli jest potrzebny.
+                    await StartEvent(); //Event Launch
                 }
             }
 
             return (true, message);
         }
 
-
-        public async Task TeleportPlayerToSpawnPoint(long playerId, int teamId)
+        public async Task TeleportPlayerToSpecificSpawnPoint(long playerId, int teamId)
         {
             if (!Teams.TryGetValue(teamId, out Team team))
             {
@@ -135,45 +145,22 @@ namespace EventSystem.Event
                 return;
             }
 
-            if (!SpawnedGridsEntityIds.Any())
-            {
-                Log.Error("No grids have been spawned for the event.");
-                return;
-            }
+            // Określenie nazwy bloku na podstawie ID drużyny
+            string spawnBlockName = teamId == 1 ? _config.ArenaTeamFightSettings.BlockSpawn1Name : _config.ArenaTeamFightSettings.BlockSpawn2Name;
 
-            // Przykład nazw bloków, które definiują punkty spawnu.
-            string spawnBlockNameTeam1 = _config.ArenaTeamFightSettings.BlockSpawn1Name;
-            string spawnBlockNameTeam2 = _config.ArenaTeamFightSettings.BlockSpawn2Name;
-            string spawnBlockName = teamId == 1 ? spawnBlockNameTeam1 : spawnBlockNameTeam2;
-
-            Vector3D? spawnPoint = null;
-
-            foreach (var gridId in SpawnedGridsEntityIds.Keys)
-            {
-                var grid = MyAPIGateway.Entities.GetEntityById(gridId) as MyCubeGrid;
-                if (grid == null) continue;
-
-                // Szukaj bloku po nazwie. Użyj CustomName zamiast Name.
-                var block = grid.CubeBlocks.FirstOrDefault(b => b.FatBlock != null && b.FatBlock.Name.Contains(spawnBlockName));
-                if (block != null && block.FatBlock != null)
-                {
-
-                    spawnPoint = block.FatBlock.WorldMatrix.Translation;
-                    break;
-                }
-            }
+            // Wykorzystanie metody FindBlockPositionByName do znalezienia pozycji bloku
+            var spawnPoint = await FindBlockPositionByName(spawnBlockName);
 
             if (spawnPoint.HasValue)
             {
-                // Przenieś gracza do znalezionego punktu spawnu.
-                // Implementacja
+                // Teleportacja gracza do znalezionej pozycji
+                await TeleportPlayerToSpawnPoint(playerId, spawnPoint.Value);
                 Log.Info($"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
             }
             else
             {
                 Log.Error($"Could not find spawn block '{spawnBlockName}' for team {teamId}.");
             }
-
         }
 
 

@@ -22,14 +22,18 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventBP");
         }
 
-        public override async Task ExecuteEvent()
+        public override async Task SystemStartEvent()
         {
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing SpecialEvent.");
-
-            await SpawnEventGrid();
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start SpecialEvent.");
+            await SpawnArena();
         }
 
-        private async Task SpawnEventGrid()
+        public override async Task StartEvent()
+        {
+
+        }
+
+        private async Task SpawnArena()
         {
             string gridName = _config.SpecialEventSettings.PrefabName;
             Vector3D position = new Vector3D(
@@ -41,7 +45,7 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
         }
 
-        public override async Task EndEvent()
+        public override async Task SystemEndEvent()
         {
             // Implementacja logiki końca wydarzenia
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending SpecialEvent.");

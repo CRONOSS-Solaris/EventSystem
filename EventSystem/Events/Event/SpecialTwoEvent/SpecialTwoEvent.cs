@@ -19,14 +19,19 @@ namespace EventSystem.Event
             EventName = "SpecialTwoEvent";
         }
 
-        public override Task ExecuteEvent()
+        public override Task SystemStartEvent()
         {
             // Implementacja logiki wydarzenia
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing SpecialTwoEvent.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start SpecialTwoEvent.");
             return Task.CompletedTask;
         }
 
-        public override Task EndEvent()
+        public override async Task StartEvent()
+        {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Start SpecialTwoEvent.");
+        }
+
+        public override Task SystemEndEvent()
         {
             // Implementacja logiki końca wydarzenia
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending SpecialTwoEvent.");
