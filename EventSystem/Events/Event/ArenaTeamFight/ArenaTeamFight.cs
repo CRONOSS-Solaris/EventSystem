@@ -1,13 +1,12 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
-using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using VRageMath;
 
@@ -15,9 +14,10 @@ namespace EventSystem.Event
 {
     public class ArenaTeamFight : EventsBase
     {
-        public static readonly Logger Log = LogManager.GetLogger("EventSystem/ArenaTeamFight");
+        public static new readonly Logger Log = LogManager.GetLogger("EventSystem/ArenaTeamFight");
         private readonly EventSystemConfig _config;
-        private bool EventStarted = false; 
+        private bool EventStarted = false;
+        private Timer _roundTimer;
         public ConcurrentDictionary<int, Team> Teams { get; } = new ConcurrentDictionary<int, Team>();
 
         public ArenaTeamFight(EventSystemConfig config)
@@ -32,8 +32,6 @@ namespace EventSystem.Event
         public override async Task SystemStartEvent()
         {
             await InitializeArena();
-            string team1Name = _config.ArenaTeamFightSettings.Team1Name ?? "Team 1";
-            string team2Name = _config.ArenaTeamFightSettings.Team2Name ?? "Team 2";
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing ArenaTeamFight.");
 
@@ -54,15 +52,38 @@ namespace EventSystem.Event
         public override async Task StartEvent()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Starting ArenaTeamFight Event.");
+            EventStarted = true;
+
+            _roundTimer?.Dispose(); // Zabezpieczenie przed wyciekiem timera.
+            _roundTimer = new Timer(EndRoundCallback, null, TimeSpan.FromMinutes(_config.ArenaTeamFightSettings.MatchDurationInMinutes), Timeout.InfiniteTimeSpan);
 
             foreach (var teamId in Teams.Keys)
             {
                 var team = Teams[teamId];
                 foreach (var playerId in team.Members.Keys)
                 {
+                    RemoveAllItemsFromPlayer(playerId);
                     await TeleportPlayerToSpecificSpawnPoint(playerId, teamId);
+                    await AssignRandomWeaponAndAmmo(playerId);
                 }
             }
+        }
+
+        private void EndRoundCallback(object state)
+        {
+            _roundTimer?.Dispose(); // Zatrzymanie timera po zakończeniu rundy.
+            Task.Run(async () => await EndRound()).ConfigureAwait(false);
+        }
+
+        private async Task EndRound()
+        {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Round Ending.");
+            ClearAllPlayerInventories(); // Usunięcie pozostałych przedmiotów z ekwipunku graczy.
+            TeleportPlayersBack();
+            ReturnItemsToPlayers();
+
+            // Opcjonalnie zresetuj stan eventu, aby przygotować się na kolejną rundę.
+            EventStarted = false; // Pozwól na ponowne rozpoczęcie rundy, gdy gracze zaczną dołączać.
         }
 
         public override async Task SystemEndEvent()
@@ -70,7 +91,39 @@ namespace EventSystem.Event
             // Implementacja logiki końca wydarzenia
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending ArenaTeamFight.");
             await CleanupGrids();
+            ClearAllPlayerInventories();
+            TeleportPlayersBack();
+            ReturnItemsToPlayers();
         }
+
+        private void ClearAllPlayerInventories()
+        {
+            foreach (var playerId in ParticipatingPlayers.Keys)
+            {
+                ClearPlayerInventory(playerId);
+            }
+        }
+
+        private async Task AssignRandomWeaponAndAmmo(long playerId)
+        {
+            // Zdefiniuj listę dostępnych broni i odpowiadających im typów amunicji
+            var weaponsWithAmmo = new Dictionary<string, (string weaponSubtypeID, int ammoQuantity)>() {
+                 // Przykładowe dane
+                {"Rifle", ("RifleAmmo", 120)},
+                {"Pistol", ("PistolAmmo", 50)}
+            };
+    
+            // Losowe wybranie broni
+            var random = new Random();
+            var selectedWeapon = weaponsWithAmmo.ElementAt(random.Next(weaponsWithAmmo.Count));
+
+            // Dodanie broni do ekwipunku gracza
+            AddItemToPlayer(playerId, "MyObjectBuilder_Weapon", selectedWeapon.Key, 1);
+
+            // Dodanie amunicji do ekwipunku gracza
+            AddItemToPlayer(playerId, "MyObjectBuilder_AmmoMagazine", selectedWeapon.Value.weaponSubtypeID, selectedWeapon.Value.ammoQuantity);
+        }
+
 
         public override Task CheckPlayerProgress(long steamId)
         {
