@@ -209,7 +209,7 @@ namespace EventSystem
             {
                 if (eventItem.IsActiveNow())
                 {
-                    eventItem.EndEvent().Wait();
+                    eventItem.SystemEndEvent().Wait();
                 }
             }
         }
