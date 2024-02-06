@@ -19,7 +19,7 @@ namespace EventSystem.Events
         /// <summary>
         /// Gets or sets a value indicating whether to use event-specific configuration.
         /// </summary>
-        public bool UseEventSpecificConfig { get; set; } = true;
+        public bool UseEventSpecificConfig { get; set; } = false;
 
         /// <summary>
         /// Gets or sets the path where blueprint grids are stored for the event.
