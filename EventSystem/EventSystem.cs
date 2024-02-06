@@ -8,9 +8,9 @@ using Nexus.API;
 using NLog;
 using Sandbox.ModAPI;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
 using System.Windows.Controls;
@@ -30,6 +30,12 @@ namespace EventSystem
 
         public static readonly Logger Log = LogManager.GetLogger("EventSystemMain");
         public static EventSystemMain Instance;
+
+        public static bool CompileFailed { get; set; } = false;
+        public static List<Assembly> myAssemblies = new List<Assembly>();
+        public static string path;
+        public static string basePath;
+        public const string PluginName = "EventSystem";
 
         // Manager odpowiedzialny za multiplayer
         private IMultiplayerManagerBase _multiplayerManager;
@@ -129,17 +135,7 @@ namespace EventSystem
                     //Nexus
                     ConnectNexus();
 
-                    //MultiplayerManager
-                    _multiplayerManager = session.Managers.GetManager<IMultiplayerManagerBase>();
-                    if (_multiplayerManager == null)
-                    {
-                        Log.Warn("Could not get multiplayer manager.");
-                    }
-                    else
-                    {
-                        LoggerHelper.DebugLog(Log, _config.Data, "Multiplayer manager initialized.");
-                        _multiplayerManager.PlayerJoined += OnPlayerJoined;
-                    }
+                    InitializeManagers(session);
 
                     //lcd
                     if (_config.Data.EnableActiveEventsLCDManager)
@@ -151,6 +147,11 @@ namespace EventSystem
                     {
                         _allEventsLcdManager = new AllEventsLCDManager(_eventManager, _config.Data);
                     }
+
+
+                    ExtractAndProcessDLLFiles();
+                    //compiler
+                    CompileAndLoadSourceCode(session);
 
                     // Events
                     _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
@@ -181,11 +182,84 @@ namespace EventSystem
             }
         }
 
+        private void InitializeManagers(ITorchSession session)
+        {
+            _multiplayerManager = session.Managers.GetManager<IMultiplayerManagerBase>();
+            if (_multiplayerManager == null)
+            {
+                Log.Warn("Could not get multiplayer manager.");
+            }
+            else
+            {
+                _multiplayerManager.PlayerJoined += OnPlayerJoined;
+                Log.Info("Multiplayer manager initialized.");
+            }
+        }
+
+        private void ExtractAndProcessDLLFiles()
+        {
+            // Ustawienie ścieżki bazowej i ścieżki pluginu
+            basePath = StoragePath;
+            path = Path.Combine(basePath, PluginName, "DLL");
+
+            // Tworzenie folderu pluginu, jeśli nie istnieje
+            Directory.CreateDirectory(path);
+
+            // Ścieżka do folderu z plikami tymczasowymi
+            string tempFolderPath = Path.Combine(basePath, "TempExtractEventSystem");
+
+            // Ścieżka do pliku ZIP pluginu
+            string pluginZipPath = Path.Combine(basePath.Replace(@"\Instance", ""), "Plugins", "EventSystem.zip");
+
+            try
+            {
+                // Usunięcie istniejącego folderu tymczasowego
+                if (Directory.Exists(tempFolderPath))
+                {
+                    Directory.Delete(tempFolderPath, true);
+                }
+
+                // Tworzenie nowego folderu tymczasowego
+                Directory.CreateDirectory(tempFolderPath);
+
+                // Rozpakowanie pliku ZIP do folderu tymczasowego
+                ZipFile.ExtractToDirectory(pluginZipPath, tempFolderPath);
+
+                // Kopiowanie plików DLL do folderu pluginu
+                foreach (var dllFile in Directory.GetFiles(tempFolderPath, "*.dll", SearchOption.AllDirectories))
+                {
+                    string destinationPath = Path.Combine(path, Path.GetFileName(dllFile));
+                    File.Copy(dllFile, destinationPath, true);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, "Błąd podczas rozpakowywania i przetwarzania plików pluginu.");
+            }
+            finally
+            {
+                // Opcjonalnie: Usuwanie folderu tymczasowego
+                if (Directory.Exists(tempFolderPath))
+                {
+                    Directory.Delete(tempFolderPath, true);
+                }
+            }
+        }
+
+
         private void RegisterAllEvents()
         {
             // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
+            // w bieżącym zestawie oraz w dynamicznie załadowanych zestawach.
             var eventTypes = Assembly.GetExecutingAssembly().GetTypes()
-                            .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract);
+                            .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract).ToList();
+
+            // Dodajemy do przeszukiwania typy z dynamicznie załadowanych zestawów
+            foreach (var assembly in myAssemblies)
+            {
+                eventTypes.AddRange(assembly.GetTypes()
+                                .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract));
+            }
 
             foreach (var eventType in eventTypes)
             {
@@ -197,6 +271,7 @@ namespace EventSystem
                     {
                         // Rejestrujemy event
                         _eventManager.RegisterEvent(eventInstance);
+                        Log.Info($"Event '{eventType.Name}' successfully registered.");
                     }
                 }
                 catch (Exception ex)
@@ -206,6 +281,7 @@ namespace EventSystem
                 }
             }
         }
+
 
         private void ScheduleAllEvents()
         {
@@ -296,6 +372,22 @@ namespace EventSystem
                 Log.Warn("Nexus API is not installed or not initialized. Skipping Nexus connection.");
             }
         }
+
+        public void CompileAndLoadSourceCode(ITorchSession session)
+        {
+            var sourceCodeFolder = Path.Combine(StoragePath, "EventSystem", "EventSourceCode");
+            var compilerSuccess = Compiler.Compile(sourceCodeFolder, session); // Teraz przyjmuje sesję jako argument
+
+            if (compilerSuccess)
+            {
+                Log.Info("Additional source code has been successfully compiled and loaded.");
+            }
+            else
+            {
+                Log.Warn("Compilation of additional source code failed.");
+            }
+        }
+
 
         //private ConcurrentDictionary<Action, int> updateSubscribers = new ConcurrentDictionary<Action, int>();
         //private ConcurrentDictionary<Action, int> updateSubscribersPerSecond = new ConcurrentDictionary<Action, int>();

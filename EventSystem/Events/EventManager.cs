@@ -50,8 +50,6 @@ namespace EventSystem.Events
             }
         }
 
-
-
         public void ScheduleEvent(EventsBase eventItem)
         {
             // Sprawdź, czy event jest włączony

@@ -18,7 +18,8 @@ namespace EventSystem.Managers
                           Path.Combine(_rootPath, "PlayerAccounts"),
                           Path.Combine(_rootPath, "SpecialEventBP"),
                           Path.Combine(_rootPath, "CommandPrefabTest"),
-                          Path.Combine(_rootPath, "ArenaTeamFightBP")
+                          Path.Combine(_rootPath, "ArenaTeamFightBP"),
+                          Path.Combine(_rootPath, "EventSourceCode")
 
                           );
         }
