@@ -226,6 +226,7 @@
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
+    <Compile Include="EventSystem\Utils\UpdateManager.cs" />
     <Compile Include="EventSystem\Utils\Utilities.cs" />
     <EmbeddedResource Include="EventSystem\Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

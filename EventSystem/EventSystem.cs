@@ -8,6 +8,7 @@ using Nexus.API;
 using NLog;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -71,6 +72,10 @@ namespace EventSystem
 
         //GridSpawner
         private GridSpawner _gridSpawner;
+
+        //UpdateManager
+        public Utils.UpdateManager UpdateManager { get; private set; }
+
 
 
 
@@ -155,6 +160,10 @@ namespace EventSystem
                     // Planowanie eventów po załadowaniu sesji
                     ScheduleAllEvents();
 
+                    //UpdateManager start
+                    UpdateManager = new Utils.UpdateManager();
+                    UpdateManager.StartTimers();
+
                     //GridSpawner
                     _gridSpawner = new GridSpawner();
                     Log.Info("Session Loaded!");
@@ -162,6 +171,9 @@ namespace EventSystem
 
                 case TorchSessionState.Unloading:
                     EndAllEvents();
+
+                    //UpdateManager stop
+                    UpdateManager.StopTimers();
                     Log.Info("Session Unloading!");
                     break;
                 case TorchSessionState.Unloaded:
@@ -285,77 +297,65 @@ namespace EventSystem
             }
         }
 
-        private List<Action> updateSubscribers = new List<Action>();
-        private List<Action> updateSubscribersPerSecond = new List<Action>();
+        //private ConcurrentDictionary<Action, int> updateSubscribers = new ConcurrentDictionary<Action, int>();
+        //private ConcurrentDictionary<Action, int> updateSubscribersPerSecond = new ConcurrentDictionary<Action, int>();
 
-        // Zdefiniowane czasowe aktualizacje
-        private int _currentFrameCount = 0;
-        private readonly int _maxUpdateTime = 60 * 60; // Co 1 minutę przy założeniu 60 FPS
+        //// Zdefiniowane czasowe aktualizacje
+        //private int _currentFrameCount = 0;
+        //private readonly int _maxUpdateTime = 60 * 60; // Co 1 minutę przy założeniu 60 FPS
 
-        private int _currentFrameCountSeconds = 0;
-        private static readonly int _maxUpdateTimeSeconds = 60; // Co 1 sekundę
+        //private int _currentFrameCountSeconds = 0;
+        //private static readonly int _maxUpdateTimeSeconds = 60; // Co 1 sekundę
 
-        public override void Update()
-        {
-            _currentFrameCount++;
-            _currentFrameCountSeconds++;
+        //public override void Update()
+        //{
+        //    _currentFrameCount++;
+        //    _currentFrameCountSeconds++;
 
-            if (_currentFrameCount >= _maxUpdateTime)
-            {
-                // Wykonaj aktualizację co minutę
-                foreach (var action in updateSubscribers)
-                {
-                    action();
-                }
-                _currentFrameCount = 0; // Reset licznika
-            }
+        //    if (_currentFrameCount >= _maxUpdateTime)
+        //    {
+        //        var orderedActions = updateSubscribers.OrderBy(kvp => kvp.Value).Select(kvp => kvp.Key);
+        //        foreach (var action in orderedActions)
+        //        {
+        //            action();
+        //        }
+        //        _currentFrameCount = 0;
+        //    }
 
-            if (_currentFrameCountSeconds >= _maxUpdateTimeSeconds)
-            {
-                foreach (var action in updateSubscribersPerSecond)
-                {
-                    action();
-                }
-                _currentFrameCountSeconds = 0;
-            }
+        //    if (_currentFrameCountSeconds >= _maxUpdateTimeSeconds)
+        //    {
+        //        var orderedActionsPerSecond = updateSubscribersPerSecond.OrderBy(kvp => kvp.Value).Select(kvp => kvp.Key);
+        //        foreach (var action in orderedActionsPerSecond)
+        //        {
+        //            action();
+        //        }
+        //        _currentFrameCountSeconds = 0;
+        //    }
+        //}
 
-        }
+        //// Dodaj subskrybenta aktualizacji
+        //public void AddUpdateSubscriber(Action updateAction, int priority = 0)
+        //{
+        //    updateSubscribers.TryAdd(updateAction, priority);
+        //}
 
-        // Dodaj subskrybenta aktualizacji
-        public void AddUpdateSubscriber(Action updateAction)
-        {
-            if (!updateSubscribers.Contains(updateAction))
-            {
-                updateSubscribers.Add(updateAction);
-            }
-        }
+        //// Usuń subskrybenta aktualizacji
+        //public void RemoveUpdateSubscriber(Action updateAction)
+        //{
+        //    updateSubscribers.TryRemove(updateAction, out _);
+        //}
 
-        // Usuń subskrybenta aktualizacji
-        public void RemoveUpdateSubscriber(Action updateAction)
-        {
-            if (updateSubscribers.Contains(updateAction))
-            {
-                updateSubscribers.Remove(updateAction);
-            }
-        }
+        //// Dodaj subskrybenta aktualizacji co sekundę
+        //public void AddUpdateSubscriberPerSecond(Action updateAction, int priority = 0)
+        //{
+        //    updateSubscribersPerSecond.TryAdd(updateAction, priority);
+        //}
 
-        // Dodaj subskrybenta aktualizacji co sekundę
-        public void AddUpdateSubscriberPerSecond(Action updateAction)
-        {
-            if (!updateSubscribersPerSecond.Contains(updateAction))
-            {
-                updateSubscribersPerSecond.Add(updateAction);
-            }
-        }
-
-        // Usuń subskrybenta aktualizacji co sekundę
-        public void RemoveUpdateSubscriberPerSecond(Action updateAction)
-        {
-            if (updateSubscribersPerSecond.Contains(updateAction))
-            {
-                updateSubscribersPerSecond.Remove(updateAction);
-            }
-        }
+        //// Usuń subskrybenta aktualizacji co sekundę
+        //public void RemoveUpdateSubscriberPerSecond(Action updateAction)
+        //{
+        //    updateSubscribersPerSecond.TryRemove(updateAction, out _);
+        //}
 
         public void Save()
         {
