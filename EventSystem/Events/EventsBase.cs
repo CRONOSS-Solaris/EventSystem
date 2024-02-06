@@ -16,55 +16,92 @@ namespace EventSystem.Events
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
 
-        // New property indicating whether to use an event-specific configuration (Do not change to false when creating an event outside of the source code)
+        /// <summary>
+        /// Gets or sets a value indicating whether to use event-specific configuration.
+        /// </summary>
         public bool UseEventSpecificConfig { get; set; } = true;
 
-        //location of the profile with bluepirnt grids
+        /// <summary>
+        /// Gets or sets the path where blueprint grids are stored for the event.
+        /// </summary>
         protected virtual string PrefabStoragePath { get; set; }
 
-        // The name of the event, it can be set in derived classes.
+        /// <summary>
+        /// Gets or sets the name of the event.
+        /// </summary>
         public string EventName { get; set; }
 
-        // Determines whether the event is enabled.
+        /// <summary>
+        /// Gets or sets a value indicating whether the event is enabled.
+        /// </summary>
         public bool IsEnabled { get; set; }
 
-        // List of days of the month when the event is active.
+        /// <summary>
+        /// Gets or sets a list of days of the month when the event is active.
+        /// </summary>
         public List<int> ActiveDaysOfMonth { get; set; }
 
-        // Event start time.
+        /// <summary>
+        /// Gets or sets the start time of the event.
+        /// </summary>
         public TimeSpan StartTime { get; set; }
 
-        // End time of the event.
+        /// <summary>
+        /// Gets or sets the end time of the event.
+        /// </summary>
         public TimeSpan EndTime { get; set; }
 
-        // Method to perform specific actions related to an event.
+        /// <summary>
+        /// Performs specific actions related to starting the event.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public abstract Task SystemStartEvent();
 
-        //Method of starting an event
+        /// <summary>
+        /// Starts the event.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public abstract Task StartEvent();
 
-        // Method to implement activities related to the end of the event.
+        /// <summary>
+        /// Performs specific actions related to ending the event.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public abstract Task SystemEndEvent();
 
-        // Method to load the settings of a specific event from the configuration.
+        /// <summary>
+        /// Loads the settings of a specific event from the configuration.
+        /// </summary>
+        /// <param name="config">The configuration to load settings from.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public virtual Task LoadEventSettings(EventSystemConfig config)
         {
             return Task.CompletedTask;
         }
 
+        /// <summary>
+        /// Loads event-specific settings.
+        /// </summary>
         public virtual void LoadEventSpecificSettings()
         {
 
         }
 
-        // Checks if the event is active on the specified day of the month.
+        /// <summary>
+        /// Checks if the event is active on the specified day of the month.
+        /// </summary>
+        /// <param name="day">The day of the month to check.</param>
+        /// <returns>True if the event is active on the specified day, otherwise false.</returns>
         public bool IsActiveOnDayOfMonth(int day)
         {
             // Returns true if the event is active on the specified day of the month
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
         }
 
-        // Checks if the event is active at the moment.
+        /// <summary>
+        /// Checks if the event is active at the current moment.
+        /// </summary>
+        /// <returns>True if the event is currently active, otherwise false.</returns>
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
@@ -83,14 +120,22 @@ namespace EventSystem.Events
         }
 
 
-        // Calculates the time left until the event starts.
+        /// <summary>
+        /// Calculates the time left until the event starts.
+        /// </summary>
+        /// <param name="now">The current date and time.</param>
+        /// <returns>The time left until the event starts.</returns>
         public TimeSpan GetNextStartTime(DateTime now)
         {
             var startOfDay = now.Date.Add(StartTime);
             return now < startOfDay ? startOfDay - now : TimeSpan.Zero;
         }
 
-        // Calculates the time remaining in the event.
+        /// <summary>
+        /// Calculates the time remaining in the event.
+        /// </summary>
+        /// <param name="now">The current date and time.</param>
+        /// <returns>The time remaining in the event.</returns>
         public TimeSpan GetNextEndTime(DateTime now)
         {
             var endOfDay = now.Date.Add(EndTime);

@@ -1,5 +1,6 @@
 ﻿using EventSystem.Utils;
 using Sandbox.ModAPI;
+using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -24,12 +25,19 @@ namespace EventSystem.Events
         // Stores information about items taken from players (SteamID, Item List).
         protected ConcurrentDictionary<long, Dictionary<MyDefinitionId, MyFixedPoint>> _itemsRemovedFromPlayers = new ConcurrentDictionary<long, Dictionary<MyDefinitionId, MyFixedPoint>>();
 
+        // Definition of a public event that can be triggered when a character dies
+        //protected event Func<IMyCharacter, Task> CharacterDeath;
+
         //Determines whether an event requires that a player not be in another event to join it 
         //True -  Allows you to join another event
         //False - Does not allow you to join another event
         protected bool AllowParticipationInOtherEvents { get; set; }
 
-        // Adds the player to the list of event participants.
+        /// <summary>
+        /// Adds the player to the list of event participants.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to be added.</param>
+        /// <returns>A tuple indicating success (true/false) and an associated message.</returns>
         public virtual async Task<(bool, string)> AddPlayer(long steamId)
         {
             // Check if the player is already participating in the event
@@ -57,7 +65,11 @@ namespace EventSystem.Events
             }
         }
 
-        // Check if the player is already participating in an event and if he allows to join another one
+        /// <summary>
+        /// Checks if the player is already participating in an event and if they are allowed to join another one.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to check.</param>
+        /// <returns>A tuple indicating whether the player can join (true/false) and a message.</returns>
         protected async Task<(bool, string)> CanPlayerJoinEvent(long steamId)
         {
             // Check if the player is already participating in this event
@@ -99,7 +111,11 @@ namespace EventSystem.Events
         }
 
 
-        // Removes the player from the list of event participants.
+        /// <summary>
+        /// Removes the player from the list of event participants.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to be removed.</param>
+        /// <returns>A tuple indicating success (true/false) and an associated message.</returns>
         public virtual async Task<(bool, string)> LeavePlayer(long steamId)
         {
             bool removed = ParticipatingPlayers.TryRemove(steamId, out _);
@@ -113,17 +129,28 @@ namespace EventSystem.Events
             }
         }
 
-        // Checks if the player is in the list of event participants.
+        /// <summary>
+        /// Checks if the player is currently participating in the event.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to check.</param>
+        /// <returns>A task returning true if the player is participating; otherwise, false.</returns>
         public virtual Task<bool> IsPlayerParticipating(long steamId)
         {
             bool isParticipating = ParticipatingPlayers.ContainsKey(steamId);
             return Task.FromResult(isParticipating);
         }
 
-        // Checks the player's progress in the event.
+        /// <summary>
+        /// Checks the player's progress in the event.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player whose progress is checked.</param>
         public abstract Task CheckPlayerProgress(long steamId);
 
-        // Calculates the time remaining in the event.
+        /// <summary>
+        /// Awards points to a player for their performance in the event.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to award points to.</param>
+        /// <param name="points">The number of points to award.</param>
         protected virtual async Task AwardPlayer(long steamId, long points)
         {
             // Get the database manager from the main plugin
@@ -149,13 +176,20 @@ namespace EventSystem.Events
             }
         }
 
+        /// <summary>
+        /// Returns the count of participants in the event.
+        /// </summary>
+        /// <returns>The number of participants.</returns>
         public virtual int GetParticipantsCount()
         {
             return ParticipatingPlayers.Count;
         }
 
-        // Methods of teleporting the player to the event's sleeping position
-        // Methods of teleporting the player to the event's spawn point
+        /// <summary>
+        /// Teleports a player to the event's spawn point.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to teleport.</param>
+        /// <param name="spawnPoint">The spawn point where the player should be teleported.</param>
         protected async Task TeleportPlayerToSpawnPoint(long steamId, Vector3D spawnPoint)
         {
             if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
@@ -184,7 +218,9 @@ namespace EventSystem.Events
             });
         }
 
-        // Method to teleport players back to their original positions
+        /// <summary>
+        /// Teleports players back to their original positions after an event.
+        /// </summary>
         protected void TeleportPlayersBack()
         {
             foreach (var kvp in originalPlayerPositions)
@@ -210,7 +246,11 @@ namespace EventSystem.Events
             originalPlayerPositions.Clear();
         }
 
-        // Removal of player's items, e.g. during the start of the event and moving the player to the starting point
+        /// <summary>
+        /// Removes all items from a player's inventory.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player whose items are to be removed.</param>
+        /// <returns>True if items were successfully removed; otherwise, false.</returns>
         protected bool RemoveAllItemsFromPlayer(long steamId)
         {
             if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
@@ -272,7 +312,14 @@ namespace EventSystem.Events
             return true;
         }
 
-        // Adding required items to the inventory by an event e.g. fighting arena
+        /// <summary>
+        /// Adds specified items to a player's inventory.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to add items to.</param>
+        /// <param name="typeID">The type ID of the item to add.</param>
+        /// <param name="subtypeID">The subtype ID of the item to add.</param>
+        /// <param name="quantity">The quantity of items to add.</param>
+        /// <returns>True if items were successfully added; otherwise, false.</returns>
         protected bool AddItemToPlayer(long steamId, string typeID, string subtypeID, int quantity)
         {
             if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
@@ -291,7 +338,9 @@ namespace EventSystem.Events
             return true;
         }
 
-        //Returning removed items to a player, e.g. at the end of an event and teleporting to the previous position
+        /// <summary>
+        /// Returns removed items to their respective players, e.g., at the end of an event after teleporting them to their previous positions.
+        /// </summary>
         protected void ReturnItemsToPlayers()
         {
             foreach (var entry in _itemsRemovedFromPlayers)
@@ -313,6 +362,10 @@ namespace EventSystem.Events
             _itemsRemovedFromPlayers.Clear();
         }
 
+        /// <summary>
+        /// Clears a player's inventory without saving its contents.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player whose inventory should be cleared.</param>
         protected void ClearPlayerInventory(long steamId)
         {
             if (Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) && player.Character != null)
@@ -330,6 +383,68 @@ namespace EventSystem.Events
             }
         }
 
+        /// <summary>
+        /// Finds a character by their SteamID.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player whose character is to be found.</param>
+        /// <returns>The character object as IMyCharacter or null if not found.</returns>
+        protected IMyCharacter FindCharacterBySteamId(long steamId)
+        {
+            if (Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player))
+            {
+                if (player.Character != null)
+                {
+                    return player.Character as IMyCharacter;
+                }
+            }
+            return null;
+        }
+
+        /// <summary>
+        /// Subscribes to the character death event for a given player.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player for whom the character death event should be subscribed.</param>
+        //protected void SubscribeToCharacterDeath(long steamId)
+        //{
+        //    var character = FindCharacterBySteamId(steamId);
+        //    if (character != null)
+        //    {
+        //        character.CharacterDied += OnCharacterDeathHandler;
+        //    }
+        //}
+
+        /// <summary>
+        /// Handler for when a character dies. This method triggers the CharacterDeath event if there are any subscribers.
+        /// </summary>
+        /// <param name="character">The character that died.</param>
+        //private void OnCharacterDeathHandler(IMyCharacter character)
+        //{
+        //    // Wywołanie zdarzenia CharacterDeath, jeśli jest subskrybent
+        //    CharacterDeath?.Invoke(character);
+        //}
+
+        /// <summary>
+        /// A virtual method intended to be overridden in derived classes to handle a character's death. 
+        /// </summary>
+        /// <param name="character">The character that died.</param>
+        /// <returns>A task that represents the asynchronous operation.</returns>
+        //protected virtual async Task OnCharacterDeath(IMyCharacter character)
+        //{
+
+        //}
+
+        /// <summary>
+        /// Unsubscribes from the character death event for a given player.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player for whom the character death event should be unsubscribed.</param>
+        //protected void UnsubscribeFromCharacterDeath(long steamId)
+        //{
+        //    var character = FindCharacterBySteamId(steamId);
+        //    if (character != null)
+        //    {
+        //        character.CharacterDied -= OnCharacterDeathHandler;
+        //    }
+        //}
 
     }
 }

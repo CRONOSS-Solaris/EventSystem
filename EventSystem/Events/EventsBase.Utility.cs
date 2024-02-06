@@ -8,7 +8,11 @@ namespace EventSystem.Events
 {
     public abstract partial class EventsBase
     {
-        //Removal of nets from the world via event
+        /// <summary>
+        /// Asynchronously removes an entity from the world via an event.
+        /// </summary>
+        /// <param name="gridId">The EntityId of the grid to be removed.</param>
+        /// <returns>A task representing the asynchronous operation. True if the removal was successful, otherwise false.</returns>
         protected Task RemoveEntityAsync(long gridId)
         {
             var tcs = new TaskCompletionSource<bool>();

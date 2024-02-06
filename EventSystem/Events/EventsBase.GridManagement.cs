@@ -16,7 +16,12 @@ namespace EventSystem.Events
         //list of grids created by event
         protected ConcurrentDictionary<long, bool> SpawnedGridsEntityIds { get; } = new ConcurrentDictionary<long, bool>();
 
-        // Methods to manage additional event elements, e.g. grids, objects.
+        /// <summary>
+        /// Spawns a grid in the world at the specified position.
+        /// </summary>
+        /// <param name="gridName">The name of the grid to spawn.</param>
+        /// <param name="position">The position where the grid should be spawned.</param>
+        /// <returns>A HashSet of entity IDs representing the spawned grid.</returns>
         public virtual async Task<HashSet<long>> SpawnGrid(string gridName, Vector3D position)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to spawn grid '{gridName}' at position {position}.");
@@ -56,14 +61,20 @@ namespace EventSystem.Events
             }
         }
 
-        //Grid management
+        /// <summary>
+        /// Manages additional event elements, such as grids and objects.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public virtual Task ManageGrid()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Managing grid. Override this method in derived class.");
             return Task.CompletedTask;
         }
 
-        // Cleaning the grids of the world
+        /// <summary>
+        /// Cleans up the grids created by the event.
+        /// </summary>
+        /// <returns>A task representing the asynchronous operation.</returns>
         protected virtual async Task CleanupGrids()
         {
             var removalTasks = new List<Task>();
@@ -78,7 +89,11 @@ namespace EventSystem.Events
             SpawnedGridsEntityIds.Clear();
         }
 
-        // Method to search for a block by custom name in grids created by an event.
+        /// <summary>
+        /// Finds the position of a block in the spawned grids by its custom name.
+        /// </summary>
+        /// <param name="blockName">The custom name of the block to search for.</param>
+        /// <returns>The position of the found block, or null if not found.</returns>
         protected async Task<Vector3D?> FindBlockPositionByName(string blockName)
         {
             Vector3D? foundPosition = null;
