@@ -286,6 +286,7 @@ namespace EventSystem
         }
 
         private List<Action> updateSubscribers = new List<Action>();
+        private List<Action> updateSubscribersPerSecond = new List<Action>();
 
         // Zdefiniowane czasowe aktualizacje
         private int _currentFrameCount = 0;
@@ -311,8 +312,11 @@ namespace EventSystem
 
             if (_currentFrameCountSeconds >= _maxUpdateTimeSeconds)
             {
-                // Tutaj możesz dodać inne operacje, które mają być wykonywane co sekundę
-                _currentFrameCountSeconds = 0; // Reset licznika
+                foreach (var action in updateSubscribersPerSecond)
+                {
+                    action();
+                }
+                _currentFrameCountSeconds = 0;
             }
 
         }
@@ -332,6 +336,24 @@ namespace EventSystem
             if (updateSubscribers.Contains(updateAction))
             {
                 updateSubscribers.Remove(updateAction);
+            }
+        }
+
+        // Dodaj subskrybenta aktualizacji co sekundę
+        public void AddUpdateSubscriberPerSecond(Action updateAction)
+        {
+            if (!updateSubscribersPerSecond.Contains(updateAction))
+            {
+                updateSubscribersPerSecond.Add(updateAction);
+            }
+        }
+
+        // Usuń subskrybenta aktualizacji co sekundę
+        public void RemoveUpdateSubscriberPerSecond(Action updateAction)
+        {
+            if (updateSubscribersPerSecond.Contains(updateAction))
+            {
+                updateSubscribersPerSecond.Remove(updateAction);
             }
         }
 

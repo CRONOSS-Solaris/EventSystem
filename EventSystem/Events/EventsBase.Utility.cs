@@ -47,27 +47,53 @@ namespace EventSystem.Events
         }
 
         /// <summary>
-        /// Subscribes a method to be called on each frame update. This method should be used to perform
-        /// regular updates needed by the event, such as checking conditions or updating state.
+        /// Subscribes a method to be executed on each update, approximately once per minute. 
+        /// This method should be used for regular updates that do not require high frequency, 
+        /// such as checking conditions or updating states less frequently.
         /// </summary>
-        /// <param name="updateAction">The action to be called on each update. This action should contain
-        /// the logic that needs to be executed regularly.</param>
+        /// <param name="updateAction">The action to be executed on each update. 
+        /// This action should contain the logic that needs to be executed on a roughly per-minute basis.</param>
         protected void SubscribeToUpdate(Action updateAction)
         {
             EventSystemMain.Instance.AddUpdateSubscriber(updateAction);
         }
 
         /// <summary>
-        /// Unsubscribes a previously subscribed method from being called on each frame update. Use this method
-        /// to clean up any subscriptions when they are no longer needed, such as when the event ends or specific
-        /// conditions are met.
+        /// Unsubscribes a previously subscribed method from the per-minute update calls. 
+        /// Use this method to clean up any subscriptions when they are no longer needed, 
+        /// such as when the event ends or specific conditions are met.
         /// </summary>
-        /// <param name="updateAction">The action to be unsubscribed from the update calls. This should be the same
-        /// action that was previously subscribed using SubscribeToUpdate.</param>
+        /// <param name="updateAction">The action to unsubscribe from the per-minute update calls. 
+        /// This should be the same action that was previously subscribed using SubscribeToUpdate.</param>
         protected void UnsubscribeFromUpdate(Action updateAction)
         {
             EventSystemMain.Instance.RemoveUpdateSubscriber(updateAction);
         }
+
+        /// <summary>
+        /// Subscribes a method to be executed on each update, approximately once per second. 
+        /// This method is suitable for more frequent updates, such as real-time checks or 
+        /// rapid state changes that require close to real-time responsiveness.
+        /// </summary>
+        /// <param name="updateAction">The action to be executed on each update. 
+        /// This action should contain the logic that needs to be executed on a roughly per-second basis.</param>
+        protected void SubscribeToUpdatePerSecond(Action updateAction)
+        {
+            EventSystemMain.Instance.AddUpdateSubscriberPerSecond(updateAction);
+        }
+
+        /// <summary>
+        /// Unsubscribes a previously subscribed method from the per-second update calls. 
+        /// Use this method to clean up any subscriptions when they are no longer needed, 
+        /// such as when the event ends or specific conditions are met.
+        /// </summary>
+        /// <param name="updateAction">The action to unsubscribe from the per-second update calls. 
+        /// This should be the same action that was previously subscribed using SubscribeToUpdatePerSecond.</param>
+        protected void UnsubscribeFromUpdatePerSecond(Action updateAction)
+        {
+            EventSystemMain.Instance.RemoveUpdateSubscriberPerSecond(updateAction);
+        }
+
 
     }
 }
