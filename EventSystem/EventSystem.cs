@@ -285,6 +285,56 @@ namespace EventSystem
             }
         }
 
+        private List<Action> updateSubscribers = new List<Action>();
+
+        // Zdefiniowane czasowe aktualizacje
+        private int _currentFrameCount = 0;
+        private readonly int _maxUpdateTime = 60 * 60; // Co 1 minutę przy założeniu 60 FPS
+
+        private int _currentFrameCountSeconds = 0;
+        private static readonly int _maxUpdateTimeSeconds = 60; // Co 1 sekundę
+
+        public override void Update()
+        {
+            _currentFrameCount++;
+            _currentFrameCountSeconds++;
+
+            if (_currentFrameCount >= _maxUpdateTime)
+            {
+                // Wykonaj aktualizację co minutę
+                foreach (var action in updateSubscribers)
+                {
+                    action();
+                }
+                _currentFrameCount = 0; // Reset licznika
+            }
+
+            if (_currentFrameCountSeconds >= _maxUpdateTimeSeconds)
+            {
+                // Tutaj możesz dodać inne operacje, które mają być wykonywane co sekundę
+                _currentFrameCountSeconds = 0; // Reset licznika
+            }
+
+        }
+
+        // Dodaj subskrybenta aktualizacji
+        public void AddUpdateSubscriber(Action updateAction)
+        {
+            if (!updateSubscribers.Contains(updateAction))
+            {
+                updateSubscribers.Add(updateAction);
+            }
+        }
+
+        // Usuń subskrybenta aktualizacji
+        public void RemoveUpdateSubscriber(Action updateAction)
+        {
+            if (updateSubscribers.Contains(updateAction))
+            {
+                updateSubscribers.Remove(updateAction);
+            }
+        }
+
         public void Save()
         {
             try

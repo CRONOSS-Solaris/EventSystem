@@ -45,5 +45,29 @@ namespace EventSystem.Events
 
             return tcs.Task;
         }
+
+        /// <summary>
+        /// Subscribes a method to be called on each frame update. This method should be used to perform
+        /// regular updates needed by the event, such as checking conditions or updating state.
+        /// </summary>
+        /// <param name="updateAction">The action to be called on each update. This action should contain
+        /// the logic that needs to be executed regularly.</param>
+        protected void SubscribeToUpdate(Action updateAction)
+        {
+            EventSystemMain.Instance.AddUpdateSubscriber(updateAction);
+        }
+
+        /// <summary>
+        /// Unsubscribes a previously subscribed method from being called on each frame update. Use this method
+        /// to clean up any subscriptions when they are no longer needed, such as when the event ends or specific
+        /// conditions are met.
+        /// </summary>
+        /// <param name="updateAction">The action to be unsubscribed from the update calls. This should be the same
+        /// action that was previously subscribed using SubscribeToUpdate.</param>
+        protected void UnsubscribeFromUpdate(Action updateAction)
+        {
+            EventSystemMain.Instance.RemoveUpdateSubscriber(updateAction);
+        }
+
     }
 }
