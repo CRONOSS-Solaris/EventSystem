@@ -43,38 +43,17 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        public override Task LoadEventSettings(EventSystemConfig config)
+        public override void LoadEventSpecificSettings()
         {
-            if (config.SpecialTwoEventSettings == null)
-            {
-                config.SpecialTwoEventSettings = new SpecialTwoEventConfig
-                {
-                    IsEnabled = false,
-                    ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
-                    StartTime = "00:00:00",
-                    EndTime = "23:59:59"
-                };
-            }
-
-            var settings = config.SpecialTwoEventSettings;
-            IsEnabled = settings.IsEnabled;
-            ActiveDaysOfMonth = settings.ActiveDaysOfMonth;
-
-            StartTime = TimeSpan.Parse(settings.StartTime);
-            EndTime = TimeSpan.Parse(settings.EndTime);
+            IsEnabled = false;
+            ActiveDaysOfMonth = new List<int> { 6, 15, 20 };
+            StartTime = TimeSpan.Parse("00:00:00");
+            EndTime = TimeSpan.Parse("23:59:59");
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
             LoggerHelper.DebugLog(Log, _config, $"Loaded SpecialTwoEvent settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
-            return Task.CompletedTask;
         }
 
-        public class SpecialTwoEventConfig
-        {
-            public bool IsEnabled { get; set; }
-            public List<int> ActiveDaysOfMonth { get; set; }
-            public string StartTime { get; set; }
-            public string EndTime { get; set; }
-        }
     }
 }

@@ -34,7 +34,14 @@ namespace EventSystem.Events
             try
             {
                 _events.Add(eventItem);
-                eventItem.LoadEventSettings(_config);
+                if (eventItem.UseEventSpecificConfig)
+                {
+                    eventItem.LoadEventSpecificSettings();
+                }
+                else
+                {
+                    eventItem.LoadEventSettings(_config);
+                }
                 LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
@@ -42,6 +49,8 @@ namespace EventSystem.Events
                 Log.Error(ex, $"Error while registering event '{eventItem.EventName}': {ex.Message}");
             }
         }
+
+
 
         public void ScheduleEvent(EventsBase eventItem)
         {

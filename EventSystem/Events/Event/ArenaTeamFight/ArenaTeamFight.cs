@@ -25,6 +25,7 @@ namespace EventSystem.Event
             _config = config;
             EventName = "ArenaTeamFight";
             AllowParticipationInOtherEvents = true;
+            UseEventSpecificConfig = false;
             PrefabStoragePath = Path.Combine("EventSystem", "ArenaTeamFightBP");
         }
 
@@ -166,7 +167,7 @@ namespace EventSystem.Event
                         ParticipatingPlayers.TryAdd(steamId, true);
                         playerAdded = true;
                         message = $"You have successfully joined {team.Value.Name}.";
-                        break; // Przerwanie pętli po pomyślnym dodaniu gracza do drużyny.
+                        break; 
                     }
                 }
             }

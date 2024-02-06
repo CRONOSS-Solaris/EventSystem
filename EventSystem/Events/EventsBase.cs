@@ -16,6 +16,9 @@ namespace EventSystem.Events
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
 
+        // New property indicating whether to use an event-specific configuration (Do not change to false when creating an event outside of the source code)
+        public bool UseEventSpecificConfig { get; set; } = true;
+
         //location of the profile with bluepirnt grids
         protected virtual string PrefabStoragePath { get; set; }
 
@@ -44,8 +47,15 @@ namespace EventSystem.Events
         public abstract Task SystemEndEvent();
 
         // Method to load the settings of a specific event from the configuration.
-        public abstract Task LoadEventSettings(EventSystemConfig config);
+        public virtual Task LoadEventSettings(EventSystemConfig config)
+        {
+            return Task.CompletedTask;
+        }
 
+        public virtual void LoadEventSpecificSettings()
+        {
+
+        }
 
         // Checks if the event is active on the specified day of the month.
         public bool IsActiveOnDayOfMonth(int day)

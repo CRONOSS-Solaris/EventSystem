@@ -20,6 +20,7 @@ namespace EventSystem.Event
             EventName = "SpecialEvent";
             AllowParticipationInOtherEvents = false;
             PrefabStoragePath = Path.Combine("EventSystem", "SpecialEventBP");
+            UseEventSpecificConfig = false;
         }
 
         public override async Task SystemStartEvent()
