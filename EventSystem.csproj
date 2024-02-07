@@ -203,6 +203,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventSystem\Commands\PlayerEventSystemCommands.cs" />
+    <Compile Include="EventSystem\Config\RewardConfig.cs" />
     <Compile Include="EventSystem\DataBase\PostgresDatabaseManager.cs" />
     <Compile Include="EventSystem\Events\EventManager.cs" />
     <Compile Include="EventSystem\Events\EventsBase.cs" />
@@ -218,6 +219,7 @@
       <DependentUpon>EventSystemControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="EventSystem\Managers\PlayerAccountXmlManager.cs" />
+    <Compile Include="EventSystem\Managers\PlayerItemRewardManager.cs" />
     <Compile Include="EventSystem\Managers\PointsTransferManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusAPI.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.cs" />
@@ -241,10 +243,12 @@
     <Compile Include="EventSystem\Serialization\GridSerializer.cs" />
     <Compile Include="EventSystem\Managers\FileManager.cs" />
     <Compile Include="EventSystem\Serialization\GridSpawner.cs" />
+    <Compile Include="EventSystem\Utils\CommandInCooldown.cs" />
     <Compile Include="EventSystem\Utils\Compiler.cs" />
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
+    <Compile Include="EventSystem\Utils\RewardSet.cs" />
     <Compile Include="EventSystem\Utils\UpdateManager.cs" />
     <Compile Include="EventSystem\Utils\Utilities.cs" />
     <EmbeddedResource Include="EventSystem\Properties\Resources.resx">

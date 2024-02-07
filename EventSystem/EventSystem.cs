@@ -1,4 +1,5 @@
-﻿using EventSystem.DataBase;
+﻿using EventSystem.Config;
+using EventSystem.DataBase;
 using EventSystem.Events;
 using EventSystem.Managers;
 using EventSystem.Nexus;
@@ -50,6 +51,8 @@ namespace EventSystem
         // Konfiguracja
         private Persistent<EventSystemConfig> _config;
         public EventSystemConfig Config => _config?.Data;
+        private Persistent<RewardConfig> _rewardConfig;
+        public RewardConfig RewardConfig => _rewardConfig?.Data;
 
         // Integracja z Nexus
         public static NexusAPI? nexusAPI { get; private set; }
@@ -93,6 +96,10 @@ namespace EventSystem
             //config
             var fileManager = new FileManager(Path.Combine(StoragePath, "EventSystem"));
             _config = fileManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
+            _rewardConfig = fileManager.SetupConfig("RewardConfig.cfg", new RewardConfig());
+            _rewardConfig.Data.GenerateExampleRewards();
+            _rewardConfig.Data.GenerateExampleIndividualItems();
+            _rewardConfig.Save();
 
             //PostgresSQL
             if (_config.Data.UseDatabase)
@@ -454,6 +461,7 @@ namespace EventSystem
             try
             {
                 _config.Save();
+                _rewardConfig.Save();
                 Log.Info("Configuration Saved.");
             }
             catch (IOException e)

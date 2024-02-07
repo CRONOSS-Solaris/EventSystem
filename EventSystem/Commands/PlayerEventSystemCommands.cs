@@ -1,4 +1,6 @@
 ﻿using EventSystem.Events;
+using EventSystem.Managers;
+using EventSystem.Utils;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -8,6 +10,7 @@ using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
 using VRage.Game.ModAPI;
+using VRage.Library.Utils;
 using VRageMath;
 
 namespace EventSystem
@@ -256,6 +259,172 @@ namespace EventSystem
             else
             {
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You are not participating in the event '{eventName}' or it does not exist.", Color.Red, Context.Player.SteamUserId);
+            }
+        }
+
+
+        [Command("buy", "Buy rewards with points or list available rewards.")]
+        [Permission(MyPromoteLevel.None)]
+        public async Task BuyReward(string rewardName = "")
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            var cooldownManager = CommandInCooldown.Instance;
+            var cooldown = TimeSpan.FromSeconds(10);
+
+            if (cooldownManager.IsCommandInCooldown(Context.Player.SteamUserId, cooldown))
+            {
+                var timeLeft = cooldownManager.TimeLeftForCommand(Context.Player.SteamUserId, cooldown);
+                var minutes = timeLeft.Minutes;
+                var seconds = timeLeft.Seconds;
+
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Wait {minutes}m {seconds}s to use this command again.", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            // Aktualizuj czas ostatniego użycia komendy
+            cooldownManager.UpdateCommandUsage(Context.Player.SteamUserId);
+
+            var steamId = Context.Player.SteamUserId;
+
+            // Jeśli nie podano nazwy nagrody, wyświetl dostępne nagrody
+            if (string.IsNullOrEmpty(rewardName))
+            {
+                ShowAvailableRewards();
+                return;
+            }
+
+            // Sprawdź, czy gracz ma wystarczającą ilość punktów
+            var playerPoints = await GetPlayerPoints(steamId);
+            if (!playerPoints.HasValue)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Error retrieving your points. Please try again.", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            // Spróbuj kupić nagrodę
+            await PurchaseReward(steamId, rewardName, playerPoints.Value);
+        }
+
+        private async Task<long?> GetPlayerPoints(ulong steamId)
+        {
+            // Implementacja pobierania punktów gracza
+            if (Plugin.Config.UseDatabase)
+            {
+                return await Plugin.DatabaseManager.GetPlayerPointsAsync((long)steamId);
+            }
+            else
+            {
+                var account = await Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync((long)steamId);
+                return account?.Points;
+            }
+        }
+
+        private void ShowAvailableRewards()
+        {
+            var rewardConfig = Plugin.RewardConfig;
+            var sb = new StringBuilder();
+            sb.AppendLine("Available Rewards:");
+            foreach (var set in rewardConfig.RewardSets)
+            {
+                sb.AppendLine($"{set.Name} - {set.CostInPoints} PTS");
+            }
+            foreach (var item in rewardConfig.IndividualItems)
+            {
+                sb.AppendLine($"{item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
+            }
+
+            if (Context.Player != null)
+            {
+                ulong steamId = Context.Player.SteamUserId;
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", sb.ToString(), Color.Green, steamId);
+            }
+            else
+            {
+                // Logowanie błędu lub inna forma obsługi przypadku, gdy Context.Player jest null
+                Log.Error("ShowAvailableRewards: Context.Player is null, cannot send message.");
+            }
+        }
+
+        private async Task PurchaseReward(ulong steamId, string rewardName, long playerPoints)
+        {
+            var rewardConfig = Plugin.RewardConfig;
+            var rewardSet = rewardConfig.RewardSets.FirstOrDefault(rs => rs.Name.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
+            var individualItem = rewardConfig.IndividualItems.FirstOrDefault(ri => ri.ItemSubtypeId.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
+
+            long cost = rewardSet != null ? rewardSet.CostInPoints : individualItem?.CostInPoints ?? 0;
+
+            if (cost > 0 && playerPoints >= cost)
+            {
+                StringBuilder itemsReceived = new StringBuilder("You received:\n");
+                bool anyItemsAwarded = false; // Zakładamy, że na początku żadne przedmioty nie zostały przyznane
+
+                if (rewardSet != null)
+                {
+                    // Próbuj przyznać każdy przedmiot z zestawu
+                    foreach (var item in rewardSet.Items)
+                    {
+                        if (new Random().NextDouble() * 100 <= item.ChanceToDrop)
+                        {
+                            bool awarded = PlayerItemRewardManager.AwardPlayer(steamId, item, item.Amount, Log, Plugin.Config);
+                            if (awarded)
+                            {
+                                itemsReceived.AppendLine($"- {item.Amount}x {item.ItemSubtypeId}");
+                                anyItemsAwarded = true;
+                            }
+                        }
+                    }
+                }
+                else if (individualItem != null)
+                {
+                    // Przyznaj indywidualny przedmiot
+                    bool awarded = PlayerItemRewardManager.AwardPlayer(steamId, individualItem, individualItem.Amount, Log, Plugin.Config);
+                    if (awarded)
+                    {
+                        itemsReceived.AppendLine($"- {individualItem.Amount}x {individualItem.ItemSubtypeId}");
+                        anyItemsAwarded = true;
+                    }
+                }
+
+                if (anyItemsAwarded)
+                {
+                    // Odejmij punkty tylko, jeśli jakieś przedmioty zostały przyznane
+                    bool updateResult = await UpdatePlayerPoints(steamId, -cost);
+                    if (updateResult)
+                    {
+                        EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", itemsReceived.ToString(), Color.Green, steamId);
+                    }
+                    else
+                    {
+                        EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Failed to update points after awarding items. Please contact an admin.", Color.Red, steamId);
+                    }
+                }
+                else
+                {
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "It was not possible to award rewards because your inventory is full. Points were not deducted.", Color.Red, steamId);
+
+                }
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "You do not have enough points for this reward or it does not exist.", Color.Red, steamId);
+            }
+        }
+
+
+        private async Task<bool> UpdatePlayerPoints(ulong steamId, long pointsChange)
+        {
+            if (Plugin.Config.UseDatabase)
+            {
+                return await Plugin.DatabaseManager.UpdatePlayerPointsAsync(steamId.ToString(), pointsChange);
+            }
+            else
+            {
+                return await Plugin.PlayerAccountXmlManager.UpdatePlayerPointsAsync((long)steamId, pointsChange);
             }
         }
 
