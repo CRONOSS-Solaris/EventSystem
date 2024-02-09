@@ -34,9 +34,25 @@ namespace EventSystem.Event
         {
             await InitializeArena();
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Executing ArenaTeamFight.");
+            // Inicjalizacja drużyn
+            InitializeTeams();
 
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Executing ArenaTeamFight and teams initialized.");
         }
+
+        private void InitializeTeams()
+        {
+            // Przykładowa inicjalizacja dwóch drużyn
+            Teams.TryAdd(1, new Team { Name = _config.ArenaTeamFightSettings.Team1Name, TeamID = 1 });
+            Teams.TryAdd(2, new Team { Name = _config.ArenaTeamFightSettings.Team2Name, TeamID = 2 });
+
+            // Logowanie informacji o utworzonych drużynach
+            foreach (var team in Teams)
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Team initialized: {team.Value.Name} with ID: {team.Value.TeamID}");
+            }
+        }
+
 
         /// <summary>
         /// Asynchronously initializes the arena by spawning the grid and setting up spawn points for teams.
@@ -55,39 +71,40 @@ namespace EventSystem.Event
 
 
         /// <summary>
-        /// Starts the Arena Team Fight event, initializes teams, teleports players, assigns weapons, and subscribes to necessary events.
+        /// Starts the Arena Team Fight event, teleports players, assigns weapons, and subscribes to necessary events.
         /// </summary>
         public override async Task StartEvent()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Starting ArenaTeamFight Event.");
             EventStarted = true;
 
+            // Dispose of the round timer if it already exists to avoid memory leaks
             _roundTimer?.Dispose();
+            // Initialize the round timer to end the round after the configured duration
             _roundTimer = new Timer(EndRoundCallback, null, TimeSpan.FromMinutes(_config.ArenaTeamFightSettings.MatchDurationInMinutes), Timeout.InfiniteTimeSpan);
 
-            int teamIdCounter = 1; // Rozpocznij liczenie ID drużyn od 1
-
-            foreach (var teamEntry in Teams)
-            {
-                var team = teamEntry.Value;
-                team.TeamID = teamIdCounter++; // Przydziel unikalne TeamID każdej drużynie
-            }
-
+            // Iterate through each team and prepare each player for the event
             foreach (var teamEntry in Teams)
             {
                 var team = teamEntry.Value;
                 foreach (var playerId in team.Members.Keys)
                 {
+                    // Clear the player's inventory before the event starts
                     RemoveAllItemsFromPlayer(playerId);
-                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID); // Użyj TeamID zamiast teamId z pętli
+                    // Teleport the player to their team's specific spawn point
+                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+                    // Assign a random weapon and ammunition to the player
                     await AssignRandomWeaponAndAmmo(playerId);
+                    // Subscribe to character death events for the player
                     SubscribeToCharacterDeath(playerId);
                 }
             }
+            // Subscribe to update per second to check for kills during the event
             SubscribeToUpdatePerSecond(CheckForKills, priority: 1);
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ArenaTeamFight event has started with teams initialized.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ArenaTeamFight event has started.");
         }
+
 
         /// <summary>
         /// Handles the callback for ending a round, clears inventories, teleports players back, and awards points to teams.
