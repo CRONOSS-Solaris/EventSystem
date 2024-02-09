@@ -55,7 +55,7 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Starting ArenaTeamFight Event.");
             EventStarted = true;
 
-            _roundTimer?.Dispose(); // Zabezpieczenie przed wyciekiem timera.
+            _roundTimer?.Dispose();
             _roundTimer = new Timer(EndRoundCallback, null, TimeSpan.FromMinutes(_config.ArenaTeamFightSettings.MatchDurationInMinutes), Timeout.InfiniteTimeSpan);
 
             foreach (var teamId in Teams.Keys)
@@ -64,11 +64,14 @@ namespace EventSystem.Event
                 foreach (var playerId in team.Members.Keys)
                 {
                     RemoveAllItemsFromPlayer(playerId);
-                    await TeleportPlayerToSpecificSpawnPoint(playerId, teamId);
+                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
                     await AssignRandomWeaponAndAmmo(playerId);
+                    SubscribeToCharacterDeath(playerId);
                 }
             }
+            SubscribeToUpdatePerSecond(CheckForKills, priority: 1);
         }
+
 
         private void EndRoundCallback(object state)
         {
@@ -79,9 +82,26 @@ namespace EventSystem.Event
         private async Task EndRound()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Round Ending.");
-            ClearAllPlayerInventories(); // Usunięcie pozostałych przedmiotów z ekwipunku graczy.
+            UnsubscribeFromUpdatePerSecond(CheckForKills);
+            ClearAllPlayerInventories();
             TeleportPlayersBack();
             ReturnItemsToPlayers();
+
+            foreach (var teamId in Teams.Keys)
+            {
+                var team = Teams[teamId];
+                int membersCount = team.Members.Count;
+                // Zaokrąglanie punktów do góry dzielonych na liczbę członków drużyny
+                int pointsPerMember = (int)Math.Ceiling((double)team.KillPoints / membersCount);
+
+                // Przyznawanie punktów każdemu członkowi drużyny
+                foreach (var memberId in team.Members.Keys)
+                {
+                    await AwardPlayer(memberId, pointsPerMember);
+                    UnsubscribeFromCharacterDeath(memberId);
+                }
+            }
+
 
             // Opcjonalnie zresetuj stan eventu, aby przygotować się na kolejną rundę.
             EventStarted = false; // Pozwól na ponowne rozpoczęcie rundy, gdy gracze zaczną dołączać.
@@ -89,12 +109,8 @@ namespace EventSystem.Event
 
         public override async Task SystemEndEvent()
         {
-            // Implementacja logiki końca wydarzenia
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending ArenaTeamFight.");
+            await EndRound();
             await CleanupGrids();
-            ClearAllPlayerInventories();
-            TeleportPlayersBack();
-            ReturnItemsToPlayers();
         }
 
         private void ClearAllPlayerInventories()
@@ -104,6 +120,46 @@ namespace EventSystem.Event
                 ClearPlayerInventory(playerId);
             }
         }
+
+        private void CheckForKills()
+        {
+            foreach (var victim in LastAttackers.Keys)
+            {
+                if (!ParticipatingPlayers.ContainsKey(victim))
+                    continue; // Ignoruj, jeśli ofiara nie bierze udziału w wydarzeniu
+
+                long attacker;
+                if (LastAttackers.TryRemove(victim, out attacker) && ParticipatingPlayers.ContainsKey(attacker))
+                {
+                    // Sprawdź, czy ofiara i atakujący są z różnych drużyn
+                    var victimTeam = Teams.Values.FirstOrDefault(team => team.Members.ContainsKey(victim));
+                    var attackerTeam = Teams.Values.FirstOrDefault(team => team.Members.ContainsKey(attacker));
+
+                    if (victimTeam != null && attackerTeam != null && victimTeam != attackerTeam)
+                    {
+                        // Przyznaj punkty drużynie atakującego
+                        attackerTeam.KillPoints += _config.ArenaTeamFightSettings.PointsPerKill;
+
+                        Log.Info($"Player {attacker} zabił gracza {victim}. Drużyna {attackerTeam.Name} zdobywa {_config.ArenaTeamFightSettings.PointsPerKill} punktów.");
+
+                        // Wywołanie respawnu dla ofiary
+                        Task.Run(() => RespawnPlayer(victim, victimTeam));
+                    }
+                }
+            }
+        }
+
+        private async Task RespawnPlayer(long playerId, Team team)
+        {
+            // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
+            await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+
+            // Przydzielenie ekwipunku
+            await AssignRandomWeaponAndAmmo(playerId);
+        }
+
+
+
 
         private async Task AssignRandomWeaponAndAmmo(long playerId)
         {
@@ -238,8 +294,7 @@ namespace EventSystem.Event
                     BlockSpawn2Name = "SpawnPointTeam2",
                     MaxPlayersPerTeam = 10,
                     MatchDurationInMinutes = 5,
-                    PointsForWinningTeam = 100,
-                    PointsForLosingTeam = 10,
+                    PointsPerKill = 10
                 };
             }
 
@@ -261,8 +316,10 @@ namespace EventSystem.Event
         public class Team
         {
             public string Name { get; set; }
+            public int TeamID { get; set; }
             public ConcurrentDictionary<long, bool> Members { get; set; } = new ConcurrentDictionary<long, bool>();
             public Vector3D SpawnPoint { get; set; }
+            public int KillPoints { get; set; } = 0;
         }
 
 
@@ -282,8 +339,7 @@ namespace EventSystem.Event
             public string BlockSpawn2Name { get; set; }
             public int MaxPlayersPerTeam { get; set; }
             public int MatchDurationInMinutes { get; set; }
-            public long PointsForWinningTeam { get; set; }
-            public long PointsForLosingTeam { get; set; }
+            public int PointsPerKill { get; set; }
         }
 
     }
