@@ -25,8 +25,11 @@ namespace EventSystem.Events
         // Stores information about items taken from players (SteamID, Item List).
         protected ConcurrentDictionary<long, Dictionary<MyDefinitionId, MyFixedPoint>> _itemsRemovedFromPlayers = new ConcurrentDictionary<long, Dictionary<MyDefinitionId, MyFixedPoint>>();
 
+        protected ConcurrentDictionary<long, long> LastAttackers = new ConcurrentDictionary<long, long>();
+
+
         // Definition of a public event that can be triggered when a character dies
-        //protected event Func<IMyCharacter, Task> CharacterDeath;
+        protected event Func<IMyCharacter, Task> CharacterDeath;
 
         //Determines whether an event requires that a player not be in another event to join it 
         //True -  Allows you to join another event
@@ -404,47 +407,59 @@ namespace EventSystem.Events
         /// Subscribes to the character death event for a given player.
         /// </summary>
         /// <param name="steamId">The SteamID of the player for whom the character death event should be subscribed.</param>
-        //protected void SubscribeToCharacterDeath(long steamId)
-        //{
-        //    var character = FindCharacterBySteamId(steamId);
-        //    if (character != null)
-        //    {
-        //        character.CharacterDied += OnCharacterDeathHandler;
-        //    }
-        //}
+        protected void SubscribeToCharacterDeath(long steamId)
+        {
+            var character = FindCharacterBySteamId(steamId);
+            if (character != null)
+            {
+                character.CharacterDied += OnCharacterDeathHandler;
+            }
+        }
 
         /// <summary>
         /// Handler for when a character dies. This method triggers the CharacterDeath event if there are any subscribers.
         /// </summary>
         /// <param name="character">The character that died.</param>
-        //private void OnCharacterDeathHandler(IMyCharacter character)
-        //{
-        //    // Wywołanie zdarzenia CharacterDeath, jeśli jest subskrybent
-        //    CharacterDeath?.Invoke(character);
-        //}
+        private void OnCharacterDeathHandler(IMyCharacter character)
+        {
+            // Wywołanie zdarzenia CharacterDeath, jeśli jest subskrybent
+            CharacterDeath?.Invoke(character);
+        }
 
         /// <summary>
         /// A virtual method intended to be overridden in derived classes to handle a character's death. 
         /// </summary>
         /// <param name="character">The character that died.</param>
         /// <returns>A task that represents the asynchronous operation.</returns>
-        //protected virtual async Task OnCharacterDeath(IMyCharacter character)
-        //{
+        protected virtual async Task OnCharacterDeath(IMyCharacter character)
+        {
 
-        //}
+        }
 
         /// <summary>
         /// Unsubscribes from the character death event for a given player.
         /// </summary>
         /// <param name="steamId">The SteamID of the player for whom the character death event should be unsubscribed.</param>
-        //protected void UnsubscribeFromCharacterDeath(long steamId)
-        //{
-        //    var character = FindCharacterBySteamId(steamId);
-        //    if (character != null)
-        //    {
-        //        character.CharacterDied -= OnCharacterDeathHandler;
-        //    }
-        //}
+        protected void UnsubscribeFromCharacterDeath(long steamId)
+        {
+            var character = FindCharacterBySteamId(steamId);
+            if (character != null)
+            {
+                character.CharacterDied -= OnCharacterDeathHandler;
+            }
+        }
+
+        /// <summary>
+        /// Updates the last attacker for a given victim. This method should be called whenever a player is attacked.
+        /// It stores the SteamID of the last player or entity that attacked the victim. This information can be used
+        /// to determine the killer when a player dies, allowing for proper attribution of kills in events.
+        /// </summary>
+        /// <param name="victimSteamId">The SteamID of the player who was attacked.</param>
+        /// <param name="attackerSteamId">The SteamID of the player or entity that attacked the victim.</param>
+        protected void OnPlayerAttacked(long victimSteamId, long attackerSteamId)
+        {
+            LastAttackers[victimSteamId] = attackerSteamId;
+        }
 
     }
 }
