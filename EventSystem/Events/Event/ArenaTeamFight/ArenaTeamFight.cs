@@ -1,6 +1,7 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -92,7 +93,7 @@ namespace EventSystem.Event
                     // Clear the player's inventory before the event starts
                     RemoveAllItemsFromPlayer(playerId);
                     // Teleport the player to their team's specific spawn point
-                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+                    TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
                     // Assign a random weapon and ammunition to the player
                     await AssignRandomWeaponAndAmmo(playerId);
                     // Subscribe to character death events for the player
@@ -135,17 +136,20 @@ namespace EventSystem.Event
                 int pointsPerMember = (int)Math.Ceiling((double)team.KillPoints / membersCount);
 
                 // Przyznawanie punktów każdemu członkowi drużyny
-                foreach (var memberId in team.Members.Keys)
+                foreach (var memberId in team.Members.Keys.ToList()) // Używamy ToList(), aby uniknąć błędów podczas modyfikacji kolekcji
                 {
                     await AwardPlayer(memberId, pointsPerMember);
                     UnsubscribeFromCharacterDeath(memberId);
+                    // Usunięcie członka drużyny
+                    team.Members.TryRemove(memberId, out _);
                 }
             }
 
-
+            ParticipatingPlayers.Clear();
             // Opcjonalnie zresetuj stan eventu, aby przygotować się na kolejną rundę.
             EventStarted = false; // Pozwól na ponowne rozpoczęcie rundy, gdy gracze zaczną dołączać.
         }
+
 
         public override async Task SystemEndEvent()
         {
@@ -203,7 +207,7 @@ namespace EventSystem.Event
         private async Task RespawnPlayer(long playerId, Team team)
         {
             // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
-            await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+            TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
 
             // Przydzielenie ekwipunku
             await AssignRandomWeaponAndAmmo(playerId);
@@ -303,7 +307,7 @@ namespace EventSystem.Event
         /// </summary>
         /// <param name="playerId">The ID of the player to teleport.</param>
         /// <param name="teamId">The ID of the team the player belongs to.</param>
-        public async Task TeleportPlayerToSpecificSpawnPoint(long playerId, int teamId)
+        public void TeleportPlayerToSpecificSpawnPoint(long playerId, int teamId)
         {
             if (!Teams.TryGetValue(teamId, out Team team))
             {
@@ -311,23 +315,25 @@ namespace EventSystem.Event
                 return;
             }
 
-            // Określenie nazwy bloku na podstawie ID drużyny
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to find spawn block for team {teamId}.");
             string spawnBlockName = teamId == 1 ? _config.ArenaTeamFightSettings.BlockSpawn1Name : _config.ArenaTeamFightSettings.BlockSpawn2Name;
 
-            // Wykorzystanie metody FindBlockPositionByName do znalezienia pozycji bloku
-            var spawnPoint = await FindBlockPositionByName(spawnBlockName);
-
-            if (spawnPoint.HasValue)
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
-                // Teleportacja gracza do znalezionej pozycji
-                await TeleportPlayerToSpawnPoint(playerId, spawnPoint.Value);
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
-            }
-            else
-            {
-                Log.Error($"Could not find spawn block '{spawnBlockName}' for team {teamId}.");
-            }
+                var spawnPoint = FindBlockPositionByName(spawnBlockName);
+                if (spawnPoint.HasValue)
+                {
+                    TeleportPlayerToSpawnPoint(playerId, spawnPoint.Value);
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
+                }
+                else
+                {
+                    Log.Error($"Could not find spawn block '{spawnBlockName}' for team {teamId}.");
+                }
+            });
         }
+
+
 
         /// <summary>
         /// Loads settings for the Arena Team Fight event from the configuration file.

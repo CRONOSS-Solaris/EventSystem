@@ -94,31 +94,35 @@ namespace EventSystem.Events
         /// </summary>
         /// <param name="blockName">The custom name of the block to search for.</param>
         /// <returns>The position of the found block, or null if not found.</returns>
-        protected async Task<Vector3D?> FindBlockPositionByName(string blockName)
+        public Vector3D? FindBlockPositionByName(string blockNameSubstring)
         {
             Vector3D? foundPosition = null;
 
-            // Searching each grid created by the event.
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Start searching for block containing '{blockNameSubstring}' in name.");
+
             foreach (var entityId in SpawnedGridsEntityIds.Keys)
             {
                 var grid = MyAPIGateway.Entities.GetEntityById(entityId) as IMyCubeGrid;
                 if (grid != null)
                 {
-                    // Search the blocks in the grid for a block with the appropriate custom name.
                     var blocks = new List<IMySlimBlock>();
-                    grid.GetBlocks(blocks, b => b.FatBlock != null && (b.FatBlock as IMyTerminalBlock)?.CustomName.Contains(blockName) == true);
+                    grid.GetBlocks(blocks, b => b.FatBlock != null && (b.FatBlock as IMyTerminalBlock)?.CustomName.Contains(blockNameSubstring) == true);
 
                     var block = blocks.FirstOrDefault()?.FatBlock as IMyTerminalBlock;
                     if (block != null)
                     {
-                        // If a block is found, return its position.
                         foundPosition = block.GetPosition();
-                        break; // Break the loop if a block is found.
+                        break;
                     }
                 }
             }
 
-            return await Task.FromResult(foundPosition);
+            if (!foundPosition.HasValue)
+            {
+                Log.Warn($"Could not find any block containing '{blockNameSubstring}'.");
+            }
+
+            return foundPosition;
         }
 
 

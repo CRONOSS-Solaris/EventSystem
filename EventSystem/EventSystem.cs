@@ -14,6 +14,7 @@ using System.IO;
 using System.IO.Compression;
 using System.Linq;
 using System.Reflection;
+using System.Threading.Tasks;
 using System.Windows.Controls;
 using Torch;
 using Torch.API;
@@ -301,16 +302,17 @@ namespace EventSystem
             }
         }
 
-        private void EndAllEvents()
+        private async Task EndAllEvents()
         {
             foreach (var eventItem in _eventManager.Events)
             {
                 if (eventItem.IsActiveNow())
                 {
-                    eventItem.SystemEndEvent().Wait();
+                    await eventItem.SystemEndEvent();
                 }
             }
         }
+
 
         private async void OnPlayerJoined(IPlayer player)
         {

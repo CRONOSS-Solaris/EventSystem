@@ -1,6 +1,8 @@
 ﻿using Sandbox.Game.World;
+using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Threading.Tasks;
 using Torch.Commands;
 using Torch.Commands.Permissions;
@@ -108,5 +110,46 @@ namespace EventSystem
                 }
             }
         }
+
+        [Command("testjoin", "Test joining an event by adding a fictional player.")]
+        [Permission(MyPromoteLevel.Admin)]
+        public async Task TestJoinEvent(string eventName)
+        {
+            var eventManager = Plugin._eventManager;
+            var eventToJoin = eventManager.Events.FirstOrDefault(e => e.EventName.Equals(eventName, StringComparison.OrdinalIgnoreCase));
+
+            if (eventToJoin != null)
+            {
+                // Sprawdź, czy event jest aktywny
+                if (eventToJoin.IsActiveNow())
+                {
+                    // Generuj losowy Steam ID
+                    long fakeSteamId = GenerateFakeSteamId();
+
+                    // Dodaj fikcyjną osobę do eventu
+                    var (success, message) = await eventToJoin.AddPlayer(fakeSteamId);
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", message, success ? Color.Green : Color.Red, Context.Player?.SteamUserId ?? 0);
+                }
+                else
+                {
+                    // Event nie jest aktywny
+                    EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Event '{eventName}' is not active.", Color.Red, Context.Player?.SteamUserId ?? 0);
+                }
+            }
+            else
+            {
+                // Event nie istnieje
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Event '{eventName}' does not exist.", Color.Red, Context.Player?.SteamUserId ?? 0);
+            }
+        }
+
+        // Metoda do generowania losowego Steam ID
+        private long GenerateFakeSteamId()
+        {
+            Random random = new Random();
+            long fakeSteamId = random.Next(100000000, 999999999);
+            return fakeSteamId;
+        }
+
     }
 }

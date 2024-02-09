@@ -349,15 +349,21 @@ namespace EventSystem.Events
         /// </summary>
         protected void ReturnItemsToPlayers()
         {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ReturnItemsToPlayers: Starting to return items to players.");
             foreach (var entry in _itemsRemovedFromPlayers)
             {
                 ulong steamId = (ulong)entry.Key;
                 var itemsToReturn = entry.Value;
 
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"ReturnItemsToPlayers: Processing player with SteamID {steamId}.");
+
                 foreach (var definitionId in itemsToReturn.Keys)
                 {
                     // Get the quantity of the item
                     int quantity = (int)itemsToReturn[definitionId];
+
+                    // Log the item and quantity being returned
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"ReturnItemsToPlayers: Returning {quantity} of {definitionId} to player.");
 
                     // Default to adding one unit of each item
                     AddItemToPlayer((long)steamId, definitionId.SubtypeId.ToString(), definitionId.SubtypeId.ToString(), quantity);
@@ -366,7 +372,9 @@ namespace EventSystem.Events
 
             // Clear the list after returning items
             _itemsRemovedFromPlayers.Clear();
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ReturnItemsToPlayers: Completed returning items to players.");
         }
+
 
         /// <summary>
         /// Clears a player's inventory without saving its contents.
