@@ -326,14 +326,15 @@ namespace EventSystem
 
         private void ShowAvailableRewards()
         {
-            var rewardConfig = Plugin.RewardConfig;
+            var packRewardsConfig = Plugin.PackRewardsConfig;
+            var itemRewardsConfig = Plugin.ItemRewardsConfig;
             var sb = new StringBuilder();
             sb.AppendLine("Available Rewards:");
-            foreach (var set in rewardConfig.RewardSets)
+            foreach (var set in packRewardsConfig.RewardSets)
             {
                 sb.AppendLine($"{set.Name} - {set.CostInPoints} PTS");
             }
-            foreach (var item in rewardConfig.IndividualItems)
+            foreach (var item in itemRewardsConfig.IndividualItems)
             {
                 sb.AppendLine($"{item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
             }
@@ -352,9 +353,10 @@ namespace EventSystem
 
         private async Task PurchaseReward(ulong steamId, string rewardName, long playerPoints)
         {
-            var rewardConfig = Plugin.RewardConfig;
-            var rewardSet = rewardConfig.RewardSets.FirstOrDefault(rs => rs.Name.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
-            var individualItem = rewardConfig.IndividualItems.FirstOrDefault(ri => ri.ItemSubtypeId.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
+            var packRewardsConfig = Plugin.PackRewardsConfig;
+            var itemRewardsConfig = Plugin.ItemRewardsConfig;
+            var rewardSet = packRewardsConfig.RewardSets.FirstOrDefault(rs => rs.Name.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
+            var individualItem = itemRewardsConfig.IndividualItems.FirstOrDefault(ri => ri.ItemSubtypeId.Equals(rewardName, StringComparison.OrdinalIgnoreCase));
 
             long cost = rewardSet != null ? rewardSet.CostInPoints : individualItem?.CostInPoints ?? 0;
 

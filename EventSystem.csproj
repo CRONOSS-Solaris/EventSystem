@@ -203,7 +203,8 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="EventSystem\Commands\PlayerEventSystemCommands.cs" />
-    <Compile Include="EventSystem\Config\RewardConfig.cs" />
+    <Compile Include="EventSystem\Config\ItemRewardsConfig.cs" />
+    <Compile Include="EventSystem\Config\PackRewardsConfig.cs" />
     <Compile Include="EventSystem\DataBase\PostgresDatabaseManager.cs" />
     <Compile Include="EventSystem\Events\EventManager.cs" />
     <Compile Include="EventSystem\Events\EventsBase.cs" />
