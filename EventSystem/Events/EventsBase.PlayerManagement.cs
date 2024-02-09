@@ -147,7 +147,10 @@ namespace EventSystem.Events
         /// Checks the player's progress in the event.
         /// </summary>
         /// <param name="steamId">The SteamID of the player whose progress is checked.</param>
-        public abstract Task CheckPlayerProgress(long steamId);
+        public virtual Task CheckPlayerProgress(long steamId)
+        {
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Awards points to a player for their performance in the event.
