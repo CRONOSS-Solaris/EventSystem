@@ -38,6 +38,9 @@ namespace EventSystem.Event
 
         }
 
+        /// <summary>
+        /// Asynchronously initializes the arena by spawning the grid and setting up spawn points for teams.
+        /// </summary>
         private async Task InitializeArena()
         {
             string gridName = _config.ArenaTeamFightSettings.PrefabName;
@@ -50,6 +53,10 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Spawned grid '{gridName}' with entity IDs: {string.Join(", ", spawnedEntityIds)}");
         }
 
+
+        /// <summary>
+        /// Starts the Arena Team Fight event, initializes teams, teleports players, assigns weapons, and subscribes to necessary events.
+        /// </summary>
         public override async Task StartEvent()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Starting ArenaTeamFight Event.");
@@ -82,14 +89,19 @@ namespace EventSystem.Event
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ArenaTeamFight event has started with teams initialized.");
         }
 
-
-
+        /// <summary>
+        /// Handles the callback for ending a round, clears inventories, teleports players back, and awards points to teams.
+        /// </summary>
+        /// <param name="state">The state object passed to the timer callback.</param>
         private void EndRoundCallback(object state)
         {
             _roundTimer?.Dispose(); // Zatrzymanie timera po zakończeniu rundy.
             Task.Run(async () => await EndRound()).ConfigureAwait(false);
         }
 
+        /// <summary>
+        /// Ends the current round of the Arena Team Fight event, awards points to players, and resets the event state for the next round.
+        /// </summary>
         private async Task EndRound()
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Round Ending.");
@@ -124,6 +136,9 @@ namespace EventSystem.Event
             await CleanupGrids();
         }
 
+        /// <summary>
+        /// Clears inventories of all participating players.
+        /// </summary>
         private void ClearAllPlayerInventories()
         {
             foreach (var playerId in ParticipatingPlayers.Keys)
@@ -132,6 +147,9 @@ namespace EventSystem.Event
             }
         }
 
+        /// <summary>
+        /// Checks for kills during the event and awards points to attacking teams.
+        /// </summary>
         private void CheckForKills()
         {
             foreach (var victim in LastAttackers.Keys)
@@ -151,7 +169,7 @@ namespace EventSystem.Event
                         // Przyznaj punkty drużynie atakującego
                         attackerTeam.KillPoints += _config.ArenaTeamFightSettings.PointsPerKill;
 
-                        Log.Info($"Player {attacker} zabił gracza {victim}. Drużyna {attackerTeam.Name} zdobywa {_config.ArenaTeamFightSettings.PointsPerKill} punktów.");
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Player {attacker} zabił gracza {victim}. Drużyna {attackerTeam.Name} zdobywa {_config.ArenaTeamFightSettings.PointsPerKill} punktów.");
 
                         // Wywołanie respawnu dla ofiary
                         Task.Run(() => RespawnPlayer(victim, victimTeam));
@@ -160,6 +178,11 @@ namespace EventSystem.Event
             }
         }
 
+        /// <summary>
+        /// Respawns a player after being killed during the event.
+        /// </summary>
+        /// <param name="playerId">The ID of the player to respawn.</param>
+        /// <param name="team">The team to which the player belongs.</param>
         private async Task RespawnPlayer(long playerId, Team team)
         {
             // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
@@ -169,9 +192,10 @@ namespace EventSystem.Event
             await AssignRandomWeaponAndAmmo(playerId);
         }
 
-
-
-
+        /// <summary>
+        /// Assigns a random weapon and corresponding ammunition to a player.
+        /// </summary>
+        /// <param name="playerId">The ID of the player to assign the weapon and ammunition to.</param>
         private async Task AssignRandomWeaponAndAmmo(long playerId)
         {
             // Zdefiniuj listę dostępnych broni i odpowiadających im typów amunicji
@@ -192,12 +216,11 @@ namespace EventSystem.Event
             AddItemToPlayer(playerId, "MyObjectBuilder_AmmoMagazine", selectedWeapon.Value.weaponSubtypeID, selectedWeapon.Value.ammoQuantity);
         }
 
-
-        public override Task CheckPlayerProgress(long steamId)
-        {
-            return Task.CompletedTask;
-        }
-
+        /// <summary>
+        /// Attempts to add a player to the event, assigning them to a team if possible.
+        /// </summary>
+        /// <param name="steamId">The Steam ID of the player to add.</param>
+        /// <returns>A tuple indicating whether the player was added successfully and a message indicating the result.</returns>
         public override async Task<(bool, string)> AddPlayer(long steamId)
         {
             if (EventStarted)
@@ -258,6 +281,11 @@ namespace EventSystem.Event
             return (true, message);
         }
 
+        /// <summary>
+        /// Teleports a player to a specific spawn point based on their team ID.
+        /// </summary>
+        /// <param name="playerId">The ID of the player to teleport.</param>
+        /// <param name="teamId">The ID of the team the player belongs to.</param>
         public async Task TeleportPlayerToSpecificSpawnPoint(long playerId, int teamId)
         {
             if (!Teams.TryGetValue(teamId, out Team team))
@@ -276,7 +304,7 @@ namespace EventSystem.Event
             {
                 // Teleportacja gracza do znalezionej pozycji
                 await TeleportPlayerToSpawnPoint(playerId, spawnPoint.Value);
-                Log.Info($"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
             }
             else
             {
@@ -284,7 +312,10 @@ namespace EventSystem.Event
             }
         }
 
-
+        /// <summary>
+        /// Loads settings for the Arena Team Fight event from the configuration file.
+        /// </summary>
+        /// <param name="config">The configuration object containing event settings.</param>
         public override Task LoadEventSettings(EventSystemConfig config)
         {
             if (config.ArenaTeamFightSettings == null)
