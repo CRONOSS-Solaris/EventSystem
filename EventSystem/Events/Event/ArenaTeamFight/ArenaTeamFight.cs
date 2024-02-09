@@ -58,19 +58,30 @@ namespace EventSystem.Event
             _roundTimer?.Dispose();
             _roundTimer = new Timer(EndRoundCallback, null, TimeSpan.FromMinutes(_config.ArenaTeamFightSettings.MatchDurationInMinutes), Timeout.InfiniteTimeSpan);
 
-            foreach (var teamId in Teams.Keys)
+            int teamIdCounter = 1; // Rozpocznij liczenie ID drużyn od 1
+
+            foreach (var teamEntry in Teams)
             {
-                var team = Teams[teamId];
+                var team = teamEntry.Value;
+                team.TeamID = teamIdCounter++; // Przydziel unikalne TeamID każdej drużynie
+            }
+
+            foreach (var teamEntry in Teams)
+            {
+                var team = teamEntry.Value;
                 foreach (var playerId in team.Members.Keys)
                 {
                     RemoveAllItemsFromPlayer(playerId);
-                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+                    await TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID); // Użyj TeamID zamiast teamId z pętli
                     await AssignRandomWeaponAndAmmo(playerId);
                     SubscribeToCharacterDeath(playerId);
                 }
             }
             SubscribeToUpdatePerSecond(CheckForKills, priority: 1);
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ArenaTeamFight event has started with teams initialized.");
         }
+
 
 
         private void EndRoundCallback(object state)
