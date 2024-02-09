@@ -23,10 +23,10 @@ namespace EventSystem.Config
                 {
                     Name = "StarterPack",
                     CostInPoints = 100,
-                    Items = new List<RewardItem>
+                    Items = new List<PackRewardItem>
                     {
-                        new RewardItem { ItemTypeId = "MyObjectBuilder_Ingot", ItemSubtypeId = "Iron", Amount = 100, ChanceToDrop = 100 },
-                        new RewardItem { ItemTypeId = "MyObjectBuilder_Component", ItemSubtypeId = "Construction", Amount = 50, ChanceToDrop = 100 }
+                        new PackRewardItem { ItemTypeId = "MyObjectBuilder_Ingot", ItemSubtypeId = "Iron", Amount = 100, ChanceToDrop = 100 },
+                        new PackRewardItem{ ItemTypeId = "MyObjectBuilder_Component", ItemSubtypeId = "Construction", Amount = 50, ChanceToDrop = 100 }
                     }
                 });
 
@@ -34,10 +34,10 @@ namespace EventSystem.Config
                 {
                     Name = "AdvancedPack",
                     CostInPoints = 500,
-                    Items = new List<RewardItem>
+                    Items = new List<PackRewardItem>
                     {
-                        new RewardItem { ItemTypeId = "MyObjectBuilder_Ingot", ItemSubtypeId = "Uranium", Amount = 5, ChanceToDrop = 50 },
-                        new RewardItem { ItemTypeId = "MyObjectBuilder_Component", ItemSubtypeId = "Detector", Amount = 10, ChanceToDrop = 75 }
+                        new PackRewardItem { ItemTypeId = "MyObjectBuilder_Ingot", ItemSubtypeId = "Uranium", Amount = 5, ChanceToDrop = 50 },
+                        new PackRewardItem { ItemTypeId = "MyObjectBuilder_Component", ItemSubtypeId = "Detector", Amount = 10, ChanceToDrop = 75 }
                     }
                 });
             }

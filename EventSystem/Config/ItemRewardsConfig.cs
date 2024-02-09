@@ -10,9 +10,9 @@ namespace EventSystem.Config
 {
     public class ItemRewardsConfig : ViewModel
     {
-        private List<RewardItem> _individualItems = new List<RewardItem>();
+        private List<IndividualRewardItem> _individualItems = new List<IndividualRewardItem>();
 
-        public List<RewardItem> IndividualItems
+        public List<IndividualRewardItem> IndividualItems
         {
             get => _individualItems;
             set => SetValue(ref _individualItems, value);
@@ -23,7 +23,7 @@ namespace EventSystem.Config
         {
             if (_individualItems.Count == 0)
             {
-                _individualItems.Add(new RewardItem
+                _individualItems.Add(new IndividualRewardItem
                 {
                     ItemTypeId = "MyObjectBuilder_Ingot",
                     ItemSubtypeId = "Silver",
@@ -31,7 +31,7 @@ namespace EventSystem.Config
                     CostInPoints = 50
                 });
 
-                _individualItems.Add(new RewardItem
+                _individualItems.Add(new IndividualRewardItem
                 {
                     ItemTypeId = "MyObjectBuilder_Ore",
                     ItemSubtypeId = "Gold",

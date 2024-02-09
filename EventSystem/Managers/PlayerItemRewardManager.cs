@@ -12,7 +12,7 @@ namespace EventSystem.Managers
 {
     public class PlayerItemRewardManager
     {
-        public static bool AwardPlayer(ulong steamId, RewardItem rewardItem, int randomAmount, Logger log, EventSystemConfig config)
+        public static bool AwardPlayer(ulong steamId, IRewardItem rewardItem, int randomAmount, Logger log, EventSystemConfig config)
         {
             var player = MySession.Static.Players.TryGetPlayerBySteamId(steamId);
             if (player == null)

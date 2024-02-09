@@ -214,6 +214,7 @@
     <Compile Include="EventSystem\Events\EventsBase.GridManagement.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialEvent\SpecialEvent.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialTwoEvent\SpecialTwoEvent.cs" />
+    <Compile Include="EventSystem\Interface\IRewardItem.cs" />
     <Compile Include="EventSystem\Managers\AllEventsLCDManager.cs" />
     <Compile Include="EventSystem\Managers\ActiveEventsLCDManager.cs" />
     <Compile Include="EventSystem\GUI\EventSystemControl.xaml.cs">
@@ -247,7 +248,9 @@
     <Compile Include="EventSystem\Utils\CommandInCooldown.cs" />
     <Compile Include="EventSystem\Utils\Compiler.cs" />
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
+    <Compile Include="EventSystem\Utils\IndividualRewardItem.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />
+    <Compile Include="EventSystem\Utils\PackRewardItem.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
     <Compile Include="EventSystem\Utils\RewardSet.cs" />
     <Compile Include="EventSystem\Utils\UpdateManager.cs" />
@@ -282,6 +285,7 @@
     <Analyzer Include="packages\Microsoft.CodeAnalysis.Analyzers.3.3.4\analyzers\dotnet\cs\Microsoft.CodeAnalysis.Analyzers.dll" />
     <Analyzer Include="packages\Microsoft.CodeAnalysis.Analyzers.3.3.4\analyzers\dotnet\cs\Microsoft.CodeAnalysis.CSharp.Analyzers.dll" />
   </ItemGroup>
+  <ItemGroup />
   <Target Name="Zip" BeforeTargets="AfterBuild">
     <MakeDir Directories="$(SolutionDir)\Build\" />
     <ZipDirectory SourceDirectory="$(OutputPath)" DestinationFile="$(SolutionDir)\Build\$(MSBuildProjectName).zip" Overwrite="true" />
