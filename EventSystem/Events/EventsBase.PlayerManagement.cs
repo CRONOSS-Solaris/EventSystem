@@ -1,10 +1,16 @@
-﻿using EventSystem.Utils;
+﻿using EventSystem.Managers;
+using EventSystem.Utils;
+using Sandbox.Definitions;
+using Sandbox.Engine.Utils;
+using Sandbox.Game.Entities;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Torch;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
@@ -279,18 +285,21 @@ namespace EventSystem.Events
             // Save the current state of the items in the inventory before clearing it
             Dictionary<MyDefinitionId, MyFixedPoint> removedItemsDetails = new Dictionary<MyDefinitionId, MyFixedPoint>();
 
-            // Remove all items from the inventory
+            // Remove all items from the inventory and log removed items
             foreach (var item in itemsBeforeClear)
             {
                 var definitionId = MyDefinitionId.Parse($"{item.Type.TypeId}/{item.Type.SubtypeId}");
+                var itemName = item.Type.SubtypeId;
                 inventory.RemoveItemsOfType(item.Amount, definitionId, spawn: false);
                 if (removedItemsDetails.ContainsKey(definitionId))
                 {
                     removedItemsDetails[definitionId] += item.Amount; // Add the quantity if the item already exists
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Increased quantity of removed '{itemName}' for player with SteamID {steamId} to {removedItemsDetails[definitionId]}.");
                 }
                 else
                 {
                     removedItemsDetails.Add(definitionId, item.Amount); // Add a new entry if the item is not listed
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Removed '{itemName}' with quantity {item.Amount} from player with SteamID {steamId}.");
                 }
             }
 
@@ -304,45 +313,22 @@ namespace EventSystem.Events
                         if (existingDict.ContainsKey(item.Key))
                         {
                             existingDict[item.Key] += item.Value;
+                            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Updated existing item '{item.Key.SubtypeName}' in _itemsRemovedFromPlayers for player with SteamID {steamId} to {existingDict[item.Key]}.");
                         }
                         else
                         {
                             existingDict.Add(item.Key, item.Value);
+                            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Added new item '{item.Key.SubtypeName}' to _itemsRemovedFromPlayers for player with SteamID {steamId} with quantity {item.Value}.");
                         }
                     }
                     return existingDict;
                 });
             }
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Removed all items from player with SteamID {steamId}.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Completed removing all items from player with SteamID {steamId}.");
             return true;
         }
 
-        /// <summary>
-        /// Adds specified items to a player's inventory.
-        /// </summary>
-        /// <param name="steamId">The SteamID of the player to add items to.</param>
-        /// <param name="typeID">The type ID of the item to add.</param>
-        /// <param name="subtypeID">The subtype ID of the item to add.</param>
-        /// <param name="quantity">The quantity of items to add.</param>
-        /// <returns>True if items were successfully added; otherwise, false.</returns>
-        protected bool AddItemToPlayer(long steamId, string typeID, string subtypeID, int quantity)
-        {
-            if (!Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) || player.Character == null)
-            {
-                Log.Error($"Player with SteamID {steamId} not found or does not have a character.");
-                return false;
-            }
-
-            MyDefinitionId definitionId = new MyDefinitionId(MyObjectBuilderType.Parse(typeID), subtypeID);
-
-            var inventory = player.Character.GetInventory();
-
-            MyObjectBuilder_PhysicalObject ob = (MyObjectBuilder_PhysicalObject)MyObjectBuilderSerializer.CreateNewObject(definitionId);
-            inventory.AddItems(quantity, ob);
-
-            return true;
-        }
 
         /// <summary>
         /// Returns removed items to their respective players, e.g., at the end of an event after teleporting them to their previous positions.
@@ -359,22 +345,38 @@ namespace EventSystem.Events
 
                 foreach (var definitionId in itemsToReturn.Keys)
                 {
-                    // Get the quantity of the item
-                    int quantity = (int)itemsToReturn[definitionId];
+                    // Tworzenie instancji RewardItem na podstawie zapisanych danych
+                    var rewardItem = new RewardItem
+                    {
+                        ItemTypeId = definitionId.TypeId.ToString(),
+                        ItemSubtypeId = definitionId.SubtypeName,
+                        Amount = (int)itemsToReturn[definitionId]
+                    };
 
-                    // Log the item and quantity being returned
-                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"ReturnItemsToPlayers: Returning {quantity} of {definitionId} to player.");
+                    // Użycie PlayerItemRewardManager do oddania przedmiotu graczowi
+                    var result = PlayerItemRewardManager.AwardPlayer(steamId, rewardItem, rewardItem.Amount, Log, EventSystemMain.Instance.Config);
 
-                    // Default to adding one unit of each item
-                    AddItemToPlayer((long)steamId, definitionId.SubtypeId.ToString(), definitionId.SubtypeId.ToString(), quantity);
+                    if (result)
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully returned {rewardItem.Amount} of {rewardItem.ItemTypeId}/{rewardItem.ItemSubtypeId} to player {steamId}.");
+                    }
+                    else
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Failed to return {rewardItem.Amount} of {rewardItem.ItemTypeId}/{rewardItem.ItemSubtypeId} to player {steamId}.");
+                    }
                 }
             }
 
-            // Clear the list after returning items
             _itemsRemovedFromPlayers.Clear();
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ReturnItemsToPlayers: Completed returning items to players.");
         }
 
+        protected class RewardItem : IRewardItem
+        {
+            public string ItemTypeId { get; set; }
+            public string ItemSubtypeId { get; set; }
+            public int Amount { get; set; }
+        }
 
         /// <summary>
         /// Clears a player's inventory without saving its contents.

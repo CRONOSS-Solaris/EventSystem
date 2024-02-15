@@ -210,8 +210,10 @@
     <Compile Include="EventSystem\Events\EventsBase.cs" />
     <Compile Include="EventSystem\Events\EventsBase.PlayerManagement.cs" />
     <Compile Include="EventSystem\Events\EventsBase.Utility.cs" />
+    <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.Config.cs" />
     <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.cs" />
     <Compile Include="EventSystem\Events\EventsBase.GridManagement.cs" />
+    <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.PlayerManagement.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialEvent\SpecialEvent.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialTwoEvent\SpecialTwoEvent.cs" />
     <Compile Include="EventSystem\Interface\IRewardItem.cs" />

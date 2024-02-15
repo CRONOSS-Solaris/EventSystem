@@ -182,7 +182,7 @@ namespace EventSystem
                     break;
 
                 case TorchSessionState.Unloading:
-                    EndAllEvents();
+                    EndAllEventsAsync();
 
                     //UpdateManager stop
                     UpdateManager.StopTimers();
@@ -302,17 +302,16 @@ namespace EventSystem
             }
         }
 
-        private async Task EndAllEvents()
+        private async Task EndAllEventsAsync()
         {
-            foreach (var eventItem in _eventManager.Events)
-            {
-                if (eventItem.IsActiveNow())
-                {
-                    await eventItem.SystemEndEvent();
-                }
-            }
-        }
+            var activeEvents = _eventManager.Events.Where(e => e.IsActiveNow());
 
+            var endEventTasks = activeEvents.Select(e => e.SystemEndEvent());
+
+            await Task.WhenAll(endEventTasks);
+
+            Log.Info("All events have been ended asynchronously.");
+        }
 
         private async void OnPlayerJoined(IPlayer player)
         {

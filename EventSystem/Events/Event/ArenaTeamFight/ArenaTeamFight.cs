@@ -1,4 +1,5 @@
 ﻿using EventSystem.Events;
+using EventSystem.Managers;
 using EventSystem.Utils;
 using NLog;
 using Sandbox.ModAPI;
@@ -13,7 +14,7 @@ using VRageMath;
 
 namespace EventSystem.Event
 {
-    public class ArenaTeamFight : EventsBase
+    public partial class ArenaTeamFight : EventsBase
     {
         public static new readonly Logger Log = LogManager.GetLogger("EventSystem/ArenaTeamFight");
         private readonly EventSystemConfig _config;
@@ -136,7 +137,7 @@ namespace EventSystem.Event
                 int pointsPerMember = (int)Math.Ceiling((double)team.KillPoints / membersCount);
 
                 // Przyznawanie punktów każdemu członkowi drużyny
-                foreach (var memberId in team.Members.Keys.ToList()) // Używamy ToList(), aby uniknąć błędów podczas modyfikacji kolekcji
+                foreach (var memberId in team.Members.Keys.ToList())
                 {
                     await AwardPlayer(memberId, pointsPerMember);
                     UnsubscribeFromCharacterDeath(memberId);
@@ -155,86 +156,6 @@ namespace EventSystem.Event
         {
             await EndRound();
             await CleanupGrids();
-        }
-
-        /// <summary>
-        /// Clears inventories of all participating players.
-        /// </summary>
-        private void ClearAllPlayerInventories()
-        {
-            foreach (var playerId in ParticipatingPlayers.Keys)
-            {
-                ClearPlayerInventory(playerId);
-            }
-        }
-
-        /// <summary>
-        /// Checks for kills during the event and awards points to attacking teams.
-        /// </summary>
-        private void CheckForKills()
-        {
-            foreach (var victim in LastAttackers.Keys)
-            {
-                if (!ParticipatingPlayers.ContainsKey(victim))
-                    continue; // Ignoruj, jeśli ofiara nie bierze udziału w wydarzeniu
-
-                long attacker;
-                if (LastAttackers.TryRemove(victim, out attacker) && ParticipatingPlayers.ContainsKey(attacker))
-                {
-                    // Sprawdź, czy ofiara i atakujący są z różnych drużyn
-                    var victimTeam = Teams.Values.FirstOrDefault(team => team.Members.ContainsKey(victim));
-                    var attackerTeam = Teams.Values.FirstOrDefault(team => team.Members.ContainsKey(attacker));
-
-                    if (victimTeam != null && attackerTeam != null && victimTeam != attackerTeam)
-                    {
-                        // Przyznaj punkty drużynie atakującego
-                        attackerTeam.KillPoints += _config.ArenaTeamFightSettings.PointsPerKill;
-
-                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Player {attacker} zabił gracza {victim}. Drużyna {attackerTeam.Name} zdobywa {_config.ArenaTeamFightSettings.PointsPerKill} punktów.");
-
-                        // Wywołanie respawnu dla ofiary
-                        Task.Run(() => RespawnPlayer(victim, victimTeam));
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// Respawns a player after being killed during the event.
-        /// </summary>
-        /// <param name="playerId">The ID of the player to respawn.</param>
-        /// <param name="team">The team to which the player belongs.</param>
-        private async Task RespawnPlayer(long playerId, Team team)
-        {
-            // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
-            TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
-
-            // Przydzielenie ekwipunku
-            await AssignRandomWeaponAndAmmo(playerId);
-        }
-
-        /// <summary>
-        /// Assigns a random weapon and corresponding ammunition to a player.
-        /// </summary>
-        /// <param name="playerId">The ID of the player to assign the weapon and ammunition to.</param>
-        private async Task AssignRandomWeaponAndAmmo(long playerId)
-        {
-            // Zdefiniuj listę dostępnych broni i odpowiadających im typów amunicji
-            var weaponsWithAmmo = new Dictionary<string, (string weaponSubtypeID, int ammoQuantity)>() {
-                 // Przykładowe dane
-                {"Rifle", ("RifleAmmo", 120)},
-                {"Pistol", ("PistolAmmo", 50)}
-            };
-    
-            // Losowe wybranie broni
-            var random = new Random();
-            var selectedWeapon = weaponsWithAmmo.ElementAt(random.Next(weaponsWithAmmo.Count));
-
-            // Dodanie broni do ekwipunku gracza
-            AddItemToPlayer(playerId, "MyObjectBuilder_Weapon", selectedWeapon.Key, 1);
-
-            // Dodanie amunicji do ekwipunku gracza
-            AddItemToPlayer(playerId, "MyObjectBuilder_AmmoMagazine", selectedWeapon.Value.weaponSubtypeID, selectedWeapon.Value.ammoQuantity);
         }
 
         /// <summary>
@@ -302,82 +223,6 @@ namespace EventSystem.Event
             return (true, message);
         }
 
-        /// <summary>
-        /// Teleports a player to a specific spawn point based on their team ID.
-        /// </summary>
-        /// <param name="playerId">The ID of the player to teleport.</param>
-        /// <param name="teamId">The ID of the team the player belongs to.</param>
-        public void TeleportPlayerToSpecificSpawnPoint(long playerId, int teamId)
-        {
-            if (!Teams.TryGetValue(teamId, out Team team))
-            {
-                Log.Error($"Could not find team {teamId}.");
-                return;
-            }
-
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempting to find spawn block for team {teamId}.");
-            string spawnBlockName = teamId == 1 ? _config.ArenaTeamFightSettings.BlockSpawn1Name : _config.ArenaTeamFightSettings.BlockSpawn2Name;
-
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                var spawnPoint = FindBlockPositionByName(spawnBlockName);
-                if (spawnPoint.HasValue)
-                {
-                    TeleportPlayerToSpawnPoint(playerId, spawnPoint.Value);
-                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleporting player {playerId} to spawn point for team {teamId} at {spawnPoint.Value}.");
-                }
-                else
-                {
-                    Log.Error($"Could not find spawn block '{spawnBlockName}' for team {teamId}.");
-                }
-            });
-        }
-
-
-
-        /// <summary>
-        /// Loads settings for the Arena Team Fight event from the configuration file.
-        /// </summary>
-        /// <param name="config">The configuration object containing event settings.</param>
-        public override Task LoadEventSettings(EventSystemConfig config)
-        {
-            if (config.ArenaTeamFightSettings == null)
-            {
-                config.ArenaTeamFightSettings = new ArenaTeamFightConfig
-                {
-                    IsEnabled = false,
-                    ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
-                    StartTime = "00:00:00",
-                    EndTime = "23:59:59",
-                    PrefabName = "arenapvp",
-                    SpawnPositionX = -42596.88,
-                    SpawnPositionY = 40764.17,
-                    SpawnPositionZ = -16674.06,
-                    Team1Name = "Red",
-                    BlockSpawn1Name = "SpawnPointTeam1",
-                    Team2Name = "Blue",
-                    BlockSpawn2Name = "SpawnPointTeam2",
-                    MaxPlayersPerTeam = 10,
-                    MatchDurationInMinutes = 5,
-                    PointsPerKill = 10
-                };
-            }
-
-            var settings = config.ArenaTeamFightSettings;
-            IsEnabled = settings.IsEnabled;
-            ActiveDaysOfMonth = settings.ActiveDaysOfMonth;
-            StartTime = TimeSpan.Parse(settings.StartTime);
-            EndTime = TimeSpan.Parse(settings.EndTime);
-
-            // Ustawienie pozycji spawnu na podstawie konfiguracji
-            Vector3D spawnPosition = new Vector3D(settings.SpawnPositionX, settings.SpawnPositionY, settings.SpawnPositionZ);
-
-            string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded ArenaTeamFight settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}, SpawnPosition={spawnPosition}");
-
-            return Task.CompletedTask;
-        }
-
         public class Team
         {
             public string Name { get; set; }
@@ -385,26 +230,6 @@ namespace EventSystem.Event
             public ConcurrentDictionary<long, bool> Members { get; set; } = new ConcurrentDictionary<long, bool>();
             public Vector3D SpawnPoint { get; set; }
             public int KillPoints { get; set; } = 0;
-        }
-
-
-        public class ArenaTeamFightConfig
-        {
-            public bool IsEnabled { get; set; }
-            public List<int> ActiveDaysOfMonth { get; set; }
-            public string StartTime { get; set; }
-            public string EndTime { get; set; }
-            public string PrefabName { get; set; }
-            public double SpawnPositionX { get; set; }
-            public double SpawnPositionY { get; set; }
-            public double SpawnPositionZ { get; set; }
-            public string Team1Name { get; set; }
-            public string BlockSpawn1Name { get; set; }
-            public string Team2Name { get; set; }
-            public string BlockSpawn2Name { get; set; }
-            public int MaxPlayersPerTeam { get; set; }
-            public int MatchDurationInMinutes { get; set; }
-            public int PointsPerKill { get; set; }
         }
 
     }
