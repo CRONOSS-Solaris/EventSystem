@@ -130,12 +130,25 @@ namespace EventSystem.Events
             bool removed = ParticipatingPlayers.TryRemove(steamId, out _);
             if (removed)
             {
+                // Wywołaj OnPlayerLeave, gdy gracz opuści event.
+                await OnPlayerLeave(steamId);
                 return (true, $"You have successfully left the event: {EventName}.");
             }
             else
             {
                 return (false, "You were not participating in this event or an error occurred.");
             }
+        }
+
+
+        /// <summary>
+        /// Method called when the player leaves the event.
+        /// </summary>
+        /// <param name="steamId">SteamID of the player leaving the event.</param>
+        /// <returns>Task representing asynchronous operations.</returns>
+        protected virtual Task OnPlayerLeave(long steamId)
+        {
+            return Task.CompletedTask;
         }
 
         /// <summary>
