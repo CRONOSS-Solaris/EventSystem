@@ -272,6 +272,37 @@ namespace EventSystem.Events
         }
 
         /// <summary>
+        /// Teleports a specific player back to their original position after an event.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to teleport back.</param>
+        protected void TeleportPlayerBack(long steamId)
+        {
+            if (originalPlayerPositions.TryGetValue(steamId, out Vector3D originalPosition))
+            {
+                if (Utilities.TryGetPlayerBySteamId(steamId, out IMyPlayer player) && player.Character != null)
+                {
+                    // Perform teleportation in the main game thread
+                    MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+                    {
+                        player.Character.SetPosition(originalPosition);
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Teleported player {player.DisplayName} back to original position at {originalPosition}.");
+                    });
+
+                    // Remove the player's position from the dictionary after teleporting them back
+                    originalPlayerPositions.TryRemove(steamId, out _);
+                }
+                else
+                {
+                    Log.Error($"Player with SteamID {steamId} not found or does not have a character.");
+                }
+            }
+            else
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Original position not found for player with SteamID {steamId}.");
+            }
+        }
+
+        /// <summary>
         /// Removes all items from a player's inventory.
         /// </summary>
         /// <param name="steamId">The SteamID of the player whose items are to be removed.</param>
@@ -383,6 +414,49 @@ namespace EventSystem.Events
             _itemsRemovedFromPlayers.Clear();
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "ReturnItemsToPlayers: Completed returning items to players.");
         }
+
+        /// <summary>
+        /// Returns removed items to a specific player after teleporting them to their previous position or when they leave the event.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to return items to.</param>
+        protected void ReturnItemsToPlayer(long steamId)
+        {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"ReturnItemsToPlayer: Processing player with SteamID {steamId}.");
+
+            if (_itemsRemovedFromPlayers.TryGetValue(steamId, out var itemsToReturn))
+            {
+                foreach (var definitionId in itemsToReturn.Keys)
+                {
+                    // Tworzenie instancji RewardItem na podstawie zapisanych danych
+                    var rewardItem = new RewardItem
+                    {
+                        ItemTypeId = definitionId.TypeId.ToString(),
+                        ItemSubtypeId = definitionId.SubtypeName,
+                        Amount = (int)itemsToReturn[definitionId]
+                    };
+
+                    // Użycie PlayerItemRewardManager do oddania przedmiotu graczowi
+                    var result = PlayerItemRewardManager.AwardPlayer((ulong)steamId, rewardItem, rewardItem.Amount, Log, EventSystemMain.Instance.Config);
+
+                    if (result)
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully returned {rewardItem.Amount} of {rewardItem.ItemTypeId}/{rewardItem.ItemSubtypeId} to player {steamId}.");
+                    }
+                    else
+                    {
+                        LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Failed to return {rewardItem.Amount} of {rewardItem.ItemTypeId}/{rewardItem.ItemSubtypeId} to player {steamId}.");
+                    }
+                }
+
+                // Usunięcie gracza z listy, aby uniknąć ponownego przetwarzania
+                _itemsRemovedFromPlayers.TryRemove(steamId, out _);
+            }
+            else
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"No items to return for player with SteamID {steamId}.");
+            }
+        }
+
 
         protected class RewardItem : IRewardItem
         {

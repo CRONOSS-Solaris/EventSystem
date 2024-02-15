@@ -7,6 +7,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using VRageMath;
 
 namespace EventSystem.Event
 {
@@ -133,5 +134,36 @@ namespace EventSystem.Event
                 }
             });
         }
+
+        protected override async Task OnPlayerLeave(long steamId)
+        {
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Player with SteamID {steamId} is leaving the event.");
+
+            // Usuń gracza z listy uczestników
+            ParticipatingPlayers.TryRemove(steamId, out _);
+
+            // Znajdź zespół, do którego należy gracz, i usuń go z tego zespołu
+            Team playerTeam = null;
+            foreach (var team in Teams.Values)
+            {
+                if (team.Members.TryRemove(steamId, out _))
+                {
+                    playerTeam = team;
+                    break;
+                }
+            }
+            if (playerTeam != null)
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Player with SteamID {steamId} removed from team {playerTeam.Name}.");
+            }
+
+            ClearPlayerInventory(steamId);
+            UnsubscribeFromCharacterDeath(steamId);
+            ReturnItemsToPlayer(steamId);
+            TeleportPlayerBack(steamId);
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Player with SteamID {steamId} has been processed for leaving.");
+        }
+
     }
 }
