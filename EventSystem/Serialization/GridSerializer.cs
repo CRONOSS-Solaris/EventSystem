@@ -29,11 +29,12 @@ public static class GridSerializer
         try
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Deserializing grid file...");
-            if (MyObjectBuilderSerializerKeen.DeserializeXML(filePath, out MyObjectBuilder_Definitions definitions))
+            if (MyObjectBuilderSerializerKeen.DeserializeXML(filePath, out MyObjectBuilder_Definitions? definitions))
             {
                 LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grid file deserialized successfully.");
 
-                if (TryGetGridsFromDefinition(definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids))
+                List<MyObjectBuilder_CubeGrid> grids = GetGridsFromDefinition(definitions);
+                if (grids.Any())
                 {
                     GridSpawner spawner = new GridSpawner();
                     var entityIds = await spawner.SpawnGrids(grids, position);
@@ -42,8 +43,12 @@ public static class GridSerializer
                 }
                 else
                 {
-                    Log.Error("Failed to get grids from definition.");
+                    Log.Error("No grids found in definition.");
                 }
+            }
+            else
+            {
+                Log.Error("Failed to deserialize the grid file.");
             }
         }
         catch (Exception ex)
@@ -54,17 +59,28 @@ public static class GridSerializer
         return new HashSet<long>();
     }
 
-    private static bool TryGetGridsFromDefinition(MyObjectBuilder_Definitions definitions, out IEnumerable<MyObjectBuilder_CubeGrid> grids)
+    private static List<MyObjectBuilder_CubeGrid> GetGridsFromDefinition(MyObjectBuilder_Definitions definitions)
     {
-        grids = new List<MyObjectBuilder_CubeGrid>();
-        if (definitions.ShipBlueprints != null && definitions.ShipBlueprints.Any())
+        var grids = new List<MyObjectBuilder_CubeGrid>();
+
+        if (definitions.ShipBlueprints != null)
         {
-            grids = definitions.ShipBlueprints.SelectMany(blueprint => blueprint.CubeGrids);
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids successfully extracted from ship blueprints.");
-            return true;
+            foreach (var blueprint in definitions.ShipBlueprints)
+            {
+                grids.AddRange(blueprint.CubeGrids);
+            }
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids extracted from ship blueprints.");
         }
 
-        Log.Error("Invalid MyObjectBuilder_Definitions, no ship blueprints found.");
-        return false;
+        if (definitions.Prefabs != null)
+        {
+            foreach (var prefab in definitions.Prefabs)
+            {
+                grids.AddRange(prefab.CubeGrids);
+            }
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Grids extracted from prefabs.");
+        }
+
+        return grids;
     }
 }
