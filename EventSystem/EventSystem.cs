@@ -88,9 +88,6 @@ namespace EventSystem
         //UpdateManager
         public Utils.UpdateManager UpdateManager { get; private set; }
 
-
-
-
         //Metody
         public override void Init(ITorchBase torch)
         {
@@ -257,7 +254,6 @@ namespace EventSystem
             }
         }
 
-
         private void RegisterAllEvents()
         {
             // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
@@ -292,7 +288,6 @@ namespace EventSystem
                 }
             }
         }
-
 
         private void ScheduleAllEvents()
         {
@@ -459,7 +454,6 @@ namespace EventSystem
         //{
         //    updateSubscribersPerSecond.TryRemove(updateAction, out _);
         //}
-
         public void Save()
         {
             try

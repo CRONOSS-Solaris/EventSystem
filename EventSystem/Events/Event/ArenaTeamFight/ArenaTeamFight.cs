@@ -1,11 +1,8 @@
 ﻿using EventSystem.Events;
-using EventSystem.Managers;
 using EventSystem.Utils;
 using NLog;
-using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
