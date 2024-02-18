@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Diagnostics;
+using System.Windows;
 using System.Windows.Controls;
 
 namespace EventSystem
@@ -17,6 +18,42 @@ namespace EventSystem
         {
             Plugin = plugin;
             DataContext = plugin.Config;
+        }
+
+        private void UserControl_Loaded(object sender, RoutedEventArgs e)
+        {
+            // Ustawienie domyślnego wyboru lub wczytanie konfiguracji, jeśli jest to konieczne
+            EventSelector.SelectedIndex = 0;
+        }
+
+        private void SupportButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            string discordInviteLink = "https://discord.gg/BUnUnXz5xJ";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = discordInviteLink,
+                UseShellExecute = true
+            });
+        }
+
+        private void WikiButton_OnClick(object sender, RoutedEventArgs e)
+        {
+            string WikiLink = "https://wiki.torchapi.com/en/Plugins/EventSystem/EventSystem";
+            Process.Start(new ProcessStartInfo
+            {
+                FileName = WikiLink,
+                UseShellExecute = true
+            });
+        }
+
+        private void EventSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            switch (EventSelector.SelectedIndex)
+            {
+                case 0:
+                    //EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl();
+                    break;
+            }
         }
 
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)

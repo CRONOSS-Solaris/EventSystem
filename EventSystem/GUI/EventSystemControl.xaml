@@ -1,28 +1,236 @@
 ﻿<UserControl x:Class="EventSystem.EventSystemControl"
-      xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-      xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-      xmlns:local="clr-namespace:EventSystem"
-      mc:Ignorable="d" 
-      d:DesignHeight="450" d:DesignWidth="800">
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:EventSystem"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800"
+              Loaded="UserControl_Loaded">
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Styles.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+
+            <SolidColorBrush x:Key="TextBox.Static.Border" Color="#FFABAdB3"/>
+            <SolidColorBrush x:Key="TextBox.MouseOver.Border" Color="#FF7EB4EA"/>
+            <SolidColorBrush x:Key="TextBox.Focus.Border" Color="#FF569DE5"/>
+            <Style x:Key="TextBoxStyle1" TargetType="{x:Type TextBox}">
+                <Setter Property="Background" Value="{DynamicResource {x:Static SystemColors.WindowBrushKey}}"/>
+                <Setter Property="BorderBrush" Value="{StaticResource TextBox.Static.Border}"/>
+                <Setter Property="Foreground" Value="{DynamicResource {x:Static SystemColors.ControlTextBrushKey}}"/>
+                <Setter Property="BorderThickness" Value="1"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+                <Setter Property="HorizontalContentAlignment" Value="Center"/>
+                <Setter Property="KeyboardNavigation.TabNavigation" Value="None"/>
+                <Setter Property="HorizontalContentAlignment" Value="Left"/>
+                <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+                <Setter Property="AllowDrop" Value="true"/>
+                <Setter Property="ScrollViewer.PanningMode" Value="VerticalFirst"/>
+                <Setter Property="Stylus.IsFlicksEnabled" Value="False"/>
+                <Setter Property="Template">
+                    <Setter.Value>
+                        <ControlTemplate TargetType="{x:Type TextBox}">
+                            <Border x:Name="border" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" SnapsToDevicePixels="True" Cursor="" CornerRadius="8,8,8,8" BorderThickness="2,2,2,2">
+                                <ScrollViewer x:Name="PART_ContentHost" Focusable="false" HorizontalScrollBarVisibility="Hidden" VerticalScrollBarVisibility="Hidden"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsEnabled" Value="false">
+                                    <Setter Property="Opacity" TargetName="border" Value="0.56"/>
+                                </Trigger>
+                                <Trigger Property="IsMouseOver" Value="true">
+                                    <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource TextBox.MouseOver.Border}"/>
+                                </Trigger>
+                                <Trigger Property="IsKeyboardFocused" Value="true">
+                                    <Setter Property="BorderBrush" TargetName="border" Value="{StaticResource TextBox.Focus.Border}"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Setter.Value>
+                </Setter>
+                <Style.Triggers>
+                    <MultiTrigger>
+                        <MultiTrigger.Conditions>
+                            <Condition Property="IsInactiveSelectionHighlightEnabled" Value="true"/>
+                            <Condition Property="IsSelectionActive" Value="false"/>
+                        </MultiTrigger.Conditions>
+                        <Setter Property="SelectionBrush" Value="{DynamicResource {x:Static SystemColors.InactiveSelectionHighlightBrushKey}}"/>
+                    </MultiTrigger>
+                </Style.Triggers>
+            </Style>
+
+        </ResourceDictionary>
+    </UserControl.Resources>
 
     <Grid>
+        <TabControl>
+            <TabItem Header="General Settings">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
 
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="Labels"/>
-            <ColumnDefinition Width="*"/>
-            <ColumnDefinition Width="Auto" SharedSizeGroup="Buttons"/>
-        </Grid.ColumnDefinitions>
-        <Grid.RowDefinitions>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-        </Grid.RowDefinitions>
+                    <!-- Debug and Environment Settings -->
+                    <GroupBox Header="Debug and Environment Settings" FontWeight="Bold" Grid.Row="0" Grid.Column="0" BorderBrush="Black" BorderThickness="2" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Debug Mode" IsChecked="{Binding DebugMode}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
+                            <CheckBox Content="Is Lobby" IsChecked="{Binding isLobby}" Grid.Row="0" Grid.Column="1" FontWeight="Normal"/>
+                        </Grid>
+                    </GroupBox>
 
-        <Button Grid.Column="2" Grid.Row="4" Content="Save Config" Margin="5" Click="SaveButton_OnClick"></Button>
+                    <!-- Event System Prefix -->
+                    <GroupBox Header="Event System Prefix" FontWeight="Bold" Grid.Row="0" Grid.Column="1" BorderBrush="Black" BorderThickness="2" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Label Content="Event Prefix" Grid.Row="0"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding EventPrefix}" Grid.Row="0" Grid.Column="1" Margin="5" Padding="1,0,0,0"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Support -->
+                    <GroupBox Grid.Row="1" Grid.Column="1" Header="Support" Margin="5,5,5,142" FontWeight="Bold" BorderBrush="Black" BorderThickness="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Join Us for Help!" 
+                                VerticalAlignment="Center" HorizontalAlignment="Center" 
+                                FontWeight="Bold" FontSize="16" Margin="5,0"/>
+
+                            <Button Style="{StaticResource ButtonStyle1}" Grid.Column="1" 
+                                Content="Join Discord Server" Click="SupportButton_OnClick" 
+                                VerticalAlignment="Center" HorizontalAlignment="Center" Width="128" FontWeight="Bold"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Wiki -->
+                    <GroupBox Grid.Row="1" Grid.Column="1" Header="Wiki" Margin="5,65,5,72" FontWeight="Bold" BorderBrush="Black" BorderThickness="2">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="224*"/>
+                                <!-- Zwiększona przestrzeń dla tekst -->
+                                <ColumnDefinition Width="143*"/>
+                            </Grid.ColumnDefinitions>
+
+                            <TextBlock Grid.Column="0" Text="Something you don't know? Take a look here:" FontWeight="Bold" FontSize="16" Margin="5,0,5,0" TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+
+                            <Button Style="{StaticResource ButtonStyle1}" Grid.Column="1" Content="Wiki" Click="WikiButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Center" Width="100" FontWeight="Bold" Height="22"/>
+                        </Grid>
+                    </GroupBox>
+
+
+                    <!-- LCD Management -->
+                    <GroupBox Header="LCD Management" FontWeight="Bold" Grid.Row="2" Grid.Column="0" BorderBrush="Black" BorderThickness="2" Margin="5,5,5,69">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="2"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Enable Active Events LCD Manager" IsChecked="{Binding EnableActiveEventsLCDManager}" Grid.Row="0" FontWeight="Normal"/>
+                            <Label Content="Active Events LCD Tag Name" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding ActiveEventsLCDManagerTagName}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Rectangle Grid.Row="2" Fill="Black" Grid.ColumnSpan="2"/>
+                            <CheckBox Content="Enable All Events LCD Manager" IsChecked="{Binding EnableAllEventsLCDManager}" Grid.Row="3" Margin="0,5,0,0" FontWeight="Normal"/>
+                            <Label Content="All Events LCD Tag Name" Grid.Row="4" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding AllEventsLcdTagName}" Grid.Row="4" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                        </Grid>
+                    </GroupBox>
+
+                    <!-- Database Configuration -->
+                    <GroupBox Header="Database Configuration" FontWeight="Bold" Grid.Row="1" Grid.Column="0" BorderBrush="Black" BorderThickness="2" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="105*"/>
+                                <ColumnDefinition Width="247*"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Use Database" IsChecked="{Binding UseDatabase}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
+                            <Label Content="Database Host" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabaseHost}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Database Port" Grid.Row="2" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabasePort}" Grid.Row="2" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Database Name" Grid.Row="3" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabaseName}" Grid.Row="3" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Database Username" Grid.Row="4" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabaseUsername}" Grid.Row="4" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Database Password" Grid.Row="5" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabasePassword}" Grid.Row="5" Grid.Column="1" Margin="5,5,5,4" Padding="1,0,0,0"/>
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
+
+
+            <TabItem Header="Event Configuration">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <!-- Dodaj więcej RowDefinition w zależności od potrzeb -->
+                    </Grid.RowDefinitions>
+
+                    <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Content="SAVE CHANGES" Click="SaveButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Right" Width="100" FontWeight="Bold" Height="22" Margin="5"/>
+                    <Grid Grid.Row="1">
+                        <ComboBox x:Name="EventSelector" Margin="10" Grid.Row="1" VerticalAlignment="Top" SelectionChanged="EventSelector_SelectionChanged">
+                        <ComboBoxItem Content="Arena Team Fight"/>
+                        <!-- Dodaj więcej opcji dla innych eventów -->
+                    </ComboBox>
+                    <ContentControl x:Name="EventConfigurationContent" Margin="10" Grid.Row="1"/>
+                    </Grid>
+                </Grid>
+            </TabItem>
+            
+            <TabItem Header="Reward Management">
+                <!-- Kontrolki dla zarządzania nagrodami -->
+            </TabItem>
+            <!-- Dodaj więcej zakładek w razie potrzeby -->
+        </TabControl>
     </Grid>
 </UserControl>
