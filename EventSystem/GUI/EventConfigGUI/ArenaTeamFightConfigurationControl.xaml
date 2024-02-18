@@ -3,9 +3,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:EventSystem"
-             xmlns:utils="clr-namespace:EventSystem.Utils"
-             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+
              mc:Ignorable="d" 
              d:DesignHeight="550" d:DesignWidth="800">
 
@@ -101,13 +99,29 @@
         <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding ArenaTeamFightSettings.IsEnabled}" />
 
         <Label Grid.Row="2" Grid.Column="0" Content="Active Days Of Month"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}"  Grid.Row="2" Grid.Column="1" Text="{Binding ArenaTeamFightSettings.ActiveDaysOfMonth}" Margin="2"/>
+        <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal">
+            <ItemsControl x:Name="DaysItemsControl" ItemsSource="{Binding ArenaTeamFightSettings.ActiveDaysOfMonth}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding}" Margin="5"/>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+            <TextBox Style="{DynamicResource TextBoxStyle1}" x:Name="NewDayTextBox" Width="50" Margin="2"/>
+            <Button Style="{StaticResource ButtonStyle1}" Content="+" Click="AddDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
+            <Button Style="{StaticResource ButtonStyle1}" Content="-" Click="RemoveSelectedDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
+        </StackPanel>
 
         <Label Grid.Row="3" Grid.Column="0" Content="Start Time"/>
-        <xctk:TimePicker Grid.Row="3" Grid.Column="1" Format="Custom" FormatString="HH:mm" Value="{Binding ArenaTeamFightSettings.StartTime}" Margin="2"/>
+        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="3" Grid.Column="1" Text="{Binding ArenaTeamFightSettings.StartTime}" Tag="StartTime" Margin="2"/>
 
         <Label Grid.Row="4" Grid.Column="0" Content="End Time"/>
-        <xctk:TimePicker Grid.Row="4" Grid.Column="1" Format="Custom" FormatString="HH:mm" Value="{Binding ArenaTeamFightSettings.EndTime}" Margin="2"/>
+        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="4" Grid.Column="1" Text="{Binding ArenaTeamFightSettings.EndTime}" Tag="EndTime" Margin="2"/>
 
         <Label Grid.Row="5" Grid.Column="0" Content="Prefab Name"/>
         <TextBox Style="{DynamicResource TextBoxStyle1}"  Grid.Row="5" Grid.Column="1" Text="{Binding ArenaTeamFightSettings.PrefabName}" Margin="2"/>

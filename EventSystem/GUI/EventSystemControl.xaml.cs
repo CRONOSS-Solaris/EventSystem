@@ -20,12 +20,6 @@ namespace EventSystem
             DataContext = plugin.Config;
         }
 
-        private void UserControl_Loaded(object sender, RoutedEventArgs e)
-        {
-            // Ustawienie domyślnego wyboru lub wczytanie konfiguracji, jeśli jest to konieczne
-            EventSelector.SelectedIndex = 0;
-        }
-
         private void SupportButton_OnClick(object sender, RoutedEventArgs e)
         {
             string discordInviteLink = "https://discord.gg/BUnUnXz5xJ";
@@ -51,7 +45,7 @@ namespace EventSystem
             switch (EventSelector.SelectedIndex)
             {
                 case 0:
-                    //EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl();
+                    EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl(Plugin);
                     break;
             }
         }

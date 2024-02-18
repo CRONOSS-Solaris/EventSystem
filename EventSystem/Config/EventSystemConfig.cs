@@ -67,6 +67,11 @@ namespace EventSystem
         // Konfiguracje Eventów
         public SpecialEventConfig SpecialEventSettings { get; set; }
         //public SpecialTwoEventConfig SpecialTwoEventSettings { get; set; }
-        public ArenaTeamFightConfig ArenaTeamFightSettings {  get; set; }
+        private ArenaTeamFightConfig _arenaTeamFightSettings;
+        public ArenaTeamFightConfig ArenaTeamFightSettings
+        {
+            get => _arenaTeamFightSettings;
+            set => SetValue(ref _arenaTeamFightSettings, value);
+        }
     }
 }
