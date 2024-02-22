@@ -549,6 +549,23 @@ namespace EventSystem.Events
             }
         }
 
+        public void RegisterDamageHandler()
+        {
+            // Przykład, jak można zarejestrować handler; upewnij się, że jest wywoływany w odpowiednim miejscu
+            MyAPIGateway.Session.DamageSystem.RegisterBeforeDamageHandler(0, BeforeDamageHandler);
+        }
+
+        private void BeforeDamageHandler(object target, ref MyDamageInformation info)
+        {
+            if (target is IMyCharacter character)
+            {
+                var victimSteamId = character.ControllerInfo.ControllingIdentityId;
+                var attackerSteamId = info.AttackerId; //tutaj może to byś identityid.
+
+                OnPlayerAttacked(victimSteamId, attackerSteamId);
+            }
+        }
+
         /// <summary>
         /// Updates the last attacker for a given victim. This method should be called whenever a player is attacked.
         /// It stores the SteamID of the last player or entity that attacked the victim. This information can be used
@@ -560,6 +577,7 @@ namespace EventSystem.Events
         {
             LastAttackers[victimSteamId] = attackerSteamId;
         }
+
 
     }
 }

@@ -35,6 +35,7 @@ namespace EventSystem.Event
 
             // Inicjalizacja drużyn
             InitializeTeams();
+            RegisterDamageHandler();
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Executing ArenaTeamFight and teams initialized.");
         }

@@ -1,6 +1,7 @@
 ﻿using EventSystem.Events;
 using EventSystem.Managers;
 using EventSystem.Utils;
+using Sandbox.Game.Entities.Character;
 using Sandbox.ModAPI;
 using System;
 using System.Linq;
@@ -59,8 +60,8 @@ namespace EventSystem.Event
         /// <param name="team">The team to which the player belongs.</param>
         private async Task RespawnPlayer(long playerId, Team team)
         {
-            // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
-            TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
+           // Użyj właściwości TeamID z obiektu team do identyfikacji drużyny
+           TeleportPlayerToSpecificSpawnPoint(playerId, team.TeamID);
 
             // Przydzielenie ekwipunku
             await AssignRandomWeaponAndAmmo(playerId);
