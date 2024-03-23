@@ -113,8 +113,8 @@
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
             <TextBox Style="{DynamicResource TextBoxStyle1}" x:Name="NewDayTextBox" Width="50" Margin="2"/>
-            <Button Style="{StaticResource ButtonStyle1}" Content="+" Click="AddDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
-            <Button Style="{StaticResource ButtonStyle1}" Content="-" Click="RemoveSelectedDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
+            <!--<Button Style="{StaticResource ButtonStyle1}" Content="+" Click="AddDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>-->
+            <!--<Button Style="{StaticResource ButtonStyle1}" Content="-" Click="RemoveSelectedDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>-->
         </StackPanel>
 
         <Label Grid.Row="3" Grid.Column="0" Content="Start Time"/>

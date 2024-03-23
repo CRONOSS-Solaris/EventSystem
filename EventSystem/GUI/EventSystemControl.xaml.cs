@@ -45,7 +45,7 @@ namespace EventSystem
             switch (EventSelector.SelectedIndex)
             {
                 case 0:
-                    EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl(Plugin);
+                    //EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl(Plugin);
                     break;
             }
         }

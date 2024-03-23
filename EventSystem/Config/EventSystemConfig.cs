@@ -1,6 +1,5 @@
-﻿using EventSystem.Event;
-using Torch;
-using static EventSystem.Event.ArenaTeamFight;
+﻿using Torch;
+//using static EventSystem.Event.ArenaTeamFight;
 using static EventSystem.Event.SpecialEvent;
 // static EventSystem.Event.SpecialTwoEvent;
 
@@ -67,11 +66,12 @@ namespace EventSystem
         // Konfiguracje Eventów
         public SpecialEventConfig SpecialEventSettings { get; set; }
         //public SpecialTwoEventConfig SpecialTwoEventSettings { get; set; }
-        private ArenaTeamFightConfig _arenaTeamFightSettings;
-        public ArenaTeamFightConfig ArenaTeamFightSettings
-        {
-            get => _arenaTeamFightSettings;
-            set => SetValue(ref _arenaTeamFightSettings, value);
-        }
+
+        //private ArenaTeamFightConfig _arenaTeamFightSettings;
+        //public ArenaTeamFightConfig ArenaTeamFightSettings
+        //{
+        //    get => _arenaTeamFightSettings;
+        //    set => SetValue(ref _arenaTeamFightSettings, value);
+        //}
     }
 }
