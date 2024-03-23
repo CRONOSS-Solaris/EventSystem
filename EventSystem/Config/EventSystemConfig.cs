@@ -1,7 +1,7 @@
 ﻿using Torch;
 using static EventSystem.Event.WarZone;
 //using static EventSystem.Event.ArenaTeamFight;
-using static EventSystem.Event.SpecialEvent;
+//using static EventSystem.Event.SpecialEvent;
 // static EventSystem.Event.SpecialTwoEvent;
 
 namespace EventSystem
@@ -65,7 +65,7 @@ namespace EventSystem
         public string DatabasePassword { get => _databasePassword; set => SetValue(ref _databasePassword, value); }
 
         // Konfiguracje Eventów
-        public SpecialEventConfig SpecialEventSettings { get; set; }
+        //public SpecialEventConfig SpecialEventSettings { get; set; }
 
         public WarZoneConfig WarZoneSettings { get; set; }
 
