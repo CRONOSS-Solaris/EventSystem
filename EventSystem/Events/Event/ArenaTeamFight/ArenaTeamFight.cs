@@ -25,7 +25,7 @@ namespace EventSystem.Event
             EventName = "ArenaTeamFight";
             AllowParticipationInOtherEvents = true;
             UseEventSpecificConfig = false;
-            PrefabStoragePath = Path.Combine("EventSystem", "ArenaTeamFightBP");
+            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefab/Blueprint");
         }
 
 

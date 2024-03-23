@@ -16,9 +16,8 @@ namespace EventSystem.Managers
             _rootPath = rootPath;
             CreateFolders(Path.Combine(_rootPath, "Config"),
                           Path.Combine(_rootPath, "PlayerAccounts"),
-                          Path.Combine(_rootPath, "SpecialEventBP"),
+                          Path.Combine(_rootPath, "EventPrefab/Blueprint"),
                           Path.Combine(_rootPath, "CommandPrefabTest"),
-                          Path.Combine(_rootPath, "ArenaTeamFightBP"),
                           Path.Combine(_rootPath, "EventSourceCode")
 
                           );
