@@ -169,38 +169,41 @@ namespace EventSystem.Event
         // Implementacja metody IsEnemy
         private bool IsEnemy(long playerId)
         {
-            // Pobierz frakcję dla danego gracza
             var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
-
             if (playerFaction == null)
             {
                 // Gracz nie należy do żadnej frakcji, więc nie jest traktowany jako wróg
                 return false;
             }
 
-            // Pobierz frakcje wszystkich graczy aktualnie w strefie
+            // Sprawdzamy, czy jakiekolwiek frakcje obecne w strefie są wrogie wobec frakcji gracza
             foreach (var otherPlayerId in playersInSphere.Keys)
             {
                 if (otherPlayerId == playerId)
                 {
-                    // Pomijamy samego siebie
-                    continue;
+                    continue; // Pomijamy samego siebie
                 }
 
                 var otherPlayerFaction = MySession.Static.Factions.TryGetPlayerFaction(otherPlayerId);
-                if (otherPlayerFaction != null && playerFaction.FactionId != otherPlayerFaction.FactionId)
+                if (otherPlayerFaction != null)
                 {
-                    // Sprawdź, czy frakcje są w stanie wojny
+                    if (playerFaction.FactionId == otherPlayerFaction.FactionId)
+                    {
+                        continue; // To ten sam związek, nie wróg
+                    }
+
+                    // Sprawdź, czy frakcje są wrogie względem siebie
                     if (MySession.Static.Factions.AreFactionsEnemies(playerFaction.FactionId, otherPlayerFaction.FactionId))
                     {
-                        // Jeśli frakcje są wrogie, uznajemy gracza za wroga
-                        return true;
+                        return true; // Znaleziono wrogą frakcję
                     }
                 }
             }
 
+            // Jeśli dotarliśmy tutaj, oznacza to, że nie ma wrogich frakcji w strefie wobec frakcji gracza
             return false;
         }
+
 
         public override Task CheckPlayerProgress(long steamId)
         {
