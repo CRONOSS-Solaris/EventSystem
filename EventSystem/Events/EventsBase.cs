@@ -61,7 +61,10 @@ namespace EventSystem.Events
         /// Starts the event.
         /// </summary>
         /// <returns>A task representing the asynchronous operation.</returns>
-        public abstract Task StartEvent();
+        public virtual Task StartEvent()
+        {
+            return Task.CompletedTask;
+        }
 
         /// <summary>
         /// Performs specific actions related to ending the event.

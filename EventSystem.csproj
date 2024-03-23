@@ -229,6 +229,7 @@
     <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.cs" />
     <Compile Include="EventSystem\Events\EventsBase.GridManagement.cs" />
     <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.PlayerManagement.cs" />
+    <Compile Include="EventSystem\Events\Event\WarZone\WarZone.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialEvent\SpecialEvent.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialTwoEvent\SpecialTwoEvent.cs" />
     <Compile Include="EventSystem\GUI\EventConfigGUI\ArenaTeamFightConfigurationControl.xaml.cs">
