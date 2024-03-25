@@ -3,6 +3,7 @@ using EventSystem.Utils;
 using Sandbox.Definitions;
 using Sandbox.Engine.Utils;
 using Sandbox.Game.Entities;
+using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
@@ -457,6 +458,27 @@ namespace EventSystem.Events
             }
         }
 
+        protected void SendGpsToPlayer(long playerId, string name, Vector3D coords, string description = "", TimeSpan? discardAt = null, bool showOnHud = true, bool alwaysVisible = true, Color? color = null, long entityId = 0, bool isObjective = false, long contractId = 0)
+        {
+            var gps = new MyGps
+            {
+                Name = name,
+                Coords = coords,
+                Description = description ?? "",
+                ShowOnHud = showOnHud,
+                AlwaysVisible = alwaysVisible,
+                GPSColor = color ?? Color.White,
+                EntityId = entityId,
+                IsObjective = isObjective,
+                ContractId = contractId,
+                DisplayName = name,
+                DiscardAt = discardAt
+            };
+
+            gps.UpdateHash();
+
+            MyAPIGateway.Session?.GPS.AddGps(playerId, gps);
+        }
 
         protected class RewardItem : IRewardItem
         {
