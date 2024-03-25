@@ -22,6 +22,8 @@ namespace EventSystem.Event
         private ConcurrentDictionary<long, DateTime> playerEntryTime = new ConcurrentDictionary<long, DateTime>();
         private ConcurrentDictionary<long, DateTime> playerExitTime = new ConcurrentDictionary<long, DateTime>();
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
+        private System.Timers.Timer messageAndGpsTimer;
+
 
         private bool enemyInZone = false;
 
@@ -61,12 +63,32 @@ namespace EventSystem.Event
             // Subskrypcja sprawdzania pozycji graczy co sekundę
             SubscribeToUpdatePerSecond(CheckPlayersInSphere);
 
-            // Wiadomości do wysłania
-            EventSystemMain.ChatManager.SendMessageAsOther($"WarZone", $"Start of the WarZone event!", Color.Red);
-            EventSystemMain.ChatManager.SendMessageAsOther($"WarZone", $"GPS:WarZone:{sphereCenter.X}:{sphereCenter.Y}:{sphereCenter.Z}:#FFF17575:", Color.Red);
+            // Inicjalizacja i konfiguracja timera
+            messageAndGpsTimer = new System.Timers.Timer(settings.MessageAndGpsBroadcastIntervalSeconds * 1000);
+            messageAndGpsTimer.Elapsed += async (sender, e) => await SendEventMessagesAndGps();
+            messageAndGpsTimer.AutoReset = true;
+            messageAndGpsTimer.Enabled = true;
+
+            // Rozpocznij timer od razu
+            await SendEventMessagesAndGps();
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZone.");
         }
+
+        private async Task SendEventMessagesAndGps()
+        {
+            // Wysyłanie ogólnej wiadomości o rozpoczęciu eventu
+            EventSystemMain.ChatManager.SendMessageAsOther("WarZone", $"Start of the WarZone event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
+
+            // Pobieranie listy wszystkich graczy online i wysyłanie do nich informacji GPS
+            foreach (var player in MySession.Static.Players.GetOnlinePlayers())
+            {
+                long playerId = player.Identity.IdentityId;
+                // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
+                SendGpsToPlayer(playerId, "WarZone", sphereCenter, "Location of the WarZone event!", color: Color.Red);
+            }
+        }
+
 
         public override async Task SystemEndEvent()
         {
@@ -80,6 +102,13 @@ namespace EventSystem.Event
             ParticipatingPlayers.Clear();
             playerEntryTime.Clear();
             playerExitTime.Clear();
+
+            // Zatrzymaj i wyczyść timer
+            if (messageAndGpsTimer != null)
+            {
+                messageAndGpsTimer.Stop();
+                messageAndGpsTimer.Dispose();
+            }
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Ending WarZone.");
             await Task.CompletedTask;
@@ -261,12 +290,6 @@ namespace EventSystem.Event
             return false;
         }
 
-
-        public override Task CheckPlayerProgress(long steamId)
-        {
-            return Task.CompletedTask;
-        }
-
         public override Task LoadEventSettings(EventSystemConfig config)
         {
             if (config.WarZoneSettings == null)
@@ -278,6 +301,7 @@ namespace EventSystem.Event
                     StartTime = "00:00:00",
                     EndTime = "23:59:59",
                     PointsAwardIntervalSeconds = 60,
+                    MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
                     SphereRadius = 100,
                     SphereMinCoords = new Vector3D(-1000, -1000, -1000),
@@ -324,6 +348,7 @@ namespace EventSystem.Event
             public string StartTime { get; set; }
             public string EndTime { get; set; }
             public int PointsAwardIntervalSeconds { get; set; }
+            public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
             public double SphereRadius { get; set; }
             public Vector3D SphereMinCoords { get; set; }
