@@ -20,7 +20,7 @@ namespace EventSystem.Event
         private ConcurrentDictionary<long, bool> playerMessageSent = new ConcurrentDictionary<long, bool>();
         private ConcurrentDictionary<long, DateTime> lastPointsAwarded = new ConcurrentDictionary<long, DateTime>();
         private ConcurrentDictionary<long, DateTime> playerEntryTime = new ConcurrentDictionary<long, DateTime>();
-        private ConcurrentDictionary<long, DateTime> playerExitTime = new ConcurrentDictionary<long, DateTime>();
+
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
         private System.Timers.Timer messageAndGpsTimer;
 
@@ -85,7 +85,7 @@ namespace EventSystem.Event
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, "WarZone", sphereCenter, "Location of the WarZone event!", color: Color.Red);
+                SendGpsToPlayer(playerId, "WarZone", sphereCenter, "Location of the WarZone event!", TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
 
@@ -101,7 +101,6 @@ namespace EventSystem.Event
             lastPointsAwarded.Clear();
             ParticipatingPlayers.Clear();
             playerEntryTime.Clear();
-            playerExitTime.Clear();
 
             // Zatrzymaj i wyczyść timer
             if (messageAndGpsTimer != null)
@@ -141,7 +140,6 @@ namespace EventSystem.Event
                     }
                     else if (!isInSphereNow && wasInSphereBefore)
                     {
-                        playerExitTime[playerId] = now;
                         // Powiadomienie o opuszczeniu strefy.
                         SendMessage(playerId, "You left the WarZone!", Color.Red);
                     }
@@ -188,54 +186,34 @@ namespace EventSystem.Event
                 {
                     long playerId = kvp.Key;
                     ulong steamId = MySession.Static.Players.TryGetSteamId(playerId);
-                    bool isPlayerInZone = kvp.Value;
+                    bool isPlayerCurrentlyInZone = kvp.Value;
 
-                    // Sprawdzamy, czy dla gracza został zarejestrowany czas wejścia do strefy.
-                    if (playerEntryTime.TryGetValue(playerId, out var entryTime))
+                    // Sprawdź, czy gracz jest aktualnie w strefie.
+                    if (isPlayerCurrentlyInZone && playerEntryTime.TryGetValue(playerId, out var entryTime))
                     {
-                        DateTime lastExitTime;
-                        double totalSecondsInZone;
+                        double totalSecondsInZone = (now - entryTime).TotalSeconds;
 
-                        // Jeśli gracz obecnie znajduje się w strefie, używamy bieżącego czasu do obliczenia całkowitego czasu spędzonego w strefie.
-                        // W przeciwnym przypadku używamy czasu ostatniego wyjścia do obliczeń, aby nie naliczać czasu poza strefą.
-                        if (isPlayerInZone || !playerExitTime.TryGetValue(playerId, out lastExitTime))
+                        // Sprawdź, czy upłynął wystarczający czas od momentu wejścia do strefy.
+                        if (totalSecondsInZone >= _config.WarZoneSettings.PointsAwardIntervalSeconds)
                         {
-                            totalSecondsInZone = (now - entryTime).TotalSeconds;
-                        }
-                        else
-                        {
-                            // Jeśli gracz opuścił strefę, obliczamy czas spędzony na podstawie ostatniego znanego czasu wyjścia.
-                            totalSecondsInZone = (lastExitTime - entryTime).TotalSeconds;
-                        }
+                            // Resetuj czas wejścia gracza do bieżącego momentu, aby ponownie zacząć liczenie czasu spędzonego w strefie
+                            playerEntryTime[playerId] = now;
 
-                        var pointsAwardIntervalSeconds = _config.WarZoneSettings.PointsAwardIntervalSeconds;
-
-                        // Obliczamy, ile pełnych interwałów czasowych upłynęło od czasu wejścia gracza do strefy.
-                        int intervalsSpentInZone = (int)(totalSecondsInZone / pointsAwardIntervalSeconds);
-
-                        if (intervalsSpentInZone > 0)
-                        {
-                            // Przyznajemy punkty za każdy pełny interwał spędzony w strefie.
-                            int pointsToAward = intervalsSpentInZone * _config.WarZoneSettings.PointsPerInterval;
-
-                            // Aktualizujemy czas wejścia gracza, przesuwając go o liczbę pełnych interwałów, które zostały już uwzględnione przy przyznawaniu punktów.
-                            playerEntryTime[playerId] = entryTime.AddSeconds(intervalsSpentInZone * pointsAwardIntervalSeconds);
-
-                            // Przyznajemy punkty graczowi.
+                            // Przyznaj punkty graczowi
+                            int pointsToAward = _config.WarZoneSettings.PointsPerInterval;
                             AwardPlayer((long)steamId, pointsToAward);
                             SendMessage(playerId, $"You have earned {pointsToAward} points for staying in the WarZone!", Color.Yellow);
                         }
-
-                        // Jeśli gracz opuścił strefę, zachowujemy jego czas wyjścia do późniejszego użycia.
-                        if (!isPlayerInZone)
-                        {
-                            playerExitTime[playerId] = now;
-                        }
+                    }
+                    else if (!isPlayerCurrentlyInZone)
+                    {
+                        // Jeśli gracz opuścił strefę, usuń jego czas wejścia, aby nie liczyć czasu spędzonego poza strefą
+                        DateTime removedTime;
+                        playerEntryTime.TryRemove(playerId, out removedTime);
                     }
                 }
             }
         }
-
 
         private void SendMessage(long playerId, string message, Color color)
         {
@@ -369,14 +347,6 @@ namespace EventSystem.Event
                 Y = y;
                 Z = z;
             }
-
-            //// Metoda pomocnicza do konwersji na Vector3D
-            //public Vector3D ToVector3D()
-            //{
-            //    return new Vector3D(X, Y, Z);
-            //}
         }
-
-
     }
 }
