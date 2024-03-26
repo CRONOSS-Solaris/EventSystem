@@ -219,6 +219,7 @@
                     <Grid Grid.Row="1">
                         <ComboBox x:Name="EventSelector" Margin="10" Grid.Row="1" VerticalAlignment="Top" SelectionChanged="EventSelector_SelectionChanged">
                         <ComboBoxItem Content="WarZone"/>
+                        <ComboBoxItem Content="WarZoneGrid"/>
                         <!-- Dodaj więcej opcji dla innych eventów -->
                     </ComboBox>
                     <ContentControl x:Name="EventConfigurationContent" Margin="10" Grid.Row="1"/>

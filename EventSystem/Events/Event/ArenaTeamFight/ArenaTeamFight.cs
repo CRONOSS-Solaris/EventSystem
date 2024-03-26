@@ -25,7 +25,7 @@
 //            EventName = "ArenaTeamFight";
 //            AllowParticipationInOtherEvents = true;
 //            UseEventSpecificConfig = false;
-//            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefab/Blueprint");
+//            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
 //        }
 
 

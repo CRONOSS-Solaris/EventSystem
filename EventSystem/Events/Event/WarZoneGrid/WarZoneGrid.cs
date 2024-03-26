@@ -13,9 +13,9 @@ using VRageMath;
 
 namespace EventSystem.Event
 {
-    public class WarZone : EventsBase
+    public class WarZoneGrid : EventsBase
     {
-        public static readonly Logger Log = LogManager.GetLogger("EventSystem/WarZone");
+        public static readonly Logger Log = LogManager.GetLogger("EventSystem/WarZoneGrid");
         private readonly EventSystemConfig _config;
         private ConcurrentDictionary<long, bool> playersInSphere = new ConcurrentDictionary<long, bool>();
         private ConcurrentDictionary<long, bool> playerMessageSent = new ConcurrentDictionary<long, bool>();
@@ -33,13 +33,13 @@ namespace EventSystem.Event
         private double sphereRadius;
 
 
-        public WarZone(EventSystemConfig config)
+        public WarZoneGrid(EventSystemConfig config)
         {
             _config = config;
-            EventName = "WarZone";
+            EventName = "WarZoneGrid";
             AllowParticipationInOtherEvents = false;
             UseEventSpecificConfig = false;
-            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefab/Blueprint");
+            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
         public override async Task SystemStartEvent()
@@ -51,7 +51,7 @@ namespace EventSystem.Event
                 ParticipatingPlayers.TryAdd(playerId, true);
             }
 
-            var settings = _config.WarZoneSettings;
+            var settings = _config.WarZoneGridSettings;
 
             // Losowanie pozycji sfery
             Vector3D sphereCenter = RandomizeSpherePosition(settings);
@@ -73,20 +73,27 @@ namespace EventSystem.Event
             // Rozpocznij timer od razu
             await SendEventMessagesAndGps();
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZone.");
+            // spawnowanie siatki na środku strefy.
+            var gridName = settings.PrefabName;
+            if (!string.IsNullOrWhiteSpace(gridName))
+            {
+                await SpawnGrid(gridName, sphereCenter);
+            }
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZoneGrid.");
         }
 
         private async Task SendEventMessagesAndGps()
         {
             // Wysyłanie ogólnej wiadomości o rozpoczęciu eventu
-            EventSystemMain.ChatManager.SendMessageAsOther("WarZone", $"Start of the WarZone event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
+            EventSystemMain.ChatManager.SendMessageAsOther("WarZoneGrid", $"Start of the WarZoneGrid event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
 
             // Pobieranie listy wszystkich graczy online i wysyłanie do nich informacji GPS
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, "WarZone", sphereCenter, "Location of the WarZone event!", TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
+                SendGpsToPlayer(playerId, "WarZoneGrid", sphereCenter, "Location of the WarZoneGrid event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
 
@@ -110,7 +117,9 @@ namespace EventSystem.Event
                 messageAndGpsTimer.Dispose();
             }
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Ending WarZone.");
+            await CleanupGrids();
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Ending WarZoneGrid.");
             await Task.CompletedTask;
         }
 
@@ -138,7 +147,7 @@ namespace EventSystem.Event
                         {
                             // Gracz wszedł do strefy
                             playerEntryTime[playerId] = now;
-                            SendMessage(playerId, "You entered the WarZone!", Color.Green);
+                            SendMessage(playerId, "You entered the WarZoneGrid!", Color.Green);
                             stateChanged = true;
                         }
 
@@ -147,7 +156,7 @@ namespace EventSystem.Event
                         if (playerFaction == null)
                         {
                             // Gracz bez frakcji w strefie
-                            SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                            SendMessage(playerId, "You must be part of a faction to participate in the WarZoneGrid event!", Color.Red);
                         }
                         else if (IsEnemy(playerId))
                         {
@@ -159,7 +168,7 @@ namespace EventSystem.Event
                     {
                         // Gracz opuścił strefę
                         playersInSphere.TryRemove(playerId, out _);
-                        SendMessage(playerId, "You left the WarZone!", Color.Red);
+                        SendMessage(playerId, "You left the WarZoneGrid!", Color.Red);
                         stateChanged = true;
                     }
                 }
@@ -211,15 +220,15 @@ namespace EventSystem.Event
                         double totalSecondsInZone = (now - entryTime).TotalSeconds;
 
                         // Sprawdź, czy upłynął wystarczający czas od momentu wejścia do strefy.
-                        if (totalSecondsInZone >= _config.WarZoneSettings.PointsAwardIntervalSeconds)
+                        if (totalSecondsInZone >= _config.WarZoneGridSettings.PointsAwardIntervalSeconds)
                         {
                             // Resetuj czas wejścia gracza do bieżącego momentu, aby ponownie zacząć liczenie czasu spędzonego w strefie
                             playerEntryTime[playerId] = now;
 
                             // Przyznaj punkty graczowi
-                            int pointsToAward = _config.WarZoneSettings.PointsPerInterval;
+                            int pointsToAward = _config.WarZoneGridSettings.PointsPerInterval;
                             AwardPlayer((long)steamId, pointsToAward);
-                            SendMessage(playerId, $"You have earned {pointsToAward} points for staying in the WarZone!", Color.Yellow);
+                            SendMessage(playerId, $"You have earned {pointsToAward} points for staying in the WarZoneGrid!", Color.Yellow);
                         }
                     }
                     else if (!isPlayerCurrentlyInZone)
@@ -235,7 +244,7 @@ namespace EventSystem.Event
         private void SendMessage(long playerId, string message, Color color)
         {
             ulong steamId = MySession.Static.Players.TryGetSteamId(playerId);
-            EventSystemMain.ChatManager.SendMessageAsOther("WarZone", message, color, steamId);
+            EventSystemMain.ChatManager.SendMessageAsOther("WarZoneGrid", message, color, steamId);
         }
 
         private void SendMessageToPlayersInZone(string message, Color color)
@@ -291,31 +300,32 @@ namespace EventSystem.Event
 
         public override Task LoadEventSettings(EventSystemConfig config)
         {
-            if (config.WarZoneSettings == null)
+            if (config.WarZoneGridSettings == null)
             {
-                config.WarZoneSettings = new WarZoneConfig
+                config.WarZoneGridSettings = new WarZoneGridConfig
                 {
                     IsEnabled = false,
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
                     EndTime = "23:59:59",
+                    PrefabName = "PrefabName",
                     PointsAwardIntervalSeconds = 60,
                     MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
                     SphereRadius = 100,
-                    SphereMinCoords = new SphereCoords(-1000, -1000, -1000),
-                    SphereMaxCoords = new SphereCoords(1000, 1000, 1000)
+                    SphereMinCoords = new SphereCoordsGrid(-1000, -1000, -1000),
+                    SphereMaxCoords = new SphereCoordsGrid(1000, 1000, 1000)
                 };
             }
 
-            var settings = config.WarZoneSettings;
+            var settings = config.WarZoneGridSettings;
             IsEnabled = settings.IsEnabled;
             ActiveDaysOfMonth = settings.ActiveDaysOfMonth;
             StartTime = TimeSpan.Parse(settings.StartTime);
             EndTime = TimeSpan.Parse(settings.EndTime);
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded WarZone settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+            LoggerHelper.DebugLog(Log, _config, $"Loaded WarZoneGrid settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
             return Task.CompletedTask;
         }
@@ -329,7 +339,7 @@ namespace EventSystem.Event
             return distance <= sphereRadius;
         }
 
-        private Vector3D RandomizeSpherePosition(WarZoneConfig settings)
+        private Vector3D RandomizeSpherePosition(WarZoneGridConfig settings)
         {
             Random rnd = new Random();
             double x = rnd.NextDouble() * (settings.SphereMaxCoords.X - settings.SphereMinCoords.X) + settings.SphereMinCoords.X;
@@ -339,30 +349,31 @@ namespace EventSystem.Event
             return new Vector3D(x, y, z);
         }
 
-        public class WarZoneConfig
+        public class WarZoneGridConfig
         {
             public bool IsEnabled { get; set; }
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
             public string EndTime { get; set; }
+            public string PrefabName { get; set; }
             public int PointsAwardIntervalSeconds { get; set; }
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
             public double SphereRadius { get; set; }
-            public SphereCoords SphereMinCoords { get; set; }
-            public SphereCoords SphereMaxCoords { get; set; }
+            public SphereCoordsGrid SphereMinCoords { get; set; }
+            public SphereCoordsGrid SphereMaxCoords { get; set; }
         }
 
-        public class SphereCoords
+        public class SphereCoordsGrid
         {
             public double X { get; set; }
             public double Y { get; set; }
             public double Z { get; set; }
 
-            public SphereCoords() { }
+            public SphereCoordsGrid() { }
 
             // Konstruktor przyjmujący wartości X, Y, Z
-            public SphereCoords(double x, double y, double z)
+            public SphereCoordsGrid(double x, double y, double z)
             {
                 X = x;
                 Y = y;

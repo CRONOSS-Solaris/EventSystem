@@ -229,6 +229,7 @@
     <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.cs" />
     <Compile Include="EventSystem\Events\EventsBase.GridManagement.cs" />
     <Compile Include="EventSystem\Events\Event\ArenaTeamFight\ArenaTeamFight.PlayerManagement.cs" />
+    <Compile Include="EventSystem\Events\Event\WarZoneGrid\WarZoneGrid.cs" />
     <Compile Include="EventSystem\Events\Event\WarZone\WarZone.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialEvent\SpecialEvent.cs" />
     <Compile Include="EventSystem\Events\Event\SpecialTwoEvent\SpecialTwoEvent.cs" />
@@ -237,6 +238,9 @@
     </Compile>
     <Compile Include="EventSystem\GUI\EventConfigGUI\WarZoneConfigurationControl.xaml.cs">
       <DependentUpon>WarZoneConfigurationControl.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="EventSystem\GUI\EventConfigGUI\WarZoneGridConfigurationControl.xaml.cs">
+      <DependentUpon>WarZoneGridConfigurationControl.xaml</DependentUpon>
     </Compile>
     <Compile Include="EventSystem\Interface\IRewardItem.cs" />
     <Compile Include="EventSystem\Managers\AllEventsLCDManager.cs" />
@@ -297,6 +301,10 @@
       <SubType>Designer</SubType>
     </Page>
     <Page Include="EventSystem\GUI\EventConfigGUI\WarZoneConfigurationControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="EventSystem\GUI\EventConfigGUI\WarZoneGridConfigurationControl.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

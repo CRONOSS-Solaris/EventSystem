@@ -1,5 +1,6 @@
 ﻿using Torch;
 using static EventSystem.Event.WarZone;
+using static EventSystem.Event.WarZoneGrid;
 //using static EventSystem.Event.ArenaTeamFight;
 //using static EventSystem.Event.SpecialEvent;
 // static EventSystem.Event.SpecialTwoEvent;
@@ -68,6 +69,7 @@ namespace EventSystem
         //public SpecialEventConfig SpecialEventSettings { get; set; }
 
         public WarZoneConfig WarZoneSettings { get; set; }
+        public WarZoneGridConfig WarZoneGridSettings { get; set; }
 
         //public SpecialTwoEventConfig SpecialTwoEventSettings { get; set; }
 

@@ -48,6 +48,9 @@ namespace EventSystem
                     EventConfigurationContent.Content = new WarZoneConfigurationControl(Plugin);
                     break;
                 case 1:
+                    EventConfigurationContent.Content = new WarZoneGridConfigurationControl(Plugin);
+                    break;
+                case 2:
                     //EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl(Plugin);
                     break;
             }
