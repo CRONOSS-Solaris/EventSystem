@@ -117,8 +117,8 @@ namespace EventSystem.Event
         {
             var now = DateTime.UtcNow;
             var newEnemiesInZone = new HashSet<long>();
+            bool stateChanged = false;
 
-            // Przygotowanie do sprawdzenia, czy doszło do zmiany w obecności wrogów.
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 var character = player.Character;
@@ -127,55 +127,71 @@ namespace EventSystem.Event
                     long playerId = player.Identity.IdentityId;
                     Vector3D playerPosition = character.PositionComp.GetPosition();
                     bool isInSphereNow = IsPlayerInSphere(playerPosition, sphereCenter, sphereRadius);
-                    bool wasInSphereBefore = playersInSphere.GetOrAdd(playerId, false);
+                    bool wasInSphereBefore = playersInSphere.ContainsKey(playerId) && playersInSphere[playerId];
 
-                    // Zaktualizuj obecność gracza w strefie.
-                    playersInSphere[playerId] = isInSphereNow;
-
-                    if (isInSphereNow && !wasInSphereBefore)
+                    if (isInSphereNow)
                     {
-                        playerEntryTime[playerId] = now;
-                        // Powiadomienie o wejściu do strefy.
-                        SendMessage(playerId, "You entered the WarZone!", Color.Green);
+                        playersInSphere[playerId] = true;
+
+                        if (!wasInSphereBefore)
+                        {
+                            // Gracz wszedł do strefy
+                            playerEntryTime[playerId] = now;
+                            SendMessage(playerId, "You entered the WarZone!", Color.Green);
+                            stateChanged = true;
+                        }
+
+                        // Sprawdzenie przynależności do frakcji i obecności wrogów
+                        var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
+                        if (playerFaction == null)
+                        {
+                            // Gracz bez frakcji w strefie
+                            SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        }
+                        else if (IsEnemy(playerId))
+                        {
+                            // Wykryto wroga w strefie
+                            newEnemiesInZone.Add(playerId);
+                        }
                     }
-                    else if (!isInSphereNow && wasInSphereBefore)
+                    else if (wasInSphereBefore)
                     {
-                        // Powiadomienie o opuszczeniu strefy.
+                        // Gracz opuścił strefę
+                        playersInSphere.TryRemove(playerId, out _);
                         SendMessage(playerId, "You left the WarZone!", Color.Red);
-                    }
-
-                    var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
-                    if (playerFaction == null && isInSphereNow)
-                    {
-                        // Gracz w strefie bez frakcji.
-                        SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
-                    }
-                    else if (isInSphereNow && IsEnemy(playerId))
-                    {
-                        newEnemiesInZone.Add(playerId);
+                        stateChanged = true;
                     }
                 }
             }
 
-            // Aktualizacja stanu wrogów w strefie.
-            UpdateEnemyPresence(newEnemiesInZone);
+            if (stateChanged || !newEnemiesInZone.SetEquals(currentEnemiesInZone))
+            {
+                // Aktualizuj obecność wrogów tylko, jeśli doszło do zmiany stanu
+                UpdateEnemyPresence(newEnemiesInZone);
+            }
 
-            // Przyznawanie punktów.
             AwardPointsToPlayers(now);
         }
 
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
         {
-            bool enemyPresenceChanged = !newEnemiesInZone.SetEquals(currentEnemiesInZone);
-            if (enemyPresenceChanged)
-            {
-                enemyInZone = newEnemiesInZone.Any();
-                currentEnemiesInZone = newEnemiesInZone;
+            bool previouslyEnemyInZone = enemyInZone;
+            enemyInZone = newEnemiesInZone.Any();
 
-                String message = enemyInZone ? "An enemy has entered the zone, eliminate them to continue earning points!" : "Enemies have left the zone. You can now continue earning points!";
-                Color messageColor = enemyInZone ? Color.Red : Color.Green;
-                SendMessageToAllPlayers(message, messageColor);
+            // Sprawdź, czy doszło do zmiany z obecności wrogów na ich brak
+            if (previouslyEnemyInZone && !enemyInZone)
+            {
+                // Wrogowie opuścili strefę, wyślij powiadomienie tylko raz
+                SendMessageToPlayersInZone("Enemies have left the zone. You can now continue earning points!", Color.Green);
             }
+            else if (!previouslyEnemyInZone && enemyInZone)
+            {
+                // Wrogowie pojawili się w strefie, zaktualizuj obecność
+                SendMessageToPlayersInZone("An enemy has entered the zone, eliminate them to continue earning points!", Color.Red);
+            }
+
+            // Aktualizuj listę obecnych wrogów
+            currentEnemiesInZone = newEnemiesInZone;
         }
 
         private void AwardPointsToPlayers(DateTime now)
@@ -221,11 +237,15 @@ namespace EventSystem.Event
             EventSystemMain.ChatManager.SendMessageAsOther("WarZone", message, color, steamId);
         }
 
-        private void SendMessageToAllPlayers(string message, Color color)
+        private void SendMessageToPlayersInZone(string message, Color color)
         {
+            // Wysyłaj komunikat tylko do graczy, którzy są w strefie
             foreach (var playerId in playersInSphere.Keys)
             {
-                SendMessage(playerId, message, color);
+                if (playersInSphere.TryGetValue(playerId, out bool isInZone) && isInZone)
+                {
+                    SendMessage(playerId, message, color);
+                }
             }
         }
 
