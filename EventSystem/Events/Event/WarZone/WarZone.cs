@@ -44,7 +44,7 @@ namespace EventSystem.Event
         public override async Task SystemStartEvent()
         {
             // Dodanie wszystkich graczy do listy uczestników
-            foreach (var player in MySession.Static.Players.GetOnlinePlayers())
+            foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
                 ParticipatingPlayers.TryAdd(playerId, true);
@@ -81,7 +81,7 @@ namespace EventSystem.Event
             EventSystemMain.ChatManager.SendMessageAsOther("WarZone", $"Start of the WarZone event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
 
             // Pobieranie listy wszystkich graczy online i wysyłanie do nich informacji GPS
-            foreach (var player in MySession.Static.Players.GetOnlinePlayers())
+            foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
@@ -120,7 +120,7 @@ namespace EventSystem.Event
             var newEnemiesInZone = new HashSet<long>();
 
             // Przygotowanie do sprawdzenia, czy doszło do zmiany w obecności wrogów.
-            foreach (var player in MySession.Static.Players.GetOnlinePlayers())
+            foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 var character = player.Character;
                 if (character != null)
