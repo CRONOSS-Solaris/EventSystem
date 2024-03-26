@@ -235,6 +235,9 @@
     <Compile Include="EventSystem\GUI\EventConfigGUI\ArenaTeamFightConfigurationControl.xaml.cs">
       <DependentUpon>ArenaTeamFightConfigurationControl.xaml</DependentUpon>
     </Compile>
+    <Compile Include="EventSystem\GUI\EventConfigGUI\WarZoneConfigurationControl.xaml.cs">
+      <DependentUpon>WarZoneConfigurationControl.xaml</DependentUpon>
+    </Compile>
     <Compile Include="EventSystem\Interface\IRewardItem.cs" />
     <Compile Include="EventSystem\Managers\AllEventsLCDManager.cs" />
     <Compile Include="EventSystem\Managers\ActiveEventsLCDManager.cs" />
@@ -274,6 +277,7 @@
     <Compile Include="EventSystem\Utils\PackRewardItem.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
     <Compile Include="EventSystem\Utils\RewardSet.cs" />
+    <Compile Include="EventSystem\Utils\SphereCoordsConverter.cs" />
     <Compile Include="EventSystem\Utils\UpdateManager.cs" />
     <Compile Include="EventSystem\Utils\Utilities.cs" />
     <EmbeddedResource Include="EventSystem\Properties\Resources.resx">
@@ -291,6 +295,10 @@
     <Page Include="EventSystem\GUI\EventConfigGUI\ArenaTeamFightConfigurationControl.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
+    </Page>
+    <Page Include="EventSystem\GUI\EventConfigGUI\WarZoneConfigurationControl.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="EventSystem\GUI\EventSystemControl.xaml">
       <SubType>Designer</SubType>

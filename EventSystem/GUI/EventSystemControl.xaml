@@ -218,7 +218,7 @@
                     <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Content="SAVE CHANGES" Click="SaveButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Right" Width="100" FontWeight="Bold" Height="22" Margin="5"/>
                     <Grid Grid.Row="1">
                         <ComboBox x:Name="EventSelector" Margin="10" Grid.Row="1" VerticalAlignment="Top" SelectionChanged="EventSelector_SelectionChanged">
-                        <ComboBoxItem Content="Arena Team Fight"/>
+                        <ComboBoxItem Content="WarZone"/>
                         <!-- Dodaj więcej opcji dla innych eventów -->
                     </ComboBox>
                     <ContentControl x:Name="EventConfigurationContent" Margin="10" Grid.Row="1"/>

@@ -304,8 +304,8 @@ namespace EventSystem.Event
                     MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
                     SphereRadius = 100,
-                    SphereMinCoords = new Vector3D(-1000, -1000, -1000),
-                    SphereMaxCoords = new Vector3D(1000, 1000, 1000)
+                    SphereMinCoords = new SphereCoords(-1000, -1000, -1000),
+                    SphereMaxCoords = new SphereCoords(1000, 1000, 1000)
                 };
             }
 
@@ -340,7 +340,6 @@ namespace EventSystem.Event
             return new Vector3D(x, y, z);
         }
 
-
         public class WarZoneConfig
         {
             public bool IsEnabled { get; set; }
@@ -351,9 +350,33 @@ namespace EventSystem.Event
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
             public double SphereRadius { get; set; }
-            public Vector3D SphereMinCoords { get; set; }
-            public Vector3D SphereMaxCoords { get; set; }
+            public SphereCoords SphereMinCoords { get; set; }
+            public SphereCoords SphereMaxCoords { get; set; }
         }
+
+        public class SphereCoords
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double Z { get; set; }
+
+            public SphereCoords() { }
+
+            // Konstruktor przyjmujący wartości X, Y, Z
+            public SphereCoords(double x, double y, double z)
+            {
+                X = x;
+                Y = y;
+                Z = z;
+            }
+
+            //// Metoda pomocnicza do konwersji na Vector3D
+            //public Vector3D ToVector3D()
+            //{
+            //    return new Vector3D(X, Y, Z);
+            //}
+        }
+
 
     }
 }

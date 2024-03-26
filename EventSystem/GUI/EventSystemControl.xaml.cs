@@ -45,6 +45,9 @@ namespace EventSystem
             switch (EventSelector.SelectedIndex)
             {
                 case 0:
+                    EventConfigurationContent.Content = new WarZoneConfigurationControl(Plugin);
+                    break;
+                case 1:
                     //EventConfigurationContent.Content = new ArenaTeamFightConfigurationControl(Plugin);
                     break;
             }
