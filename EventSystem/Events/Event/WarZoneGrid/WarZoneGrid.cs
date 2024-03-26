@@ -139,6 +139,15 @@ namespace EventSystem.Event
                     bool isInSphereNow = IsPlayerInSphere(playerPosition, sphereCenter, sphereRadius);
                     bool wasInSphereBefore = playersInSphere.ContainsKey(playerId) && playersInSphere[playerId];
 
+                    // Sprawdzenie przynależności do frakcji przed dodaniem gracza do strefy
+                    var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
+                    if (playerFaction == null && isInSphereNow)
+                    {
+                        // Gracz bez frakcji w strefie, wysyłaj komunikat, ale nie dodawaj go do strefy
+                        SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        continue; // Pomiń dodawanie gracza do listy uczestników
+                    }
+
                     if (isInSphereNow)
                     {
                         playersInSphere[playerId] = true;
@@ -147,18 +156,11 @@ namespace EventSystem.Event
                         {
                             // Gracz wszedł do strefy
                             playerEntryTime[playerId] = now;
-                            SendMessage(playerId, "You entered the WarZoneGrid!", Color.Green);
+                            SendMessage(playerId, "You entered the WarZone!", Color.Green);
                             stateChanged = true;
                         }
 
-                        // Sprawdzenie przynależności do frakcji i obecności wrogów
-                        var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
-                        if (playerFaction == null)
-                        {
-                            // Gracz bez frakcji w strefie
-                            SendMessage(playerId, "You must be part of a faction to participate in the WarZoneGrid event!", Color.Red);
-                        }
-                        else if (IsEnemy(playerId))
+                        if (IsEnemy(playerId))
                         {
                             // Wykryto wroga w strefie
                             newEnemiesInZone.Add(playerId);
@@ -168,7 +170,7 @@ namespace EventSystem.Event
                     {
                         // Gracz opuścił strefę
                         playersInSphere.TryRemove(playerId, out _);
-                        SendMessage(playerId, "You left the WarZoneGrid!", Color.Red);
+                        SendMessage(playerId, "You left the WarZone!", Color.Red);
                         stateChanged = true;
                     }
                 }
@@ -182,6 +184,7 @@ namespace EventSystem.Event
 
             AwardPointsToPlayers(now);
         }
+
 
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
         {

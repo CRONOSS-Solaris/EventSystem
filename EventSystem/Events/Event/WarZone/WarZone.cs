@@ -39,7 +39,7 @@ namespace EventSystem.Event
             EventName = "WarZone";
             AllowParticipationInOtherEvents = false;
             UseEventSpecificConfig = false;
-            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefab/Blueprint");
+            PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
         public override async Task SystemStartEvent()
@@ -130,6 +130,15 @@ namespace EventSystem.Event
                     bool isInSphereNow = IsPlayerInSphere(playerPosition, sphereCenter, sphereRadius);
                     bool wasInSphereBefore = playersInSphere.ContainsKey(playerId) && playersInSphere[playerId];
 
+                    // Sprawdzenie przynależności do frakcji przed dodaniem gracza do strefy
+                    var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
+                    if (playerFaction == null && isInSphereNow)
+                    {
+                        // Gracz bez frakcji w strefie, wysyłaj komunikat, ale nie dodawaj go do strefy
+                        SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        continue; // Pomiń dodawanie gracza do listy uczestników
+                    }
+
                     if (isInSphereNow)
                     {
                         playersInSphere[playerId] = true;
@@ -142,14 +151,7 @@ namespace EventSystem.Event
                             stateChanged = true;
                         }
 
-                        // Sprawdzenie przynależności do frakcji i obecności wrogów
-                        var playerFaction = MySession.Static.Factions.TryGetPlayerFaction(playerId);
-                        if (playerFaction == null)
-                        {
-                            // Gracz bez frakcji w strefie
-                            SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
-                        }
-                        else if (IsEnemy(playerId))
+                        if (IsEnemy(playerId))
                         {
                             // Wykryto wroga w strefie
                             newEnemiesInZone.Add(playerId);
@@ -173,6 +175,7 @@ namespace EventSystem.Event
 
             AwardPointsToPlayers(now);
         }
+
 
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
         {
