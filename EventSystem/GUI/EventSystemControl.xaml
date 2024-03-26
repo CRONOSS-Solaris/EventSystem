@@ -91,6 +91,9 @@
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Debug Mode" IsChecked="{Binding DebugMode}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
                             <CheckBox Content="Is Lobby" IsChecked="{Binding isLobby}" Grid.Row="0" Grid.Column="1" FontWeight="Normal"/>
+                            <Label Content="Default Owner Grid" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DefaultOwnerGrid}" Grid.Row="1" Margin="119,5,5,4" Padding="1,0,0,0" Grid.ColumnSpan="2"/>
+
                         </Grid>
                     </GroupBox>
 
@@ -197,9 +200,9 @@
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabasePort}" Grid.Row="2" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
                             <Label Content="Database Name" Grid.Row="3" Grid.Column="0" FontWeight="Normal"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabaseName}" Grid.Row="3" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
-                            <Label Content="Database Username" Grid.Row="4" Grid.Column="0" FontWeight="Normal"/>
+                            <Label Content="Database Username" Grid.Row="4" Grid.Column="0" FontWeight="Normal" Grid.ColumnSpan="2" Margin="0,0,246,29" Grid.RowSpan="2"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabaseUsername}" Grid.Row="4" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
-                            <Label Content="Database Password" Grid.Row="5" Grid.Column="0" FontWeight="Normal"/>
+                            <Label Content="Database Password" Grid.Row="5" Grid.Column="0" FontWeight="Normal" Grid.ColumnSpan="2" Margin="0,0,251,0" Grid.RowSpan="5"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DatabasePassword}" Grid.Row="5" Grid.Column="1" Margin="5,5,5,4" Padding="1,0,0,0"/>
                         </Grid>
                     </GroupBox>
@@ -218,15 +221,15 @@
                     <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Content="SAVE CHANGES" Click="SaveButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Right" Width="100" FontWeight="Bold" Height="22" Margin="5"/>
                     <Grid Grid.Row="1">
                         <ComboBox x:Name="EventSelector" Margin="10" Grid.Row="1" VerticalAlignment="Top" SelectionChanged="EventSelector_SelectionChanged">
-                        <ComboBoxItem Content="WarZone"/>
-                        <ComboBoxItem Content="WarZoneGrid"/>
-                        <!-- Dodaj więcej opcji dla innych eventów -->
-                    </ComboBox>
-                    <ContentControl x:Name="EventConfigurationContent" Margin="10" Grid.Row="1"/>
+                            <ComboBoxItem Content="WarZone"/>
+                            <ComboBoxItem Content="WarZoneGrid"/>
+                            <!-- Dodaj więcej opcji dla innych eventów -->
+                        </ComboBox>
+                        <ContentControl x:Name="EventConfigurationContent" Margin="10" Grid.Row="1"/>
                     </Grid>
                 </Grid>
             </TabItem>
-            
+
             <TabItem Header="Reward Management">
                 <!-- Kontrolki dla zarządzania nagrodami -->
             </TabItem>
