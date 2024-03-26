@@ -88,6 +88,10 @@ namespace EventSystem
         //UpdateManager
         public Utils.UpdateManager UpdateManager { get; private set; }
 
+        //listy do przechowywania dostępnych typów i podtypów przedmiotów
+        public List<string> AvailableItemTypes { get; private set; } = new List<string>();
+        public Dictionary<string, List<string>> AvailableItemSubtypes { get; private set; } = new Dictionary<string, List<string>>();
+
         //Metody
         public override void Init(ITorchBase torch)
         {
@@ -175,6 +179,10 @@ namespace EventSystem
 
                     //GridSpawner
                     _gridSpawner = new GridSpawner();
+
+                    //item loader and button on
+                    ItemLoader.LoadAvailableItemTypesAndSubtypes(AvailableItemTypes, AvailableItemSubtypes, Log, Config);
+                    _control.Dispatcher.Invoke(() => _control.UpdateButtonState(true));
                     Log.Info("Session Loaded!");
                     break;
 
@@ -183,6 +191,9 @@ namespace EventSystem
 
                     //UpdateManager stop
                     UpdateManager.StopTimers();
+
+                    //button off
+                    _control.Dispatcher.Invoke(() => _control.UpdateButtonState(false));
                     Log.Info("Session Unloading!");
                     break;
                 case TorchSessionState.Unloaded:
