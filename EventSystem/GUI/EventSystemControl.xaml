@@ -91,7 +91,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Debug Mode" IsChecked="{Binding Config.DebugMode}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
-                            <CheckBox Content="Is Lobby" IsChecked="{Binding Config.isLobby}" Grid.Row="0" Grid.Column="1" FontWeight="Normal"/>
+                            <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Grid.Column="1" Content="Save" Width="100" Margin="5" Click="SaveButton_OnClick"/>
                             <Label Content="Default Owner Grid" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding Config.DefaultOwnerGrid}" Grid.Row="1" Margin="119,5,5,4" Padding="1,0,0,0" Grid.ColumnSpan="2"/>
 
@@ -210,6 +210,24 @@
                 </Grid>
             </TabItem>
 
+            <TabItem Header="Nexus">
+                <Grid>
+                    <GroupBox Header="Nexus Settings" FontWeight="Bold" BorderBrush="Black" BorderThickness="2" Margin="5">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Is Lobby" IsChecked="{Binding Config.isLobby}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
+
+                        </Grid>
+                    </GroupBox>
+                </Grid>
+            </TabItem>
 
             <TabItem Header="Event Configuration">
                 <Grid>

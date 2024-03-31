@@ -1,4 +1,5 @@
-﻿using EventSystem.Utils;
+﻿using EventSystem.Config;
+using EventSystem.Utils;
 using Nexus.API;
 using NLog;
 using Sandbox.ModAPI;
@@ -37,6 +38,12 @@ namespace EventSystem.Nexus
                 switch (message.Type)
                 {
                     //case NexusMessage.MessageType.BaseConfig:
+                    //    HandleConfigurationMessage(message);
+                    //    break;
+                    //case NexusMessage.MessageType.ItemRewardsConfig:
+                    //    HandleConfigurationMessage(message);
+                    //    break;
+                    //case NexusMessage.MessageType.PackRewardsConfig:
                     //    HandleConfigurationMessage(message);
                     //    break;
 

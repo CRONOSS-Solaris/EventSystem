@@ -1,13 +1,16 @@
 ﻿using EventSystem.Utils;
+using ProtoBuf;
 using System.Collections.Generic;
 using Torch;
 
 namespace EventSystem.Config
 {
+    [ProtoContract]
     public class PackRewardsConfig : ViewModel
     {
         private List<RewardSet> _rewardSets = new List<RewardSet>();
 
+        [ProtoMember(1)]
         public List<RewardSet> RewardSets
         {
             get => _rewardSets;

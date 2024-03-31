@@ -1,6 +1,7 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
+using ProtoBuf;
 using Sandbox.Game.World;
 using System;
 using System.Collections.Concurrent;

@@ -88,6 +88,9 @@ namespace EventSystem
         private void SaveButton_OnClick(object sender, RoutedEventArgs e)
         {
             Plugin.Save();
+            //Plugin.UpdateConfig(Plugin.Config);
+            //Plugin.UpdateConfigItemRewards(Plugin.ItemRewardsConfig);
+            //Plugin.UpdateConfigPackRewards(Plugin.PackRewardsConfig);
         }
 
         private void AddIndividualRewardItemButton_OnClick(object sender, RoutedEventArgs e)

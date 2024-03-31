@@ -1,4 +1,5 @@
 ﻿using EventSystem.Utils;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,10 +9,12 @@ using Torch;
 
 namespace EventSystem.Config
 {
+    [ProtoContract]
     public class ItemRewardsConfig : ViewModel
     {
         private List<IndividualRewardItem> _individualItems = new List<IndividualRewardItem>();
 
+        [ProtoMember(1)]
         public List<IndividualRewardItem> IndividualItems
         {
             get => _individualItems;

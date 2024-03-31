@@ -27,7 +27,7 @@ using Torch.Session;
 
 namespace EventSystem
 {
-    public class EventSystemMain : TorchPluginBase, IWpfPlugin
+    public partial class EventSystemMain : TorchPluginBase, IWpfPlugin
     {
 
         public static readonly Logger Log = LogManager.GetLogger("EventSystemMain");

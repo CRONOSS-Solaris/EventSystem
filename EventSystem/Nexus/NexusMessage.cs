@@ -9,6 +9,8 @@ namespace EventSystem.Nexus
         public enum MessageType
         {
             BaseConfig,
+            ItemRewardsConfig,
+            PackRewardsConfig,
             // ...
         }
 
@@ -30,7 +32,6 @@ namespace EventSystem.Nexus
 
         public NexusMessage()
         {
-            // Konstruktor domyślny może być potrzebny dla serializacji.
         }
 
         public NexusMessage(int _fromServerId, int _toServerId, byte[] data, MessageType messageType)
@@ -47,14 +48,18 @@ namespace EventSystem.Nexus
             {
                 ConfigData = data;
                 Data = new byte[0];
-                //PlayerOffers = new byte[0];
 
             }
-            //else if (messageType == MessageType.TimeSpentRewardsConfig)
-            //{
-            //    ConfigData = data;
-            //    Data = new byte[0];
-            //}
+            else if (messageType == MessageType.ItemRewardsConfig)
+            {
+                ConfigData = data;
+                Data = new byte[0];
+            }
+            else if (messageType == MessageType.PackRewardsConfig)
+            {
+                ConfigData = data;
+                Data = new byte[0];
+            }
 
             Type = messageType;
         }

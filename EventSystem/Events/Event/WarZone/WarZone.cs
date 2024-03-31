@@ -1,6 +1,7 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
+using ProtoBuf;
 using Sandbox.Game.World;
 using System;
 using System.Collections.Concurrent;
@@ -355,7 +356,7 @@ namespace EventSystem.Event
             public SphereCoords SphereMinCoords { get; set; }
             public SphereCoords SphereMaxCoords { get; set; }
         }
-
+        
         public class SphereCoords
         {
             public double X { get; set; }

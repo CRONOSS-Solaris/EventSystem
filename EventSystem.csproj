@@ -221,6 +221,7 @@
     <Compile Include="EventSystem\Config\ItemRewardsConfig.cs" />
     <Compile Include="EventSystem\Config\PackRewardsConfig.cs" />
     <Compile Include="EventSystem\DataBase\PostgresDatabaseManager.cs" />
+    <Compile Include="EventSystem\EventSystem.updateconfig.cs" />
     <Compile Include="EventSystem\Events\EventManager.cs" />
     <Compile Include="EventSystem\Events\EventsBase.cs" />
     <Compile Include="EventSystem\Events\EventsBase.PlayerManagement.cs" />
@@ -252,6 +253,7 @@
     <Compile Include="EventSystem\Managers\PlayerItemRewardManager.cs" />
     <Compile Include="EventSystem\Managers\PointsTransferManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusAPI.cs" />
+    <Compile Include="EventSystem\Nexus\NexusManager.Configuration.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusMessage.cs" />
     <Compile Include="EventSystem\Properties\AssemblyInfo.cs">
