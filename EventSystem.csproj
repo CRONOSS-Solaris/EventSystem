@@ -253,7 +253,9 @@
     <Compile Include="EventSystem\Managers\PlayerItemRewardManager.cs" />
     <Compile Include="EventSystem\Managers\PointsTransferManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusAPI.cs" />
-    <Compile Include="EventSystem\Nexus\NexusManager.Configuration.cs" />
+    <Compile Include="EventSystem\Nexus\NexusManager.PackRewardsConfig.cs" />
+    <Compile Include="EventSystem\Nexus\NexusManager.ItemRewardsConfig.cs" />
+    <Compile Include="EventSystem\Nexus\NexusManager.EventSystemConfig.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusMessage.cs" />
     <Compile Include="EventSystem\Properties\AssemblyInfo.cs">

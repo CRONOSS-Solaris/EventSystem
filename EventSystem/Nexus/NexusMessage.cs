@@ -8,7 +8,7 @@ namespace EventSystem.Nexus
     {
         public enum MessageType
         {
-            BaseConfig,
+            EventSystemConfig,
             ItemRewardsConfig,
             PackRewardsConfig,
             // ...
@@ -44,7 +44,7 @@ namespace EventSystem.Nexus
             lobbyServerData = null;
 
 
-            if (messageType == MessageType.BaseConfig)
+            if (messageType == MessageType.EventSystemConfig)
             {
                 ConfigData = data;
                 Data = new byte[0];
@@ -75,7 +75,7 @@ namespace EventSystem.Nexus
 
             // Ponieważ ten konstruktor nie dotyczy wiadomości konfiguracyjnych, ustawiamy odpowiednie wartości domyślne.
             ConfigData = new byte[0];  // lub jakiekolwiek inne domyślne wartości, które są odpowiednie w kontekście
-            Type = MessageType.BaseConfig; // lub inny domyślny typ wiadomości,
+            Type = MessageType.EventSystemConfig; // lub inny domyślny typ wiadomości,
         }
     }
 }

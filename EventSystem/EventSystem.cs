@@ -355,8 +355,8 @@ namespace EventSystem
                         {
                             typeof(NexusAPI), "EventSystem Plugin"
                         });
-                        nexusAPI = new NexusAPI(9452);
-                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(9452, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
+                        nexusAPI = new NexusAPI(9455);
+                        MyAPIGateway.Multiplayer.RegisterSecureMessageHandler(9455, new Action<ushort, byte[], ulong, bool>(NexusManager.HandleNexusMessage));
                         NexusInstalled = true;
                     }
                 }

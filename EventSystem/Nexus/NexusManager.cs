@@ -37,15 +37,15 @@ namespace EventSystem.Nexus
 
                 switch (message.Type)
                 {
-                    //case NexusMessage.MessageType.BaseConfig:
-                    //    HandleConfigurationMessage(message);
-                    //    break;
-                    //case NexusMessage.MessageType.ItemRewardsConfig:
-                    //    HandleConfigurationMessage(message);
-                    //    break;
-                    //case NexusMessage.MessageType.PackRewardsConfig:
-                    //    HandleConfigurationMessage(message);
-                    //    break;
+                    case NexusMessage.MessageType.EventSystemConfig:
+                        HandleEventSystemConfigMessage(message);
+                        break;
+                    case NexusMessage.MessageType.ItemRewardsConfig:
+                        HandleItemRewardsConfigMessage(message);
+                        break;
+                    case NexusMessage.MessageType.PackRewardsConfig:
+                        HandlePackRewardsConfigMessage(message);
+                        break;
 
                     default:
                         Log.Warn($"Received an unknown type of Nexus message. Type: {message.Type}");

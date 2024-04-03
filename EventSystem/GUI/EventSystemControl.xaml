@@ -91,7 +91,7 @@
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Debug Mode" IsChecked="{Binding Config.DebugMode}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
-                            <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Grid.Column="1" Content="Save" Width="100" Margin="5" Click="SaveButton_OnClick"/>
+                            <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Grid.Column="1" Content="Save" Width="100" Margin="5" Click="SaveButtonGS_OnClick"/>
                             <Label Content="Default Owner Grid" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding Config.DefaultOwnerGrid}" Grid.Row="1" Margin="119,5,5,4" Padding="1,0,0,0" Grid.ColumnSpan="2"/>
 
@@ -237,7 +237,7 @@
                         <!-- Dodaj więcej RowDefinition w zależności od potrzeb -->
                     </Grid.RowDefinitions>
 
-                    <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Content="SAVE CHANGES" Click="SaveButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Right" Width="100" FontWeight="Bold" Height="22" Margin="5"/>
+                    <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Content="SAVE CHANGES" Click="SaveButtonGS_OnClick" VerticalAlignment="Center" HorizontalAlignment="Right" Width="100" FontWeight="Bold" Height="22" Margin="5"/>
                     <Grid Grid.Row="1">
                         <ComboBox x:Name="EventSelector" Margin="10" Grid.Row="1" VerticalAlignment="Top" SelectionChanged="EventSelector_SelectionChanged">
                             <ComboBoxItem Content="WarZone"/>
@@ -301,7 +301,7 @@
                     <StackPanel Grid.Column="0" Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
                         <Button Style="{StaticResource ButtonStyle1}" x:Name="AddIndividualRewardItemButton" Content="Add Item" Margin="5" Width="100" Click="AddIndividualRewardItemButton_OnClick" />
                         <Button Style="{StaticResource ButtonStyle1}" x:Name="DeleteIndividualRewardItemButton" Content="Delete Item" Margin="5" Width="100" Click="DeleteIndividualRewardItemButton_OnClick" />
-                        <Button Style="{StaticResource ButtonStyle1}" Content="Save" Margin="5" Width="100" Click="SaveButton_OnClick"/>
+                        <Button Style="{StaticResource ButtonStyle1}" Content="Save" Margin="5" Width="100" Click="SaveButtonIRI_OnClick"/>
                     </StackPanel>
                 </Grid>
             </TabItem>
@@ -330,12 +330,12 @@
                     <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Center">
                         <Button Style="{StaticResource ButtonStyle1}" Content="+" Width="20" Margin="5" Click="AddPackButton_Click"/>
                         <Button Style="{StaticResource ButtonStyle1}" Content="-" Width="20" Margin="5" Click="DeletePackButton_Click"/>
-                        <Button Style="{StaticResource ButtonStyle1}" Content="Save" Width="50" Margin="5" Click="SaveButton_OnClick"/>
+                        <Button Style="{StaticResource ButtonStyle1}" Content="Save" Width="50" Margin="5" Click="SaveButtonPRI_OnClick"/>
                     </StackPanel>
 
                     <!-- Reward Items for Selected Vote Range -->
                     <TextBlock Grid.Column="1" Text="Reward Items for Selected Pack" FontWeight="Bold" FontSize="16" Margin="5"/>
-                    <DataGrid x:Name="PackRewardItemsDataGrid" Grid.Column="1" Grid.Row="1" CanUserAddRows="False" AutoGenerateColumns="False" Margin="5">
+                    <DataGrid x:Name="PackRewardItemsDataGrid" Grid.Column="1" CanUserAddRows="False" AutoGenerateColumns="False" Margin="10,31,0,10" Grid.RowSpan="2">
                         <DataGrid.Columns>
                             <DataGridTemplateColumn Header="Item Type ID" Width="*">
                                 <DataGridTemplateColumn.CellTemplate>

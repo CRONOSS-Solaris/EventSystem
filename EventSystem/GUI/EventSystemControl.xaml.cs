@@ -1,4 +1,5 @@
-﻿using EventSystem.Utils;
+﻿using EventSystem.Config;
+using EventSystem.Utils;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -27,6 +28,9 @@ namespace EventSystem
                 Plugin = plugin
             };
             Loaded += OnLoaded;
+
+            Plugin.OnItemRewardsConfigUpdated += Plugin_OnItemRewardsConfigUpdated;
+            Plugin.OnPackRewardsConfigUpdated += Plugin_OnPackRewardsConfigUpdated;
         }
 
         private void OnLoaded(object sender, RoutedEventArgs e)
@@ -35,6 +39,27 @@ namespace EventSystem
             IndividualRewardItemDataGrid.ItemsSource = Plugin.ItemRewardsConfig.IndividualItems;
             RewardSetsDataGrid.ItemsSource = Plugin.PackRewardsConfig.RewardSets;
         }
+
+        private void Plugin_OnItemRewardsConfigUpdated(ItemRewardsConfig newConfig)
+        {
+            // Używamy Dispatchera, aby wykonać aktualizację na głównym wątku UI
+            Dispatcher.Invoke(() =>
+            {
+                IndividualRewardItemDataGrid.ItemsSource = newConfig.IndividualItems;
+                IndividualRewardItemDataGrid.Items.Refresh();
+            });
+        }
+
+        private void Plugin_OnPackRewardsConfigUpdated(PackRewardsConfig newConfig)
+        {
+            Dispatcher.Invoke(() =>
+            {
+                // Aktualizacja ItemsSource dla RewardSetsDataGrid z nową konfiguracją
+                RewardSetsDataGrid.ItemsSource = newConfig.RewardSets;
+                RewardSetsDataGrid.Items.Refresh();
+            });
+        }
+
 
         public class DataContextProxy
         {
@@ -85,13 +110,35 @@ namespace EventSystem
             PackRewardsItem.IsEnabled = isEnabled;
         }
 
-        private void SaveButton_OnClick(object sender, RoutedEventArgs e)
+        private void SaveButtonGS_OnClick(object sender, RoutedEventArgs e)
         {
             Plugin.Save();
-            //Plugin.UpdateConfig(Plugin.Config);
-            //Plugin.UpdateConfigItemRewards(Plugin.ItemRewardsConfig);
-            //Plugin.UpdateConfigPackRewards(Plugin.PackRewardsConfig);
+            Plugin.UpdateEventSystemConfig(Plugin.Config);
         }
+
+        private void SaveButtonIRI_OnClick(object sender, RoutedEventArgs e)
+        {
+            Plugin.Save();
+            Plugin.UpdateItemRewardsConfig(Plugin.ItemRewardsConfig);
+        }
+
+        private void SaveButtonPRI_OnClick(object sender, RoutedEventArgs e)
+        {
+            // Sprawdzanie, czy wszystkie zestawy nagród mają unikalne nazwy
+            var allRewardSetNames = Plugin.PackRewardsConfig.RewardSets.Select(rs => rs.Name).ToList();
+            var uniqueRewardSetNames = allRewardSetNames.Distinct().Count();
+
+            if (allRewardSetNames.Count != uniqueRewardSetNames)
+            {
+                MessageBox.Show("Each reward set must have a unique name.", "Save Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                return; // Zatrzymaj proces zapisu, jeśli nazwy nie są unikalne
+            }
+
+            // Kontynuuj proces zapisu, jeśli wszystkie nazwy są unikalne
+            Plugin.Save();
+            Plugin.UpdateConfigPackRewards(Plugin.PackRewardsConfig);
+        }
+
 
         private void AddIndividualRewardItemButton_OnClick(object sender, RoutedEventArgs e)
         {
@@ -208,10 +255,23 @@ namespace EventSystem
         {
             if (e.AddedItems.Count > 0 && e.AddedItems[0] is RewardSet selectedRewardSet)
             {
-                PackRewardItemsDataGrid.ItemsSource = selectedRewardSet.Items;
+                // Znajdowanie zaktualizowanego zestawu w najnowszej konfiguracji
+                var updatedSet = Plugin.PackRewardsConfig.RewardSets
+                                    .FirstOrDefault(rs => rs.Name == selectedRewardSet.Name);
+
+                if (updatedSet != null)
+                {
+                    // Aktualizacja ItemsSource dla PackRewardItemsDataGrid z przedmiotami z zaktualizowanego zestawu
+                    PackRewardItemsDataGrid.ItemsSource = updatedSet.Items;
+                }
+                else
+                {
+                    // Jeśli nie znaleziono zestawu (co może się zdarzyć, jeśli zestaw został usunięty z konfiguracji),
+                    // możesz oczyścić ItemsSource dla PackRewardItemsDataGrid
+                    PackRewardItemsDataGrid.ItemsSource = null;
+                }
             }
         }
-
 
         private void AddItemButton_Click(object sender, RoutedEventArgs e)
         {
