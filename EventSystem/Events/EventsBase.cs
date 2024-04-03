@@ -24,7 +24,7 @@ namespace EventSystem.Events
         /// <summary>
         /// Gets or sets the path where blueprint grids are stored for the event.
         /// </summary>
-        protected virtual string PrefabStoragePath { get; set; }
+        protected virtual string PrefabStoragePath { get; set; } = Path.Combine("EventSystem", "EventPrefabBlueprint");
 
         /// <summary>
         /// Gets or sets the name of the event.

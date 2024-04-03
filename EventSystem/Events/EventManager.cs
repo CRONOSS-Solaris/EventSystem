@@ -185,7 +185,7 @@ namespace EventSystem.Events
                 var commandManager = torch.CurrentSession.Managers.GetManager<CommandManager>();
                 if (commandManager != null)
                 {
-                    string notificationCommand = $"!notify \"{message}\" 3000 {color}";
+                    string notificationCommand = $"!notify \"{message}\" 9000 {color}";
                     commandManager.HandleCommandFromServer(notificationCommand);
                 }
             }
