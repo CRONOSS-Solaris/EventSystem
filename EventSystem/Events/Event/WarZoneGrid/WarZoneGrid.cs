@@ -1,7 +1,6 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
-using ProtoBuf;
 using Sandbox.Game.World;
 using System;
 using System.Collections.Concurrent;
@@ -9,7 +8,6 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using System.Xml.Serialization;
 using VRageMath;
 
 namespace EventSystem.Event

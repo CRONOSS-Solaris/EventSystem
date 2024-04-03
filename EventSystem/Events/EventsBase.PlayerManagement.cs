@@ -600,6 +600,31 @@ namespace EventSystem.Events
             LastAttackers[victimSteamId] = attackerSteamId;
         }
 
+        /// <summary>
+        /// Sends a message to a player identified by their game-specific playerId.
+        /// This method first converts the playerId to a SteamID before sending the message.
+        /// </summary>
+        /// <param name="playerId">The game-specific ID of the player to whom the message is to be sent.</param>
+        /// <param name="message">The message content to be sent to the player.</param>
+        /// <param name="color">The color of the message text.</param>
+        protected void SendMessageByPlayerId(long playerId, string message, Color color)
+        {
+            ulong steamId = MySession.Static.Players.TryGetSteamId(playerId);
+            SendMessageBySteamId(steamId, message, color);
+        }
+
+        /// <summary>
+        /// Sends a message to a player identified by their SteamID.
+        /// This method is used when the SteamID of the player is known and directly sends the message using this ID.
+        /// </summary>
+        /// <param name="steamId">The SteamID of the player to whom the message is to be sent.</param>
+        /// <param name="message">The message content to be sent to the player.</param>
+        /// <param name="color">The color of the message text.</param>
+        protected void SendMessageBySteamId(ulong steamId, string message, Color color)
+        {
+            EventSystemMain.ChatManager.SendMessageAsOther(EventName, message, color, steamId);
+        }
+
 
     }
 }
