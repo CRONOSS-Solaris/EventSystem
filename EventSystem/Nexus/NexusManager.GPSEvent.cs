@@ -3,6 +3,8 @@ using Nexus.API;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
+using System.Collections.Generic;
+using System.Linq;
 
 namespace EventSystem.Nexus
 {
@@ -17,7 +19,7 @@ namespace EventSystem.Nexus
                 // Tutaj można zaimplementować logikę, która zdecyduje, czy GPS ma być dodany do konkretnego gracza,
                 // na przykład na podstawie jego playerId, lub dodać GPS do wszystkich graczy online
 
-                foreach (var player in MySession.Static.Players.GetOnlinePlayers())
+                foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
                 {
                     long playerId = player.Identity.IdentityId;
                     // Dodaj GPS do gracza, upewniając się, że nie rozgłaszamy ponownie do innych serwerów
