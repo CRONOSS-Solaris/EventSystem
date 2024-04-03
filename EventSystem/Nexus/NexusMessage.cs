@@ -11,6 +11,7 @@ namespace EventSystem.Nexus
             EventSystemConfig,
             ItemRewardsConfig,
             PackRewardsConfig,
+            GPSEvent
             // ...
         }
 
@@ -59,6 +60,11 @@ namespace EventSystem.Nexus
             {
                 ConfigData = data;
                 Data = new byte[0];
+            }
+            else if (messageType == MessageType.GPSEvent)
+            {
+                Data = data;
+                ConfigData = new byte[0];
             }
 
             Type = messageType;

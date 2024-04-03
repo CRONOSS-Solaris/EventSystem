@@ -46,6 +46,9 @@ namespace EventSystem.Nexus
                     case NexusMessage.MessageType.PackRewardsConfig:
                         HandlePackRewardsConfigMessage(message);
                         break;
+                    case NexusMessage.MessageType.GPSEvent:
+                        HandleGPSEventMessage(message);
+                        break;
 
                     default:
                         Log.Warn($"Received an unknown type of Nexus message. Type: {message.Type}");

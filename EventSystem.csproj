@@ -253,6 +253,7 @@
     <Compile Include="EventSystem\Managers\PlayerItemRewardManager.cs" />
     <Compile Include="EventSystem\Managers\PointsTransferManager.cs" />
     <Compile Include="EventSystem\Nexus\NexusAPI.cs" />
+    <Compile Include="EventSystem\Nexus\NexusManager.GPSEvent.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.PackRewardsConfig.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.ItemRewardsConfig.cs" />
     <Compile Include="EventSystem\Nexus\NexusManager.EventSystemConfig.cs" />
@@ -280,6 +281,7 @@
     <Compile Include="EventSystem\Utils\CommandInCooldown.cs" />
     <Compile Include="EventSystem\Utils\Compiler.cs" />
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
+    <Compile Include="EventSystem\Utils\GPSEventData.cs" />
     <Compile Include="EventSystem\Utils\IndividualRewardItem.cs" />
     <Compile Include="EventSystem\Utils\ItemLoader.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />

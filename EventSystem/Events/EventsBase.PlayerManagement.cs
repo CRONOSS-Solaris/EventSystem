@@ -1,8 +1,6 @@
 ﻿using EventSystem.Managers;
+using EventSystem.Nexus;
 using EventSystem.Utils;
-using Sandbox.Definitions;
-using Sandbox.Engine.Utils;
-using Sandbox.Game.Entities;
 using Sandbox.Game.Screens.Helpers;
 using Sandbox.Game.World;
 using Sandbox.ModAPI;
@@ -11,12 +9,10 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using Torch;
 using VRage;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.Game.ModAPI.Ingame;
-using VRage.ObjectBuilders;
 using VRageMath;
 
 namespace EventSystem.Events
@@ -458,7 +454,7 @@ namespace EventSystem.Events
             }
         }
 
-        protected void SendGpsToPlayer(long playerId, string name, Vector3D coords, string description = "", TimeSpan? discardAt = null, bool showOnHud = true, bool alwaysVisible = true, Color? color = null, long entityId = 0, bool isObjective = false, long contractId = 0)
+        public void SendGpsToPlayer(long playerId, string name, Vector3D coords, string description = "", TimeSpan? discardAt = null, bool showOnHud = true, bool alwaysVisible = true, Color? color = null, long entityId = 0, bool isObjective = false, long contractId = 0, bool propagateToOtherServers = true)
         {
             var gps = new MyGps
             {
@@ -478,7 +474,29 @@ namespace EventSystem.Events
             gps.UpdateHash();
 
             MyAPIGateway.Session?.GPS.AddGps(playerId, gps);
+
+            // Jeśli flaga propagateToOtherServers jest ustawiona, wyślij dane GPS do innych serwerów
+            if (propagateToOtherServers)
+            {
+                GPSEventData gpsData = new GPSEventData
+                {
+                    PlayerId = playerId,
+                    Name = name,
+                    Coords = coords,
+                    Description = description,
+                    DiscardAt = discardAt,
+                    ShowOnHud = showOnHud,
+                    AlwaysVisible = alwaysVisible,
+                    Color = color,
+                    EntityId = entityId,
+                    IsObjective = isObjective,
+                    ContractId = contractId
+                };
+
+                NexusManager.SendGPSEventToAllServers(gpsData);
+            }
         }
+
 
         protected class RewardItem : IRewardItem
         {

@@ -92,7 +92,7 @@ namespace EventSystem.Event
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, "WarZoneGrid", sphereCenter, "Location of the WarZoneGrid event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
+                SendGpsToPlayer(playerId, "WarZoneGrid Event", sphereCenter, "Location of the WarZoneGrid event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
 
@@ -143,7 +143,7 @@ namespace EventSystem.Event
                     if (playerFaction == null && isInSphereNow)
                     {
                         // Gracz bez frakcji w strefie, wysyłaj komunikat, ale nie dodawaj go do strefy
-                        SendMessage(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        SendMessageByPlayerId(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
                         continue; // Pomiń dodawanie gracza do listy uczestników
                     }
 
@@ -155,7 +155,7 @@ namespace EventSystem.Event
                         {
                             // Gracz wszedł do strefy
                             playerEntryTime[playerId] = now;
-                            SendMessage(playerId, "You entered the WarZone!", Color.Green);
+                            SendMessageByPlayerId(playerId, "You entered the WarZone!", Color.Green);
                             stateChanged = true;
                         }
 
@@ -169,7 +169,7 @@ namespace EventSystem.Event
                     {
                         // Gracz opuścił strefę
                         playersInSphere.TryRemove(playerId, out _);
-                        SendMessage(playerId, "You left the WarZone!", Color.Red);
+                        SendMessageByPlayerId(playerId, "You left the WarZone!", Color.Red);
                         stateChanged = true;
                     }
                 }
@@ -230,7 +230,7 @@ namespace EventSystem.Event
                             // Przyznaj punkty graczowi
                             int pointsToAward = _config.WarZoneGridSettings.PointsPerInterval;
                             AwardPlayer((long)steamId, pointsToAward);
-                            SendMessage(playerId, $"You have earned {pointsToAward} points for staying in the WarZoneGrid!", Color.Yellow);
+                            SendMessageByPlayerId(playerId, $"You have earned {pointsToAward} points for staying in the WarZoneGrid!", Color.Yellow);
                         }
                     }
                     else if (!isPlayerCurrentlyInZone)
@@ -243,12 +243,6 @@ namespace EventSystem.Event
             }
         }
 
-        private void SendMessage(long playerId, string message, Color color)
-        {
-            ulong steamId = MySession.Static.Players.TryGetSteamId(playerId);
-            EventSystemMain.ChatManager.SendMessageAsOther("WarZoneGrid", message, color, steamId);
-        }
-
         private void SendMessageToPlayersInZone(string message, Color color)
         {
             // Wysyłaj komunikat tylko do graczy, którzy są w strefie
@@ -256,7 +250,7 @@ namespace EventSystem.Event
             {
                 if (playersInSphere.TryGetValue(playerId, out bool isInZone) && isInZone)
                 {
-                    SendMessage(playerId, message, color);
+                    SendMessageByPlayerId(playerId, message, color);
                 }
             }
         }

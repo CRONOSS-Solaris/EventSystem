@@ -85,6 +85,10 @@ namespace EventSystem
         //GridSpawner
         private GridSpawner _gridSpawner;
 
+        //EventsBase
+
+        public EventsBase EventsBase;
+
         //UpdateManager
         public Utils.UpdateManager UpdateManager { get; private set; }
 
