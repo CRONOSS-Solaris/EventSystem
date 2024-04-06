@@ -301,7 +301,7 @@ namespace EventSystem
         }
 
 
-        [Command("buy", "Buy rewards with points or list available rewards.")]
+        [Command("buy", "Buy rewards with points")]
         [Permission(MyPromoteLevel.None)]
         public async Task BuyReward(string rewardName = "")
         {
@@ -332,7 +332,7 @@ namespace EventSystem
             // Jeśli nie podano nazwy nagrody, wyświetl dostępne nagrody
             if (string.IsNullOrEmpty(rewardName))
             {
-                ShowAvailableRewards();
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Please specify the reward name. Use !event listrewards to view available rewards.", Color.Red, Context.Player.SteamUserId);
                 return;
             }
 
@@ -348,6 +348,60 @@ namespace EventSystem
             await PurchaseReward(steamId, rewardName, playerPoints.Value);
         }
 
+        [Command("listrewards", "Displays available rewards")]
+        [Permission(MyPromoteLevel.None)]
+        public void ListRewards()
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Available Rewards:\n");
+
+            // Sekcja dla paczek nagród
+            var packRewards = Plugin.PackRewardsConfig.RewardSets;
+            if (packRewards.Any())
+            {
+                sb.AppendLine("Pack Rewards:\n");
+                foreach (var rewardSet in packRewards)
+                {
+                    sb.AppendLine($"  {rewardSet.Name} - {rewardSet.CostInPoints} PTS");
+                    foreach (var item in rewardSet.Items)
+                    {
+                        sb.AppendLine($"    •{item.ItemSubtypeId} x{item.Amount} - Chance: {item.ChanceToDrop}%");
+                    }
+                    sb.AppendLine();
+                }
+            }
+            else
+            {
+                sb.AppendLine("  No Pack Rewards Available\n");
+            }
+
+            // Sekcja dla indywidualnych nagród
+            var itemRewards = Plugin.ItemRewardsConfig.IndividualItems;
+            if (itemRewards.Any())
+            {
+                sb.AppendLine("Individual Rewards:\n");
+                foreach (var item in itemRewards)
+                {
+                    sb.AppendLine($"  •{item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
+                }
+            }
+            else
+            {
+                sb.AppendLine("  No Individual Rewards Available\n");
+            }
+
+            // Wyświetl nagrody w oknie MOTD
+            var dialogMessage = new DialogMessage("Available Rewards", "You can buy these rewards with your points:", sb.ToString().TrimEnd());
+            ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
+        }
+
+
         private async Task<long?> GetPlayerPoints(ulong steamId)
         {
             // Implementacja pobierania punktów gracza
@@ -359,33 +413,6 @@ namespace EventSystem
             {
                 var account = await Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync((long)steamId);
                 return account?.Points;
-            }
-        }
-
-        private void ShowAvailableRewards()
-        {
-            var packRewardsConfig = Plugin.PackRewardsConfig;
-            var itemRewardsConfig = Plugin.ItemRewardsConfig;
-            var sb = new StringBuilder();
-            sb.AppendLine("Available Rewards:");
-            foreach (var set in packRewardsConfig.RewardSets)
-            {
-                sb.AppendLine($"{set.Name} - {set.CostInPoints} PTS");
-            }
-            foreach (var item in itemRewardsConfig.IndividualItems)
-            {
-                sb.AppendLine($"{item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
-            }
-
-            if (Context.Player != null)
-            {
-                ulong steamId = Context.Player.SteamUserId;
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", sb.ToString(), Color.Green, steamId);
-            }
-            else
-            {
-                // Logowanie błędu lub inna forma obsługi przypadku, gdy Context.Player jest null
-                Log.Error("ShowAvailableRewards: Context.Player is null, cannot send message.");
             }
         }
 
