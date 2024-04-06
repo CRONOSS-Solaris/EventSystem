@@ -7,10 +7,12 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Torch.API.Managers;
 using Torch.Commands;
 using Torch.Commands.Permissions;
+using Torch.Mod;
+using Torch.Mod.Messages;
 using VRage.Game.ModAPI;
-using VRage.Library.Utils;
 using VRageMath;
 
 namespace EventSystem
@@ -20,6 +22,42 @@ namespace EventSystem
     {
         public EventSystemMain Plugin => (EventSystemMain)Context.Plugin;
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/PlayerEventSystemCommands");
+
+        [Command("help", "Shows help for commands available to you.")]
+        [Permission(MyPromoteLevel.None)]
+        public void Help()
+        {
+            var commandManager = Context.Torch.CurrentSession?.Managers.GetManager<CommandManager>();
+            if (commandManager == null)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Must have an attached session to list commands", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            var playerPromoteLevel = Context.Player?.PromoteLevel ?? MyPromoteLevel.None;
+
+            // Iterate over all commands and add them to the StringBuilder if they are from this plugin and the player has the required permissions.
+            foreach (CommandTree.CommandNode command in commandManager.Commands.WalkTree())
+            {
+                if (command.IsCommand && command.Command.Plugin == this.Plugin && command.Command.MinimumPromoteLevel <= playerPromoteLevel)
+                {
+                    sb.AppendLine($"{command.Command.SyntaxHelp}\n    {command.Command.HelpText}\n");
+                }
+            }
+
+            // Check if there were any commands to list, then send them using ModCommunication to display as MOTD in dialog.
+            if (sb.Length > 0)
+            {
+                string message = sb.ToString().TrimEnd();
+                var dialogMessage = new DialogMessage("Event System Help", "Available commands:", message);
+                ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
+            }
+            else
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "No commands available for your permission level.", Color.Red, Context.Player.SteamUserId);
+            }
+        }
 
         [Command("points", "Check your points.")]
         [Permission(MyPromoteLevel.None)]
