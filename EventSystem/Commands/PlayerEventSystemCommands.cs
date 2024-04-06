@@ -201,6 +201,106 @@ namespace EventSystem
             return text.ToString();
         }
 
+        [Command("buy", "Buy rewards with points")]
+        [Permission(MyPromoteLevel.None)]
+        public async Task BuyReward(string rewardName = "")
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            var cooldownManager = CommandInCooldown.Instance;
+            var cooldown = TimeSpan.FromSeconds(10);
+
+            if (cooldownManager.IsCommandInCooldown(Context.Player.SteamUserId, cooldown))
+            {
+                var timeLeft = cooldownManager.TimeLeftForCommand(Context.Player.SteamUserId, cooldown);
+                var minutes = timeLeft.Minutes;
+                var seconds = timeLeft.Seconds;
+
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Wait {minutes}m {seconds}s to use this command again.", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            // Aktualizuj czas ostatniego użycia komendy
+            cooldownManager.UpdateCommandUsage(Context.Player.SteamUserId);
+
+            var steamId = Context.Player.SteamUserId;
+
+            // Jeśli nie podano nazwy nagrody, wyświetl dostępne nagrody
+            if (string.IsNullOrEmpty(rewardName))
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Please specify the reward name. Use !event listrewards to view available rewards.", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            // Sprawdź, czy gracz ma wystarczającą ilość punktów
+            var playerPoints = await GetPlayerPoints(steamId);
+            if (!playerPoints.HasValue)
+            {
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Error retrieving your points. Please try again.", Color.Red, Context.Player.SteamUserId);
+                return;
+            }
+
+            // Spróbuj kupić nagrodę
+            await PurchaseReward(steamId, rewardName, playerPoints.Value);
+        }
+
+        [Command("listrewards", "Displays available rewards")]
+        [Permission(MyPromoteLevel.None)]
+        public void ListRewards()
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("Available Rewards:\n");
+
+            // Sekcja dla paczek nagród
+            var packRewards = Plugin.PackRewardsConfig.RewardSets;
+            if (packRewards.Any())
+            {
+                sb.AppendLine("Pack Rewards:\n");
+                foreach (var rewardSet in packRewards)
+                {
+                    sb.AppendLine($"  {rewardSet.Name} - {rewardSet.CostInPoints} PTS");
+                    foreach (var item in rewardSet.Items)
+                    {
+                        sb.AppendLine($"    • {item.ItemSubtypeId} x{item.Amount} - Chance: {item.ChanceToDrop}%");
+                    }
+                    sb.AppendLine();
+                }
+            }
+            else
+            {
+                sb.AppendLine("  No Pack Rewards Available\n");
+            }
+
+            // Sekcja dla indywidualnych nagród
+            var itemRewards = Plugin.ItemRewardsConfig.IndividualItems;
+            if (itemRewards.Any())
+            {
+                sb.AppendLine("Individual Rewards:\n");
+                foreach (var item in itemRewards)
+                {
+                    sb.AppendLine($"  • {item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
+                }
+            }
+            else
+            {
+                sb.AppendLine("  No Individual Rewards Available\n");
+            }
+
+            // Wyświetl nagrody w oknie MOTD
+            var dialogMessage = new DialogMessage("Available Rewards", "You can buy these rewards with your points:", sb.ToString().TrimEnd());
+            ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
+        }
+
         [Command("transfer", "Initiate a point transfer.")]
         [Permission(MyPromoteLevel.None)]
         public async Task InitiateTransfer(long points)
@@ -299,108 +399,6 @@ namespace EventSystem
                 EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"You are not participating in the event '{eventName}' or it does not exist.", Color.Red, Context.Player.SteamUserId);
             }
         }
-
-
-        [Command("buy", "Buy rewards with points")]
-        [Permission(MyPromoteLevel.None)]
-        public async Task BuyReward(string rewardName = "")
-        {
-            if (Context.Player == null)
-            {
-                Log.Error("This command can only be used by a player.");
-                return;
-            }
-
-            var cooldownManager = CommandInCooldown.Instance;
-            var cooldown = TimeSpan.FromSeconds(10);
-
-            if (cooldownManager.IsCommandInCooldown(Context.Player.SteamUserId, cooldown))
-            {
-                var timeLeft = cooldownManager.TimeLeftForCommand(Context.Player.SteamUserId, cooldown);
-                var minutes = timeLeft.Minutes;
-                var seconds = timeLeft.Seconds;
-
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Wait {minutes}m {seconds}s to use this command again.", Color.Red, Context.Player.SteamUserId);
-                return;
-            }
-
-            // Aktualizuj czas ostatniego użycia komendy
-            cooldownManager.UpdateCommandUsage(Context.Player.SteamUserId);
-
-            var steamId = Context.Player.SteamUserId;
-
-            // Jeśli nie podano nazwy nagrody, wyświetl dostępne nagrody
-            if (string.IsNullOrEmpty(rewardName))
-            {
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", "Please specify the reward name. Use !event listrewards to view available rewards.", Color.Red, Context.Player.SteamUserId);
-                return;
-            }
-
-            // Sprawdź, czy gracz ma wystarczającą ilość punktów
-            var playerPoints = await GetPlayerPoints(steamId);
-            if (!playerPoints.HasValue)
-            {
-                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", $"Error retrieving your points. Please try again.", Color.Red, Context.Player.SteamUserId);
-                return;
-            }
-
-            // Spróbuj kupić nagrodę
-            await PurchaseReward(steamId, rewardName, playerPoints.Value);
-        }
-
-        [Command("listrewards", "Displays available rewards")]
-        [Permission(MyPromoteLevel.None)]
-        public void ListRewards()
-        {
-            if (Context.Player == null)
-            {
-                Log.Error("This command can only be used by a player.");
-                return;
-            }
-
-            StringBuilder sb = new StringBuilder();
-            sb.AppendLine("Available Rewards:\n");
-
-            // Sekcja dla paczek nagród
-            var packRewards = Plugin.PackRewardsConfig.RewardSets;
-            if (packRewards.Any())
-            {
-                sb.AppendLine("Pack Rewards:\n");
-                foreach (var rewardSet in packRewards)
-                {
-                    sb.AppendLine($"  {rewardSet.Name} - {rewardSet.CostInPoints} PTS");
-                    foreach (var item in rewardSet.Items)
-                    {
-                        sb.AppendLine($"    •{item.ItemSubtypeId} x{item.Amount} - Chance: {item.ChanceToDrop}%");
-                    }
-                    sb.AppendLine();
-                }
-            }
-            else
-            {
-                sb.AppendLine("  No Pack Rewards Available\n");
-            }
-
-            // Sekcja dla indywidualnych nagród
-            var itemRewards = Plugin.ItemRewardsConfig.IndividualItems;
-            if (itemRewards.Any())
-            {
-                sb.AppendLine("Individual Rewards:\n");
-                foreach (var item in itemRewards)
-                {
-                    sb.AppendLine($"  •{item.ItemSubtypeId} x{item.Amount} - {item.CostInPoints} PTS");
-                }
-            }
-            else
-            {
-                sb.AppendLine("  No Individual Rewards Available\n");
-            }
-
-            // Wyświetl nagrody w oknie MOTD
-            var dialogMessage = new DialogMessage("Available Rewards", "You can buy these rewards with your points:", sb.ToString().TrimEnd());
-            ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
-        }
-
 
         private async Task<long?> GetPlayerPoints(ulong steamId)
         {
