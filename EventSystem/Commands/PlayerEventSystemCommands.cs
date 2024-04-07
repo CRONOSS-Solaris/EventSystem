@@ -258,7 +258,7 @@ namespace EventSystem
 
         [Command("listrewards", "Displays available rewards")]
         [Permission(MyPromoteLevel.None)]
-        public void ListRewards()
+        public async Task ListRewards()
         {
             if (Context.Player == null)
             {
@@ -266,7 +266,39 @@ namespace EventSystem
                 return;
             }
 
+            long steamId = (long)Context.Player.SteamUserId;
             StringBuilder sb = new StringBuilder();
+
+            // Pobranie ilości punktów gracza
+            long? playerPoints = null;
+            if (Plugin.Config.UseDatabase)
+            {
+                // Logika używania bazy danych
+                var pointsResult = await Plugin.DatabaseManager.GetPlayerPointsAsync(steamId);
+                if (pointsResult.HasValue)
+                {
+                    playerPoints = pointsResult.Value;
+                }
+            }
+            else
+            {
+                var playerAccount = await Plugin.PlayerAccountXmlManager.GetPlayerAccountAsync(steamId);
+                if (playerAccount != null)
+                {
+                    playerPoints = playerAccount.Points;
+                }
+            }
+
+            // Dodanie informacji o punktach gracza do wiadomości
+            if (playerPoints.HasValue)
+            {
+                sb.AppendLine($"Your points: {playerPoints.Value} PTS\n");
+            }
+            else
+            {
+                sb.AppendLine("Points not available.\n");
+            }
+
             sb.AppendLine("Available Rewards:\n");
 
             // Sekcja dla paczek nagród
@@ -308,6 +340,7 @@ namespace EventSystem
             var dialogMessage = new DialogMessage("Available Rewards", "You can buy these rewards with your points:", sb.ToString().TrimEnd());
             ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
         }
+
 
         [Command("transfer", "Initiate a point transfer.")]
         [Permission(MyPromoteLevel.None)]
