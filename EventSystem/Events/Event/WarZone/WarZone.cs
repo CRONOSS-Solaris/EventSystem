@@ -11,6 +11,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using System.Xml.Serialization;
 using VRageMath;
+using static EventSystem.Event.WarZoneGrid;
 
 namespace EventSystem.Event
 {
@@ -131,7 +132,7 @@ namespace EventSystem.Event
                 {
                     long playerId = player.Identity.IdentityId;
                     Vector3D playerPosition = character.PositionComp.GetPosition();
-                    bool isInSphereNow = IsPlayerInZone(playerPosition);
+                    bool isInSphereNow = IsPlayerInZone(playerPosition, sphereCenter, ZoneRadius);
                     bool wasInSphereBefore = playersInSphere.ContainsKey(playerId) && playersInSphere[playerId];
 
                     // Sprawdzenie przynależności do frakcji przed dodaniem gracza do strefy
@@ -323,7 +324,7 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        public bool IsPlayerInZone(Vector3D playerPosition)
+        public bool IsPlayerInZone(Vector3D playerPosition, Vector3D sphereCenter, double ZoneRadius)
         {
             if (_config.WarZoneSettings.Shape == ZoneShape.Sphere)
             {
@@ -333,6 +334,7 @@ namespace EventSystem.Event
             }
             else if (_config.WarZoneSettings.Shape == ZoneShape.Cube)
             {
+                // Logika dla sześcianu
                 double halfEdgeLength = ZoneRadius / 2;
                 Vector3D minCoords = sphereCenter - new Vector3D(halfEdgeLength);
                 Vector3D maxCoords = sphereCenter + new Vector3D(halfEdgeLength);
@@ -343,7 +345,6 @@ namespace EventSystem.Event
             }
             return false;
         }
-
 
         private Vector3D RandomizePosition(WarZoneConfig settings)
         {
