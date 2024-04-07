@@ -1,14 +1,9 @@
 ﻿using EventSystem.Utils;
 using NLog;
-using Sandbox.Game.Entities;
-using Sandbox.ModAPI;
 using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
 using System.Threading.Tasks;
-using VRageMath;
 
 namespace EventSystem.Events
 {
@@ -50,6 +45,11 @@ namespace EventSystem.Events
         /// Gets or sets the end time of the event.
         /// </summary>
         public TimeSpan EndTime { get; set; }
+
+        /// <summary>
+        /// Gets the description of the event.
+        /// </summary>
+        public abstract string EventDescription { get; }
 
         /// <summary>
         /// Performs specific actions related to starting the event.

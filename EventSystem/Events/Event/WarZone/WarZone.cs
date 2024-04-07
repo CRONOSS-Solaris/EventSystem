@@ -43,6 +43,9 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
+        public override string EventDescription => "The WarZone event transforms a specific area into a contested war zone, where players and factions can compete for control and rewards. Upon entering the zone, participants are challenged to maintain their presence within a dynamically defined sphere, battling against each other and facing periodic challenges. Points are awarded based on survival time, combat achievements, and the ability to fend off enemies. This event emphasizes strategic teamwork, individual skill, and adaptability to changing conditions. The WarZone dynamically generates GPS coordinates to guide participants into the heart of the conflict, with rewards scaling based on performance and contribution to the event's objectives.";
+
+
         public override async Task SystemStartEvent()
         {
             // Dodanie wszystkich graczy do listy uczestników

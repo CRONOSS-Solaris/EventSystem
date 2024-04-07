@@ -41,6 +41,9 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
+        public override string EventDescription => "The WarZoneGrid event transforms an area within the game world into a volatile combat zone centered around a strategically significant grid structure. This grid becomes the focal point of intense skirmishes and battles, drawing players into a fight for control and dominance. Participants are thrust into the heart of conflict, where they must utilize their combat skills, strategic thinking, and teamwork to overcome opponents and secure the area. Rewards are allocated based on participation, success in combat, and the ability to hold and defend the grid against adversaries. This event challenges players to adapt quickly to changing combat scenarios, making alliances when necessary, and employing every tactic at their disposal to emerge victorious in the relentless battle for supremacy.";
+
+
         public override async Task SystemStartEvent()
         {
             // Dodanie wszystkich graczy do listy uczestników

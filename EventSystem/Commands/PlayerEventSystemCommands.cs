@@ -114,45 +114,53 @@ namespace EventSystem
         }
 
 
-        [Command("events", "Displays active and upcoming events.")]
+        [Command("events", "Displays active and upcoming events")]
         [Permission(MyPromoteLevel.None)]
         public void ShowEvents()
         {
             var eventManager = Plugin._eventManager;
             var activeEvents = eventManager.Events.Where(e => e.IsActiveNow()).ToList();
-            var upcomingEvents = eventManager.Events.Where(e => !e.IsActiveNow()).ToList();
 
             var response = new StringBuilder();
-            response.AppendLine();
-            response.AppendLine("Active Events:");
 
+            // Sekcja dla aktywnych wydarzeń
             if (activeEvents.Any())
             {
+                response.AppendLine("Active Events:");
+                response.AppendLine();
                 foreach (var eventItem in activeEvents)
                 {
                     int participantsCount = eventItem.GetParticipantsCount();
-                    response.AppendLine($"{eventItem.EventName} - End: {eventItem.EndTime:hh\\:mm\\:ss} - Participants: {participantsCount}");
+                    response.AppendLine($"- {eventItem.EventName}");
+                    response.AppendLine($"  End: {eventItem.EndTime:hh\\:mm\\:ss}");
+                    response.AppendLine($"  Participants: {participantsCount}");
+                    response.AppendLine($"  Description:");
+                    response.AppendLine($"    {eventItem.EventDescription}");
+                    response.AppendLine();
                 }
             }
             else
             {
                 response.AppendLine("No active events currently.");
+                response.AppendLine();
             }
 
-            response.AppendLine();
-            response.AppendLine("Upcoming Events:");
-
+            // Sekcja dla nadchodzących wydarzeń, wykorzystująca metodę GenerateUpcomingEventsScheduleText
             var upcomingEventsText = GenerateUpcomingEventsScheduleText(eventManager, DateTime.Now);
-            if (string.IsNullOrEmpty(upcomingEventsText))
+            if (!string.IsNullOrEmpty(upcomingEventsText))
             {
-                response.AppendLine("No upcoming events.");
+                response.AppendLine("Upcoming Events:");
+                response.AppendLine();
+                response.Append(upcomingEventsText);
             }
             else
             {
-                response.Append(upcomingEventsText);
+                response.AppendLine("No upcoming events.");
             }
 
-            EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}", response.ToString(), Color.Green, Context.Player.SteamUserId);
+            // Wysłanie skompilowanej wiadomości jako DialogMessage (MOTD)
+            var dialogMessage = new DialogMessage("Events Overview", "", response.ToString().TrimEnd());
+            ModCommunication.SendMessageTo(dialogMessage, Context.Player.SteamUserId);
         }
 
         private string GenerateUpcomingEventsScheduleText(EventManager eventManager, DateTime now)
