@@ -9,6 +9,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VRageMath;
+using static EventSystem.Event.WarZone;
 
 namespace EventSystem.Event
 {
@@ -29,7 +30,7 @@ namespace EventSystem.Event
 
 
         private Vector3D sphereCenter;
-        private double sphereRadius;
+        private double ZoneRadius;
 
 
         public WarZoneGrid(EventSystemConfig config)
@@ -56,12 +57,12 @@ namespace EventSystem.Event
             var settings = _config.WarZoneGridSettings;
 
             // Losowanie pozycji sfery
-            Vector3D sphereCenter = RandomizeSpherePosition(settings);
-            double sphereRadius = settings.SphereRadius;
+            Vector3D sphereCenter = RandomizePosition(settings);
+            double sphereRadius = settings.Radius;
 
             // Przechowuje wartości w polach klasy, aby móc ich użyć w CheckPlayersInSphere
             this.sphereCenter = sphereCenter;
-            this.sphereRadius = sphereRadius;
+            this.ZoneRadius = sphereRadius;
 
             // Subskrypcja sprawdzania pozycji graczy co sekundę
             SubscribeToUpdatePerSecond(CheckPlayersInSphere);
@@ -138,7 +139,7 @@ namespace EventSystem.Event
                 {
                     long playerId = player.Identity.IdentityId;
                     Vector3D playerPosition = character.PositionComp.GetPosition();
-                    bool isInSphereNow = IsPlayerInSphere(playerPosition, sphereCenter, sphereRadius);
+                    bool isInSphereNow = IsPlayerInZone(playerPosition);
                     bool wasInSphereBefore = playersInSphere.ContainsKey(playerId) && playersInSphere[playerId];
 
                     // Sprawdzenie przynależności do frakcji przed dodaniem gracza do strefy
@@ -311,9 +312,11 @@ namespace EventSystem.Event
                     PointsAwardIntervalSeconds = 60,
                     MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
-                    SphereRadius = 100,
-                    SphereMinCoords = new SphereCoordsGrid(-1000, -1000, -1000),
-                    SphereMaxCoords = new SphereCoordsGrid(1000, 1000, 1000)
+                    Radius = 100,
+                    Shape = ZoneShapeGrid.Cube,
+                    MinCoords = new AreaCoordsGrid(-1000, -1000, -1000),
+                    MaxCoords = new AreaCoordsGrid(1000, 1000, 1000),
+                    RandomizationType = CoordinateRandomizationTypeGrid.Line
                 };
             }
 
@@ -329,23 +332,87 @@ namespace EventSystem.Event
             return Task.CompletedTask;
         }
 
-        public bool IsPlayerInSphere(Vector3D playerPosition, Vector3D sphereCenter, double sphereRadius)
+        public bool IsPlayerInZone(Vector3D playerPosition)
         {
-            // Oblicz dystans między pozycją gracza a środkiem sfery
-            double distance = Vector3D.Distance(playerPosition, sphereCenter);
+            if (_config.WarZoneSettings.Shape == ZoneShape.Sphere)
+            {
+                // Logika dla sfery
+                double distance = Vector3D.Distance(playerPosition, sphereCenter);
+                return distance <= ZoneRadius;
+            }
+            else if (_config.WarZoneSettings.Shape == ZoneShape.Cube)
+            {
+                double halfEdgeLength = ZoneRadius / 2;
+                Vector3D minCoords = sphereCenter - new Vector3D(halfEdgeLength);
+                Vector3D maxCoords = sphereCenter + new Vector3D(halfEdgeLength);
 
-            // Sprawdź, czy dystans jest mniejszy niż promień sfery
-            return distance <= sphereRadius;
+                return playerPosition.X >= minCoords.X && playerPosition.X <= maxCoords.X
+                    && playerPosition.Y >= minCoords.Y && playerPosition.Y <= maxCoords.Y
+                    && playerPosition.Z >= minCoords.Z && playerPosition.Z <= maxCoords.Z;
+            }
+            return false;
         }
 
-        private Vector3D RandomizeSpherePosition(WarZoneGridConfig settings)
+        private Vector3D RandomizePosition(WarZoneGridConfig settings)
         {
             Random rnd = new Random();
-            double x = rnd.NextDouble() * (settings.SphereMaxCoords.X - settings.SphereMinCoords.X) + settings.SphereMinCoords.X;
-            double y = rnd.NextDouble() * (settings.SphereMaxCoords.Y - settings.SphereMinCoords.Y) + settings.SphereMinCoords.Y;
-            double z = rnd.NextDouble() * (settings.SphereMaxCoords.Z - settings.SphereMinCoords.Z) + settings.SphereMinCoords.Z;
+            double x, y, z;
+
+            // Konwersja AreaCoords na Vector3D
+            Vector3D minCoords = new Vector3D(settings.MinCoords.X, settings.MinCoords.Y, settings.MinCoords.Z);
+            Vector3D maxCoords = new Vector3D(settings.MaxCoords.X, settings.MaxCoords.Y, settings.MaxCoords.Z);
+
+            switch (settings.RandomizationType)
+            {
+                case CoordinateRandomizationTypeGrid.Line:
+                    // Losowanie w linii prostej
+                    double t = rnd.NextDouble(); // Parametr interpolacji
+                    x = (1 - t) * minCoords.X + t * maxCoords.X;
+                    y = (1 - t) * minCoords.Y + t * maxCoords.Y;
+                    z = (1 - t) * minCoords.Z + t * maxCoords.Z;
+                    break;
+                case CoordinateRandomizationTypeGrid.Sphere:
+                    // Środek sfery to średnia wartość koordynatów Min i Max
+                    Vector3D center = (minCoords + maxCoords) / 2;
+
+                    // Promień sfery to połowa najmniejszego wymiaru sześcianu ograniczającego
+                    double radius = Math.Min(Math.Min(
+                        maxCoords.X - minCoords.X,
+                        maxCoords.Y - minCoords.Y),
+                        maxCoords.Z - minCoords.Z) / 2;
+
+                    // Losowanie w obrębie sfery
+                    Vector3D direction = Vector3D.Normalize(new Vector3D(rnd.NextDouble() - 0.5, rnd.NextDouble() - 0.5, rnd.NextDouble() - 0.5));
+                    double distance = rnd.NextDouble() * radius;
+                    x = center.X + direction.X * distance;
+                    y = center.Y + direction.Y * distance;
+                    z = center.Z + direction.Z * distance;
+                    break;
+
+                case CoordinateRandomizationTypeGrid.Cube:
+                    // Losowanie w obrębie sześcianu
+                    x = rnd.NextDouble() * (maxCoords.X - minCoords.X) + minCoords.X;
+                    y = rnd.NextDouble() * (maxCoords.Y - minCoords.Y) + minCoords.Y;
+                    z = rnd.NextDouble() * (maxCoords.Z - minCoords.Z) + minCoords.Z;
+                    break;
+                default:
+                    throw new ArgumentOutOfRangeException();
+            }
 
             return new Vector3D(x, y, z);
+        }
+
+        public enum CoordinateRandomizationTypeGrid
+        {
+            Line,
+            Sphere,
+            Cube
+        }
+
+        public enum ZoneShapeGrid
+        {
+            Sphere,
+            Cube
         }
 
         public class WarZoneGridConfig
@@ -358,21 +425,24 @@ namespace EventSystem.Event
             public int PointsAwardIntervalSeconds { get; set; }
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
-            public double SphereRadius { get; set; }
-            public SphereCoordsGrid SphereMinCoords { get; set; }
-            public SphereCoordsGrid SphereMaxCoords { get; set; }
+            public double Radius { get; set; }
+
+            public ZoneShapeGrid Shape { get; set; }
+            public AreaCoordsGrid MinCoords { get; set; }
+            public AreaCoordsGrid MaxCoords { get; set; }
+            public CoordinateRandomizationTypeGrid RandomizationType { get; set; }
         }
 
-        public class SphereCoordsGrid
+        public class AreaCoordsGrid
         {
             public double X { get; set; }
             public double Y { get; set; }
             public double Z { get; set; }
 
-            public SphereCoordsGrid() { }
+            public AreaCoordsGrid() { }
 
             // Konstruktor przyjmujący wartości X, Y, Z
-            public SphereCoordsGrid(double x, double y, double z)
+            public AreaCoordsGrid(double x, double y, double z)
             {
                 X = x;
                 Y = y;

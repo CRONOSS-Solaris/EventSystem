@@ -288,7 +288,7 @@
     <Compile Include="EventSystem\Utils\PackRewardItem.cs" />
     <Compile Include="EventSystem\Utils\PlayerAccount.cs" />
     <Compile Include="EventSystem\Utils\RewardSet.cs" />
-    <Compile Include="EventSystem\Utils\SphereCoordsConverter.cs" />
+    <Compile Include="EventSystem\Utils\AreaCoordsConverter.cs" />
     <Compile Include="EventSystem\Utils\UpdateManager.cs" />
     <Compile Include="EventSystem\Utils\Utilities.cs" />
     <EmbeddedResource Include="EventSystem\Properties\Resources.resx">

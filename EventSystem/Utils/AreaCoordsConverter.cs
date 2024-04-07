@@ -6,18 +6,18 @@ using static EventSystem.Event.WarZoneGrid;
 
 namespace EventSystem.Utils
 {
-    public class SphereCoordsConverter : IValueConverter
+    public class AreaCoordsConverter : IValueConverter
     {
         public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
         {
-            // Sprawdzenie, czy wartość jest jednym z typów SphereCoords
-            if (value is SphereCoords coords)
+            // Sprawdzenie, czy wartość jest jednym z typów AreaCoords
+            if (value is AreaCoords coords)
             {
                 return $"{coords.X}, {coords.Y}, {coords.Z}";
             }
-            else if (value is SphereCoordsGrid coordsGrid)
+            else if (value is AreaCoordsGrid coordsGrid)
             {
-                // Obsługa SphereCoordsGrid, jeśli jest to ten typ
+                // Obsługa AreaCoordsGrid, jeśli jest to ten typ
                 return $"{coordsGrid.X}, {coordsGrid.Y}, {coordsGrid.Z}";
             }
             return string.Empty;
@@ -31,13 +31,13 @@ namespace EventSystem.Utils
                 if (parts.Length == 3 && double.TryParse(parts[0], out double x) && double.TryParse(parts[1], out double y) && double.TryParse(parts[2], out double z))
                 {
                     // Możesz użyć targetType, aby określić, który typ zwrócić
-                    if (targetType == typeof(SphereCoords))
+                    if (targetType == typeof(AreaCoords))
                     {
-                        return new SphereCoords(x, y, z);
+                        return new AreaCoords(x, y, z);
                     }
-                    else if (targetType == typeof(SphereCoordsGrid))
+                    else if (targetType == typeof(AreaCoordsGrid))
                     {
-                        return new SphereCoordsGrid(x, y, z);
+                        return new AreaCoordsGrid(x, y, z);
                     }
                 }
             }
