@@ -159,7 +159,7 @@
         <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="13" Grid.Column="1" Text="{Binding WarZoneGridSettings.MaxCoords, Converter={StaticResource AreaCoordsConverter}}" Tag="MaxCoords" Margin="2"/>
 
         <Label Grid.Row="14" Grid.Column="0" Content="Randomization Type"/>
-        <ComboBox Grid.Row="15" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.RandomizationType}" SelectedValuePath="Content">
+        <ComboBox Grid.Row="14" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.RandomizationType}" SelectedValuePath="Content">
             <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Line}"/>
             <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Sphere}"/>
             <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Cube}"/>

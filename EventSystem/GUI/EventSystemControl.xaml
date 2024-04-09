@@ -92,8 +92,6 @@
                             </Grid.ColumnDefinitions>
                             <CheckBox Content="Debug Mode" IsChecked="{Binding Config.DebugMode}" Grid.Row="0" Grid.Column="0" FontWeight="Normal"/>
                             <Button Style="{StaticResource ButtonStyle1}" Grid.Row="0" Grid.Column="1" Content="Save" Width="100" Margin="5" Click="SaveButtonGS_OnClick"/>
-                            <Label Content="Default Owner Grid" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
-                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding Config.DefaultOwnerGrid}" Grid.Row="1" Margin="119,5,5,4" Padding="1,0,0,0" Grid.ColumnSpan="2"/>
 
                         </Grid>
                     </GroupBox>
