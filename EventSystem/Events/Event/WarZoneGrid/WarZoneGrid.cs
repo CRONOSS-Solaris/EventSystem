@@ -68,8 +68,6 @@ namespace EventSystem.Event
             this.sphereCenter = sphereCenter;
             this.ZoneRadius = Radius;
 
-            CreateSafeZoneAroundWarZone();
-
             // Subskrypcja sprawdzania pozycji graczy co sekundę
             SubscribeToUpdatePerSecond(CheckPlayersInSphere);
 
@@ -82,15 +80,45 @@ namespace EventSystem.Event
             // Rozpocznij timer od razu
             await SendEventMessagesAndGps();
 
-            // spawnowanie siatki na środku strefy.
+            // Ustawienia siatki
+            var gridSettings = new GridSpawnSettings
+            {
+                FunctionalBlockSettings = new FunctionalBlockSettings
+                {
+                    Enabled = true
+                },
+                CubeGridSettings = new CubeGridSettings
+                {
+                    DampenersEnabled = true,
+                    Editable = false,
+                    IsStatic = true,
+                    IsPowered = true,
+                }
+            };
+
+            // Spawnowanie siatki na środku strefy.
             var gridName = settings.PrefabName;
+            GridSettingsDictionary[gridName] = gridSettings;
+            HashSet<long> spawnedEntityIds = new HashSet<long>();
             if (!string.IsNullOrWhiteSpace(gridName))
             {
-                await SpawnGrid(gridName, sphereCenter);
+                spawnedEntityIds = await SpawnGrid(gridName, sphereCenter);
+            }
+
+            // Sprawdź, czy siatka została pomyślnie zespawniona przed tworzeniem strefy bezpieczeństwa
+            if (spawnedEntityIds.Count > 0)
+            {
+                // Siatka została pomyślnie zespawniona, twórz strefę bezpieczeństwa
+                CreateSafeZoneAroundWarZone();
+            }
+            else
+            {
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be welded together. The safety zone will not be created.");
             }
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZoneGrid.");
         }
+
 
         private async Task SendEventMessagesAndGps()
         {

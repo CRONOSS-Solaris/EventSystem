@@ -9,6 +9,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows.Controls;
 using VRage;
 using VRage.Game;
 using VRage.Game.Entity;
@@ -35,7 +36,7 @@ namespace EventSystem.Serialization
         {
         }
 
-        public Task<HashSet<long>> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position)
+        public Task<HashSet<long>> SpawnGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D position, GridSpawnSettings settings)
         {
             var tcs = new TaskCompletionSource<HashSet<long>>();
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Attempting to spawn grids. Initial position: {position}");
@@ -55,7 +56,7 @@ namespace EventSystem.Serialization
                     LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"(SpawnGrids) Found spawn position: {position}");
 
                     var currentSpawnedGridsEntityIds = new HashSet<long>();
-                    var success = await ProcessGrids(grids, position, currentSpawnedGridsEntityIds);
+                    var success = await ProcessGrids(grids, position, currentSpawnedGridsEntityIds, settings);
 
                     if (success)
                     {
@@ -78,7 +79,7 @@ namespace EventSystem.Serialization
             return tcs.Task;
         }
 
-        private async Task<bool> ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition, HashSet<long> currentSpawnedGridsEntityIds)
+        private async Task<bool> ProcessGrids(IEnumerable<MyObjectBuilder_CubeGrid> grids, Vector3D newPosition, HashSet<long> currentSpawnedGridsEntityIds, GridSpawnSettings settings)
         {
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "(ProcessGrids) Processing grids for spawning.");
 
@@ -104,7 +105,7 @@ namespace EventSystem.Serialization
             {
                 UpdateGridPosition(grid, _delta3D, newPosition);
                 TransferGridOwnership(new[] { grid });
-                EnableRequiredItemsOnLoad(grid);
+                EnableRequiredItemsOnLoad(grid, settings);
             }
 
             try
@@ -293,26 +294,23 @@ namespace EventSystem.Serialization
             }
         }
 
-        private void EnableRequiredItemsOnLoad(MyObjectBuilder_CubeGrid grid)
+        private void EnableRequiredItemsOnLoad(MyObjectBuilder_CubeGrid grid, GridSpawnSettings settings)
         {
             foreach (var block in grid.CubeBlocks)
             {
                 if (block is MyObjectBuilder_FunctionalBlock functionalBlock)
                 {
-                    functionalBlock.Enabled = true;
-
-                    //
-                    //functionalBlock.BlockGeneralDamageModifier = 9999999.9f;
+                    functionalBlock.Enabled = settings.FunctionalBlockSettings.Enabled;
                 }
             }
 
             if (grid is MyObjectBuilder_CubeGrid gridBlock)
             {
-                gridBlock.DampenersEnabled = true;
-
-                //
-                //gridBlock.GridGeneralDamageModifier = 9999999.9f;
-                gridBlock.Editable = false;
+                gridBlock.DampenersEnabled = settings.CubeGridSettings.DampenersEnabled;
+                gridBlock.Editable = settings.CubeGridSettings.Editable;
+                gridBlock.IsPowered = settings.CubeGridSettings.IsPowered;
+                gridBlock.IsStatic = settings.CubeGridSettings.IsStatic;
+                gridBlock.DestructibleBlocks = settings.CubeGridSettings.DestructibleBlocks;
             }
         }
 

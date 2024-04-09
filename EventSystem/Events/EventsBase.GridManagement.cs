@@ -15,6 +15,8 @@ namespace EventSystem.Events
     {
         //list of grids created by event
         protected ConcurrentDictionary<long, bool> SpawnedGridsEntityIds { get; } = new ConcurrentDictionary<long, bool>();
+        public static ConcurrentDictionary<string, GridSpawnSettings> GridSettingsDictionary = new ConcurrentDictionary<string, GridSpawnSettings>();
+
 
         /// <summary>
         /// Spawns a grid in the world at the specified position.
@@ -37,7 +39,14 @@ namespace EventSystem.Events
 
             try
             {
-                HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position);
+                // Pobranie ustawień dla siatki
+                GridSpawnSettings settings;
+                if (!GridSettingsDictionary.TryGetValue(gridName, out settings))
+                {
+                    settings = new GridSpawnSettings();
+                }
+
+                HashSet<long> entityIds = await GridSerializer.LoadAndSpawnGrid(prefabFolderPath, gridName, position, settings);
 
                 if (entityIds != null && entityIds.Count > 0)
                 {
@@ -60,6 +69,7 @@ namespace EventSystem.Events
                 return new HashSet<long>();
             }
         }
+
 
         /// <summary>
         /// Manages additional event elements, such as grids and objects.

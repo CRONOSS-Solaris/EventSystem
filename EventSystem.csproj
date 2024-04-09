@@ -282,6 +282,7 @@
     <Compile Include="EventSystem\Utils\Compiler.cs" />
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
     <Compile Include="EventSystem\Utils\GPSEventData.cs" />
+    <Compile Include="EventSystem\Utils\GridSpawnSettings.cs" />
     <Compile Include="EventSystem\Utils\IndividualRewardItem.cs" />
     <Compile Include="EventSystem\Utils\ItemLoader.cs" />
     <Compile Include="EventSystem\Utils\LoggerHelper.cs" />

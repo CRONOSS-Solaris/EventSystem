@@ -15,7 +15,7 @@ public static class GridSerializer
 {
     public static readonly Logger Log = LogManager.GetLogger("EventSystem/GridSerializer");
 
-    public static async Task<HashSet<long>> LoadAndSpawnGrid(string folderPath, string gridName, Vector3D position)
+    public static async Task<HashSet<long>> LoadAndSpawnGrid(string folderPath, string gridName, Vector3D position, GridSpawnSettings settings)
     {
         string filePath = Path.Combine(folderPath, gridName + ".sbc");
         LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Loading grid file: {filePath}");
@@ -37,7 +37,7 @@ public static class GridSerializer
                 if (grids.Any())
                 {
                     GridSpawner spawner = new GridSpawner();
-                    var entityIds = await spawner.SpawnGrids(grids, position);
+                    var entityIds = await spawner.SpawnGrids(grids, position, settings);
                     LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Grid(s) spawn at position {position} completed.");
                     return entityIds;
                 }
