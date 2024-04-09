@@ -46,7 +46,7 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
-        public override string EventDescription => "The WarZoneGrid event transforms an area within the game world into a volatile combat zone centered around a strategically significant grid structure. This grid becomes the focal point of intense skirmishes and battles, drawing players into a fight for control and dominance. Participants are thrust into the heart of conflict, where they must utilize their combat skills, strategic thinking, and teamwork to overcome opponents and secure the area. Rewards are allocated based on participation, success in combat, and the ability to hold and defend the grid against adversaries. This event challenges players to adapt quickly to changing combat scenarios, making alliances when necessary, and employing every tactic at their disposal to emerge victorious in the relentless battle for supremacy.";
+        public override string EventDescription => $"The {EventName} event transforms an area within the game world into a volatile combat zone centered around a strategically significant grid structure. This grid becomes the focal point of intense skirmishes and battles, drawing players into a fight for control and dominance. Participants are thrust into the heart of conflict, where they must utilize their combat skills, strategic thinking, and teamwork to overcome opponents and secure the area. Rewards are allocated based on participation, success in combat, and the ability to hold and defend the grid against adversaries. This event challenges players to adapt quickly to changing combat scenarios, making alliances when necessary, and employing every tactic at their disposal to emerge victorious in the relentless battle for supremacy.";
 
 
         public override async Task SystemStartEvent()
@@ -116,21 +116,21 @@ namespace EventSystem.Event
                 LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be welded together. The safety zone will not be created.");
             }
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZoneGrid.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start {EventName}.");
         }
 
 
         private async Task SendEventMessagesAndGps()
         {
             // Wysyłanie ogólnej wiadomości o rozpoczęciu eventu
-            EventSystemMain.ChatManager.SendMessageAsOther("WarZoneGrid", $"Start of the WarZoneGrid event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
+            EventSystemMain.ChatManager.SendMessageAsOther(EventName, $"Start of the {EventName} event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
 
             // Pobieranie listy wszystkich graczy online i wysyłanie do nich informacji GPS
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, "WarZoneGrid Event", sphereCenter, "Location of the WarZoneGrid event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
+                SendGpsToPlayer(playerId, $"{EventName} Event", sphereCenter, $"Location of the {EventName} event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
 
@@ -158,7 +158,7 @@ namespace EventSystem.Event
 
             await CleanupGrids();
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Ending WarZoneGrid.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending {EventName}.");
             await Task.CompletedTask;
         }
 
@@ -183,7 +183,7 @@ namespace EventSystem.Event
                     if (playerFaction == null && isInSphereNow)
                     {
                         // Gracz bez frakcji w strefie, wysyłaj komunikat, ale nie dodawaj go do strefy
-                        SendMessageByPlayerId(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        SendMessageByPlayerId(playerId, $"You must be part of a faction to participate in the {EventName} event!", Color.Red);
                         continue; // Pomiń dodawanie gracza do listy uczestników
                     }
 
@@ -270,7 +270,7 @@ namespace EventSystem.Event
                             // Przyznaj punkty graczowi
                             int pointsToAward = _config.WarZoneGridSettings.PointsPerInterval;
                             AwardPlayer((long)steamId, pointsToAward);
-                            SendMessageByPlayerId(playerId, $"You have earned {pointsToAward} points for staying in the WarZoneGrid!", Color.Yellow);
+                            SendMessageByPlayerId(playerId, $"You have earned {pointsToAward} points for staying in the {EventName}!", Color.Yellow);
                         }
                     }
                     else if (!isPlayerCurrentlyInZone)
@@ -349,10 +349,10 @@ namespace EventSystem.Event
                     MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
                     Radius = 100,
-                    Shape = ZoneShapeGrid.Cube,
-                    MinCoords = new AreaCoordsGrid(-1000, -1000, -1000),
-                    MaxCoords = new AreaCoordsGrid(1000, 1000, 1000),
-                    RandomizationType = CoordinateRandomizationTypeGrid.Line
+                    Shape = ZoneShape.Cube,
+                    MinCoords = new AreaCoords(-1000, -1000, -1000),
+                    MaxCoords = new AreaCoords(1000, 1000, 1000),
+                    RandomizationType = CoordinateRandomizationType.Line
                 };
             }
 
@@ -363,20 +363,20 @@ namespace EventSystem.Event
             EndTime = TimeSpan.Parse(settings.EndTime);
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded WarZoneGrid settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+            LoggerHelper.DebugLog(Log, _config, $"Loaded {EventName} settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
             return Task.CompletedTask;
         }
 
         public bool IsPlayerInZone(Vector3D playerPosition, Vector3D sphereCenter, double ZoneRadius)
         {
-            if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Sphere)
+            if (_config.WarZoneGridSettings.Shape == ZoneShape.Sphere)
             {
                 // Logika dla sfery
                 double distance = Vector3D.Distance(playerPosition, sphereCenter);
                 return distance <= ZoneRadius;
             }
-            else if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Cube)
+            else if (_config.WarZoneGridSettings.Shape == ZoneShape.Cube)
             {
                 // Logika dla sześcianu
                 double halfEdgeLength = ZoneRadius / 2;
@@ -401,14 +401,14 @@ namespace EventSystem.Event
 
             switch (settings.RandomizationType)
             {
-                case CoordinateRandomizationTypeGrid.Line:
+                case CoordinateRandomizationType.Line:
                     // Losowanie w linii prostej
                     double t = rnd.NextDouble(); // Parametr interpolacji
                     x = (1 - t) * minCoords.X + t * maxCoords.X;
                     y = (1 - t) * minCoords.Y + t * maxCoords.Y;
                     z = (1 - t) * minCoords.Z + t * maxCoords.Z;
                     break;
-                case CoordinateRandomizationTypeGrid.Sphere:
+                case CoordinateRandomizationType.Sphere:
                     // Środek sfery to średnia wartość koordynatów Min i Max
                     Vector3D center = (minCoords + maxCoords) / 2;
 
@@ -426,7 +426,7 @@ namespace EventSystem.Event
                     z = center.Z + direction.Z * distance;
                     break;
 
-                case CoordinateRandomizationTypeGrid.Cube:
+                case CoordinateRandomizationType.Cube:
                     // Losowanie w obrębie sześcianu
                     x = rnd.NextDouble() * (maxCoords.X - minCoords.X) + minCoords.X;
                     y = rnd.NextDouble() * (maxCoords.Y - minCoords.Y) + minCoords.Y;
@@ -437,19 +437,6 @@ namespace EventSystem.Event
             }
 
             return new Vector3D(x, y, z);
-        }
-
-        public enum CoordinateRandomizationTypeGrid
-        {
-            Line,
-            Sphere,
-            Cube
-        }
-
-        public enum ZoneShapeGrid
-        {
-            Sphere,
-            Cube
         }
 
         // Metoda do tworzenia SafeZone wokół wylosowanej pozycji
@@ -477,7 +464,7 @@ namespace EventSystem.Event
 
                     // Ustawienie rozmiaru strefy
                     float zoneSize = (float)ZoneRadius;
-                    if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Sphere)
+                    if (_config.WarZoneGridSettings.Shape == ZoneShape.Sphere)
                     {
                         safezoneDefinition.Shape = MySafeZoneShape.Sphere;
                         safezoneDefinition.Radius = zoneSize;
@@ -529,6 +516,7 @@ namespace EventSystem.Event
                 }
             });
         }
+
         public class WarZoneGridConfig
         {
             public bool IsEnabled { get; set; }
@@ -541,27 +529,10 @@ namespace EventSystem.Event
             public int PointsPerInterval { get; set; }
             public double Radius { get; set; }
 
-            public ZoneShapeGrid Shape { get; set; }
-            public AreaCoordsGrid MinCoords { get; set; }
-            public AreaCoordsGrid MaxCoords { get; set; }
-            public CoordinateRandomizationTypeGrid RandomizationType { get; set; }
-        }
-
-        public class AreaCoordsGrid
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-            public double Z { get; set; }
-
-            public AreaCoordsGrid() { }
-
-            // Konstruktor przyjmujący wartości X, Y, Z
-            public AreaCoordsGrid(double x, double y, double z)
-            {
-                X = x;
-                Y = y;
-                Z = z;
-            }
+            public ZoneShape Shape { get; set; }
+            public AreaCoords MinCoords { get; set; }
+            public AreaCoords MaxCoords { get; set; }
+            public CoordinateRandomizationType RandomizationType { get; set; }
         }
     }
 }

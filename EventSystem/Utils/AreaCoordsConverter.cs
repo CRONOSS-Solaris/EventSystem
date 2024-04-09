@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows.Data;
-using static EventSystem.Event.WarZone;
-using static EventSystem.Event.WarZoneGrid;
+using static EventSystem.Events.EventsBase;
 
 namespace EventSystem.Utils
 {
@@ -14,11 +13,6 @@ namespace EventSystem.Utils
             if (value is AreaCoords coords)
             {
                 return $"{coords.X}, {coords.Y}, {coords.Z}";
-            }
-            else if (value is AreaCoordsGrid coordsGrid)
-            {
-                // Obsługa AreaCoordsGrid, jeśli jest to ten typ
-                return $"{coordsGrid.X}, {coordsGrid.Y}, {coordsGrid.Z}";
             }
             return string.Empty;
         }
@@ -34,10 +28,6 @@ namespace EventSystem.Utils
                     if (targetType == typeof(AreaCoords))
                     {
                         return new AreaCoords(x, y, z);
-                    }
-                    else if (targetType == typeof(AreaCoordsGrid))
-                    {
-                        return new AreaCoordsGrid(x, y, z);
                     }
                 }
             }

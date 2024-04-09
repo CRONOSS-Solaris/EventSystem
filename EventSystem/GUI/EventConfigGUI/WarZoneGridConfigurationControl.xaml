@@ -4,7 +4,7 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:utils="clr-namespace:EventSystem.Utils"
-             xmlns:events="clr-namespace:EventSystem.Event"
+             xmlns:events="clr-namespace:EventSystem.Events"
 
              mc:Ignorable="d" 
              d:DesignHeight="550" d:DesignWidth="800">
@@ -145,8 +145,8 @@
 
         <Label Grid.Row="10" Grid.Column="0" Content="Shape"/>
         <ComboBox Grid.Row="10" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.Shape}" SelectedValuePath="Content">
-            <ComboBoxItem Content="{x:Static events:WarZoneGrid+ZoneShapeGrid.Sphere}"/>
-            <ComboBoxItem Content="{x:Static events:WarZoneGrid+ZoneShapeGrid.Cube}"/>
+            <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Sphere}"/>
+            <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Cube}"/>
         </ComboBox>
 
         <Label Grid.Row="11" Grid.Column="0" Content="Min Coords (X, Y, Z)"/>
@@ -157,9 +157,9 @@
 
         <Label Grid.Row="13" Grid.Column="0" Content="Randomization Type"/>
         <ComboBox Grid.Row="13" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.RandomizationType}" SelectedValuePath="Content">
-            <ComboBoxItem Content="{x:Static events:WarZoneGrid+CoordinateRandomizationTypeGrid.Line}"/>
-            <ComboBoxItem Content="{x:Static events:WarZoneGrid+CoordinateRandomizationTypeGrid.Sphere}"/>
-            <ComboBoxItem Content="{x:Static events:WarZoneGrid+CoordinateRandomizationTypeGrid.Cube}"/>
+            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Line}"/>
+            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Sphere}"/>
+            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Cube}"/>
         </ComboBox>
 
     </Grid>

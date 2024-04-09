@@ -271,38 +271,36 @@ namespace EventSystem
 
         private void RegisterAllEvents()
         {
-            // Używamy refleksji do znalezienia wszystkich klas dziedziczących po EventsBase
-            // w bieżącym zestawie oraz w dynamicznie załadowanych zestawach.
             var eventTypes = Assembly.GetExecutingAssembly().GetTypes()
                             .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract).ToList();
 
-            // Dodajemy do przeszukiwania typy z dynamicznie załadowanych zestawów
             foreach (var assembly in myAssemblies)
             {
-                eventTypes.AddRange(assembly.GetTypes()
-                                .Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract));
+                eventTypes.AddRange(assembly.GetTypes().Where(t => t.IsSubclassOf(typeof(EventsBase)) && !t.IsAbstract));
             }
 
             foreach (var eventType in eventTypes)
             {
                 try
                 {
-                    // Tworzymy instancję każdego eventu
-                    var eventInstance = (EventsBase)Activator.CreateInstance(eventType, _config?.Data);
+                    var eventInstance = Activator.CreateInstance(eventType, new object[] { _config?.Data }) as EventsBase;
                     if (eventInstance != null)
                     {
-                        // Rejestrujemy event
                         _eventManager.RegisterEvent(eventInstance);
                         Log.Info($"Event '{eventType.Name}' successfully registered.");
                     }
                 }
+                catch (MissingMethodException ex)
+                {
+                    Log.Error($"Error registering event '{eventType.Name}': No matching constructor found. {ex.Message}");
+                }
                 catch (Exception ex)
                 {
-                    // Logowanie błędu podczas tworzenia lub rejestrowania eventu
-                    Log.Error($"Error registering event '{eventType.Name}': {ex.Message}");
+                    Log.Error($"Error registering event '{eventType.Name}': {ex.GetType()}: {ex.Message}");
                 }
             }
         }
+
 
         private void ScheduleAllEvents()
         {

@@ -98,5 +98,37 @@ namespace EventSystem.Events
             EventSystemMain.Instance.UpdateManager.RemoveUpdateSubscriberPerSecond(updateAction);
         }
 
+
+        //WarZone Event
+        public enum CoordinateRandomizationType
+        {
+            Line,
+            Sphere,
+            Cube
+        }
+
+        public enum ZoneShape
+        {
+            Sphere,
+            Cube
+        }
+
+        public class AreaCoords
+        {
+            public double X { get; set; }
+            public double Y { get; set; }
+            public double Z { get; set; }
+
+            public AreaCoords() { }
+
+            // Konstruktor przyjmujący wartości X, Y, Z
+            public AreaCoords(double x, double y, double z)
+            {
+                X = x;
+                Y = y;
+                Z = z;
+            }
+        }
+
     }
 }

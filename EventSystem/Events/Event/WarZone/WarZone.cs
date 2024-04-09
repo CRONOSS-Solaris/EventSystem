@@ -46,7 +46,7 @@ namespace EventSystem.Event
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
-        public override string EventDescription => "The WarZone event transforms a specific area into a contested war zone, where players and factions can compete for control and rewards. Upon entering the zone, participants are challenged to maintain their presence within a dynamically defined sphere, battling against each other and facing periodic challenges. Points are awarded based on survival time, combat achievements, and the ability to fend off enemies. This event emphasizes strategic teamwork, individual skill, and adaptability to changing conditions. The WarZone dynamically generates GPS coordinates to guide participants into the heart of the conflict, with rewards scaling based on performance and contribution to the event's objectives.";
+        public override string EventDescription => $"The {EventName} event transforms a specific area into a contested war zone, where players and factions can compete for control and rewards. Upon entering the zone, participants are challenged to maintain their presence within a dynamically defined sphere, battling against each other and facing periodic challenges. Points are awarded based on survival time, combat achievements, and the ability to fend off enemies. This event emphasizes strategic teamwork, individual skill, and adaptability to changing conditions. The WarZone dynamically generates GPS coordinates to guide participants into the heart of the conflict, with rewards scaling based on performance and contribution to the event's objectives.";
 
 
         public override async Task SystemStartEvent()
@@ -83,20 +83,20 @@ namespace EventSystem.Event
             // Rozpocznij timer od razu
             await SendEventMessagesAndGps();
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "System Start WarZone.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start {EventName}.");
         }
 
         private async Task SendEventMessagesAndGps()
         {
             // Wysyłanie ogólnej wiadomości o rozpoczęciu eventu
-            EventSystemMain.ChatManager.SendMessageAsOther("WarZone", $"Start of the WarZone event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
+            EventSystemMain.ChatManager.SendMessageAsOther(EventName, $"Start of the {EventName} event at coordinates: X={sphereCenter.X:F2}, Y={sphereCenter.Y:F2}, Z={sphereCenter.Z:F2}!", Color.Red);
 
             // Pobieranie listy wszystkich graczy online i wysyłanie do nich informacji GPS
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
                 // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, "WarZone Event", sphereCenter, "Location of the WarZone event!", TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
+                SendGpsToPlayer(playerId, $"{EventName} Event", sphereCenter, $"Location of the {EventName} event!", TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
 
@@ -122,7 +122,7 @@ namespace EventSystem.Event
                 messageAndGpsTimer.Dispose();
             }
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "Ending WarZone.");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending {EventName}.");
             await Task.CompletedTask;
         }
 
@@ -147,7 +147,7 @@ namespace EventSystem.Event
                     if (playerFaction == null && isInSphereNow)
                     {
                         // Gracz bez frakcji w strefie, wysyłaj komunikat, ale nie dodawaj go do strefy
-                        SendMessageByPlayerId(playerId, "You must be part of a faction to participate in the WarZone event!", Color.Red);
+                        SendMessageByPlayerId(playerId, $"You must be part of a faction to participate in the {EventName} event!", Color.Red);
                         continue; // Pomiń dodawanie gracza do listy uczestników
                     }
 
@@ -318,7 +318,7 @@ namespace EventSystem.Event
                         ModelColor = new SerializableVector3(1f, 0f, 0f),
                         Texture = "SafeZone_Texture_Restricted",
                         IsVisible = true,
-                        DisplayName = "WarZoneSafeZone"
+                        DisplayName = $"{EventName}SafeZone"
                     };
 
                     // Ustawienie rozmiaru strefy
@@ -404,7 +404,7 @@ namespace EventSystem.Event
             EndTime = TimeSpan.Parse(settings.EndTime);
 
             string activeDaysText = ActiveDaysOfMonth.Count > 0 ? string.Join(", ", ActiveDaysOfMonth) : "Every day";
-            LoggerHelper.DebugLog(Log, _config, $"Loaded WarZone settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
+            LoggerHelper.DebugLog(Log, _config, $"Loaded {EventName} settings: IsEnabled={IsEnabled}, Active Days of Month={activeDaysText}, StartTime={StartTime}, EndTime={EndTime}");
 
             return Task.CompletedTask;
         }
@@ -480,19 +480,6 @@ namespace EventSystem.Event
             return new Vector3D(x, y, z);
         }
 
-        public enum CoordinateRandomizationType
-        {
-            Line,
-            Sphere,
-            Cube
-        }
-
-        public enum ZoneShape
-        {
-            Sphere,
-            Cube
-        }
-
         public class WarZoneConfig
         {
             public bool IsEnabled { get; set; }
@@ -507,23 +494,6 @@ namespace EventSystem.Event
             public CoordinateRandomizationType RandomizationType { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
-        }
-
-        public class AreaCoords
-        {
-            public double X { get; set; }
-            public double Y { get; set; }
-            public double Z { get; set; }
-
-            public AreaCoords() { }
-
-            // Konstruktor przyjmujący wartości X, Y, Z
-            public AreaCoords(double x, double y, double z)
-            {
-                X = x;
-                Y = y;
-                Z = z;
-            }
         }
     }
 }
