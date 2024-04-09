@@ -180,16 +180,31 @@ namespace EventSystem.Events
         private void SendNotification(string message, string color)
         {
             var torch = TorchBase.Instance;
-            if (torch != null)
+            if (torch == null)
             {
-                var commandManager = torch.CurrentSession.Managers.GetManager<CommandManager>();
-                if (commandManager != null)
-                {
-                    string notificationCommand = $"!notify \"{message}\" 9000 {color}";
-                    commandManager.HandleCommandFromServer(notificationCommand);
-                }
+                Log.Error("TorchBase.Instance is null. Notification cannot be sent.");
+                return;
             }
+
+            var session = torch.CurrentSession;
+            if (session == null)
+            {
+                Log.Error("TorchBase.CurrentSession is null. Notification cannot be sent.");
+                return;
+            }
+
+            var commandManager = session.Managers.GetManager<CommandManager>();
+            if (commandManager == null)
+            {
+                Log.Error("CommandManager is null. Notification cannot be sent.");
+                return;
+            }
+
+            string notificationCommand = $"!notify \"{message}\" 9000 {color}";
+            commandManager.HandleCommandFromServer(notificationCommand);
+            Log.Info($"A notification was sent: {message} with color {color}.");
         }
+
 
         public IEnumerable<EventsBase> Events => _events;
     }
