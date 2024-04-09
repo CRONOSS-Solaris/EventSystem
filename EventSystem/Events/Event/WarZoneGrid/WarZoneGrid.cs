@@ -93,6 +93,10 @@ namespace EventSystem.Event
                     Editable = false,
                     IsStatic = true,
                     IsPowered = true,
+                },
+                GridOwnerSettings = new GridOwnerSettings
+                {
+                    OwnerGrid = settings.OwnerGrid,
                 }
             };
 
@@ -344,6 +348,7 @@ namespace EventSystem.Event
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
                     EndTime = "23:59:59",
+                    OwnerGrid = 144115188075855881,
                     PrefabName = "PrefabName",
                     PointsAwardIntervalSeconds = 60,
                     MessageAndGpsBroadcastIntervalSeconds = 300,
@@ -533,6 +538,7 @@ namespace EventSystem.Event
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
             public CoordinateRandomizationType RandomizationType { get; set; }
+            public long OwnerGrid {  get; set; }
         }
     }
 }

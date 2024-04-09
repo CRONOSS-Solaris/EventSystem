@@ -21,64 +21,59 @@ namespace EventSystem
         [ProtoMember(2)]
         public bool isLobby { get => _isLobby; set => SetValue(ref _isLobby, value); }
 
-        //
-        private long _defaultOwnerGrid = 144115188075855881;
-        [ProtoMember(3)]
-        public long DefaultOwnerGrid { get => _defaultOwnerGrid; set => SetValue(ref _defaultOwnerGrid, value); }
-
         // EnableLCDManager: Włącza lub wyłącza zarządzanie LCD.
         private bool _enableActiveEventsLCDManager = true;
-        [ProtoMember(4)]
+        [ProtoMember(3)]
         public bool EnableActiveEventsLCDManager { get => _enableActiveEventsLCDManager; set => SetValue(ref _enableActiveEventsLCDManager, value); }
 
         // lcdTagName: Nazwa tagu dla aktywnych eventów na ekranach LCD.
         private string _activeEventsLCDManagerTagName = "ACTIVE EVENTS";
-        [ProtoMember(5)]
+        [ProtoMember(4)]
         public string ActiveEventsLCDManagerTagName { get => _activeEventsLCDManagerTagName; set => SetValue(ref _activeEventsLCDManagerTagName, value); }
 
         // EnableAllEventsLCDManager: Włącza lub wyłącza zarządzanie wszystkimi eventami na LCD.
         private bool _enableAllEventsLCDManager = true;
-        [ProtoMember(6)]
+        [ProtoMember(5)]
         public bool EnableAllEventsLCDManager { get => _enableAllEventsLCDManager; set => SetValue(ref _enableAllEventsLCDManager, value); }
 
         // allEventsLcdTagName: Nazwa tagu dla wszystkich eventów na ekranach LCD.
         private string _allEventsLcdTagName = "ALL EVENTS";
-        [ProtoMember(7)]
+        [ProtoMember(6)]
         public string AllEventsLcdTagName { get => _allEventsLcdTagName; set => SetValue(ref _allEventsLcdTagName, value); }
 
         // eventPrefix: Prefiks używany dla komunikatów związanych z eventami.
         private string _eventPrefix = "EVENT SYSTEM";
-        [ProtoMember(8)]
+        [ProtoMember(7)]
         public string EventPrefix { get => _eventPrefix; set => SetValue(ref _eventPrefix, value); }
 
         // UseDatabase: Określa, czy używać bazy danych.
         private bool _useDatabase;
-        [ProtoMember(9)]
+        [ProtoMember(8)]
         public bool UseDatabase {  get => _useDatabase; set => SetValue(ref _useDatabase, value); }
 
         // DatabaseHost: Host bazy danych.
         private string _databaseHost = "localhost";
-        [ProtoMember(10)]
+        [ProtoMember(9)]
         public string DatabaseHost { get => _databaseHost; set => SetValue(ref _databaseHost, value); }
 
         // DatabasePort: Port bazy danych.
         private int _databasePort = 5432;
-        [ProtoMember(11)]
+        [ProtoMember(10)]
         public int DatabasePort { get => _databasePort; set => SetValue(ref _databasePort, value); }
 
         // DatabaseName: Nazwa bazy danych.
         private string _databaseName = "mydatabase";
-        [ProtoMember(12)]
+        [ProtoMember(11)]
         public string DatabaseName { get => _databaseName; set => SetValue(ref _databaseName, value); }
 
         // DatabaseUsername: Nazwa użytkownika bazy danych.
         private string _databaseUsername = "myuser";
-        [ProtoMember(13)]
+        [ProtoMember(12)]
         public string DatabaseUsername { get => _databaseUsername; set => SetValue(ref _databaseUsername, value); }
 
         // DatabasePassword: Hasło do bazy danych.
         private string _databasePassword = "mypassword";
-        [ProtoMember(14)]
+        [ProtoMember(13)]
         public string DatabasePassword { get => _databasePassword; set => SetValue(ref _databasePassword, value); }
 
         // Konfiguracje Eventów

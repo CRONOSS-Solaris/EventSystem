@@ -2,6 +2,7 @@
 {
     public FunctionalBlockSettings FunctionalBlockSettings { get; set; } = new FunctionalBlockSettings();
     public CubeGridSettings CubeGridSettings { get; set; } = new CubeGridSettings();
+    public GridOwnerSettings GridOwnerSettings { get; set; } = new GridOwnerSettings();
 }
 
 public class FunctionalBlockSettings
@@ -17,4 +18,9 @@ public class CubeGridSettings
     public bool IsStatic { get; set; }
     public bool DestructibleBlocks { get; set; }
 
+}
+
+public class GridOwnerSettings
+{
+    public long OwnerGrid { get; set;}
 }

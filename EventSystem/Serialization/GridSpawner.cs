@@ -104,7 +104,7 @@ namespace EventSystem.Serialization
             foreach (var grid in grids)
             {
                 UpdateGridPosition(grid, _delta3D, newPosition);
-                TransferGridOwnership(new[] { grid });
+                TransferGridOwnership(new[] { grid }, settings);
                 EnableRequiredItemsOnLoad(grid, settings);
             }
 
@@ -281,15 +281,14 @@ namespace EventSystem.Serialization
             return p;
         }
 
-        private void TransferGridOwnership(IEnumerable<MyObjectBuilder_CubeGrid> grids)
+        private void TransferGridOwnership(IEnumerable<MyObjectBuilder_CubeGrid> grids, GridSpawnSettings settings)
         {
-            long newOwner = EventSystemMain.Instance.Config.DefaultOwnerGrid;
             foreach (var grid in grids)
             {
                 foreach (var block in grid.CubeBlocks)
                 {
-                    block.Owner = newOwner;
-                    block.BuiltBy = newOwner;
+                    block.Owner = settings.GridOwnerSettings.OwnerGrid;
+                    block.BuiltBy = settings.GridOwnerSettings.OwnerGrid;
                 }
             }
         }

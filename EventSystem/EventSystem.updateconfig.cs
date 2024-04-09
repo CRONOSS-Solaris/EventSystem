@@ -20,7 +20,6 @@ namespace EventSystem
 
             _config.Data.DebugMode = newConfig.DebugMode;
             _config.Data.isLobby = newConfig.isLobby;
-            _config.Data.DefaultOwnerGrid = newConfig.DefaultOwnerGrid;
             _config.Data.EnableActiveEventsLCDManager = newConfig.EnableActiveEventsLCDManager;
             _config.Data.ActiveEventsLCDManagerTagName = newConfig.ActiveEventsLCDManagerTagName;
             _config.Data.EnableAllEventsLCDManager = newConfig.EnableAllEventsLCDManager;
