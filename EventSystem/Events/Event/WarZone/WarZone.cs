@@ -40,13 +40,14 @@ namespace EventSystem.Event
         public WarZone(EventSystemConfig config)
         {
             _config = config;
-            EventName = "WarZone";
+            LoadEventSettings(config);
+            EventName = _config.WarZoneSettings.EventName;
             AllowParticipationInOtherEvents = false;
             UseEventSpecificConfig = false;
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
-        public override string EventDescription => $"The {EventName} event transforms a specific area into a contested war zone, where players and factions can compete for control and rewards. Upon entering the zone, participants are challenged to maintain their presence within a dynamically defined sphere, battling against each other and facing periodic challenges. Points are awarded based on survival time, combat achievements, and the ability to fend off enemies. This event emphasizes strategic teamwork, individual skill, and adaptability to changing conditions. The WarZone dynamically generates GPS coordinates to guide participants into the heart of the conflict, with rewards scaling based on performance and contribution to the event's objectives.";
+        public override string EventDescription => _config.WarZoneSettings.EventDescription;
 
 
         public override async Task SystemStartEvent()
@@ -382,6 +383,7 @@ namespace EventSystem.Event
             {
                 config.WarZoneSettings = new WarZoneConfig
                 {
+                    EventName = "WarZone",
                     IsEnabled = false,
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
@@ -394,6 +396,7 @@ namespace EventSystem.Event
                     RandomizationType = CoordinateRandomizationType.Line,
                     MinCoords = new AreaCoords(-1000, -1000, -1000),
                     MaxCoords = new AreaCoords(1000, 1000, 1000),
+                    EventDescription = $"The {EventName} event transforms a specific area into a contested war zone, where players and factions can compete for control and rewards. Upon entering the zone, participants are challenged to maintain their presence within a dynamically defined sphere, battling against each other and facing periodic challenges. Points are awarded based on survival time, combat achievements, and the ability to fend off enemies. This event emphasizes strategic teamwork, individual skill, and adaptability to changing conditions. The WarZone dynamically generates GPS coordinates to guide participants into the heart of the conflict, with rewards scaling based on performance and contribution to the event's objectives.",
                 };
             }
 
@@ -482,6 +485,7 @@ namespace EventSystem.Event
 
         public class WarZoneConfig
         {
+            public string EventName { get; set; }
             public bool IsEnabled { get; set; }
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
@@ -494,6 +498,7 @@ namespace EventSystem.Event
             public CoordinateRandomizationType RandomizationType { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
+            public string EventDescription { get; set; }
         }
     }
 }

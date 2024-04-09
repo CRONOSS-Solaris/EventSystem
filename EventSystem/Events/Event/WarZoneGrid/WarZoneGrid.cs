@@ -40,13 +40,14 @@ namespace EventSystem.Event
         public WarZoneGrid(EventSystemConfig config)
         {
             _config = config;
-            EventName = "WarZoneGrid";
+            LoadEventSettings(config);
+            EventName = _config.WarZoneGridSettings.EventName;
             AllowParticipationInOtherEvents = false;
             UseEventSpecificConfig = false;
             PrefabStoragePath = Path.Combine("EventSystem", "EventPrefabBlueprint");
         }
 
-        public override string EventDescription => $"The {EventName} event transforms an area within the game world into a volatile combat zone centered around a strategically significant grid structure. This grid becomes the focal point of intense skirmishes and battles, drawing players into a fight for control and dominance. Participants are thrust into the heart of conflict, where they must utilize their combat skills, strategic thinking, and teamwork to overcome opponents and secure the area. Rewards are allocated based on participation, success in combat, and the ability to hold and defend the grid against adversaries. This event challenges players to adapt quickly to changing combat scenarios, making alliances when necessary, and employing every tactic at their disposal to emerge victorious in the relentless battle for supremacy.";
+        public override string EventDescription => _config.WarZoneGridSettings.EventDescription;
 
 
         public override async Task SystemStartEvent()
@@ -344,6 +345,7 @@ namespace EventSystem.Event
             {
                 config.WarZoneGridSettings = new WarZoneGridConfig
                 {
+                    EventName = "WarZoneGrid",
                     IsEnabled = false,
                     ActiveDaysOfMonth = new List<int> { 1, 15, 20 },
                     StartTime = "00:00:00",
@@ -357,7 +359,8 @@ namespace EventSystem.Event
                     Shape = ZoneShape.Cube,
                     MinCoords = new AreaCoords(-1000, -1000, -1000),
                     MaxCoords = new AreaCoords(1000, 1000, 1000),
-                    RandomizationType = CoordinateRandomizationType.Line
+                    RandomizationType = CoordinateRandomizationType.Line,
+                    EventDescription = $"The {EventName} event transforms an area within the game world into a volatile combat zone centered around a strategically significant grid structure. This grid becomes the focal point of intense skirmishes and battles, drawing players into a fight for control and dominance. Participants are thrust into the heart of conflict, where they must utilize their combat skills, strategic thinking, and teamwork to overcome opponents and secure the area. Rewards are allocated based on participation, success in combat, and the ability to hold and defend the grid against adversaries. This event challenges players to adapt quickly to changing combat scenarios, making alliances when necessary, and employing every tactic at their disposal to emerge victorious in the relentless battle for supremacy.",
                 };
             }
 
@@ -464,7 +467,7 @@ namespace EventSystem.Event
                         ModelColor = new SerializableVector3(1f, 0f, 0f),
                         Texture = "SafeZone_Texture_Restricted",
                         IsVisible = true,
-                        DisplayName = "WarZoneSafeZone"
+                        DisplayName = $"{EventName}SafeZone"
                     };
 
                     // Ustawienie rozmiaru strefy
@@ -524,6 +527,7 @@ namespace EventSystem.Event
 
         public class WarZoneGridConfig
         {
+            public string EventName { get; set; }
             public bool IsEnabled { get; set; }
             public List<int> ActiveDaysOfMonth { get; set; }
             public string StartTime { get; set; }
@@ -533,12 +537,12 @@ namespace EventSystem.Event
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
             public double Radius { get; set; }
-
             public ZoneShape Shape { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
             public CoordinateRandomizationType RandomizationType { get; set; }
             public long OwnerGrid {  get; set; }
+            public string EventDescription { get; set; }
         }
     }
 }
