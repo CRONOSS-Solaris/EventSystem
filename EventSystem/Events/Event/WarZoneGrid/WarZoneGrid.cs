@@ -1,15 +1,18 @@
 ﻿using EventSystem.Events;
 using EventSystem.Utils;
 using NLog;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.World;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VRage;
+using VRage.Game.ObjectBuilders.Components;
 using VRageMath;
-using static EventSystem.Event.WarZone;
 
 namespace EventSystem.Event
 {
@@ -21,6 +24,7 @@ namespace EventSystem.Event
         private ConcurrentDictionary<long, bool> playerMessageSent = new ConcurrentDictionary<long, bool>();
         private ConcurrentDictionary<long, DateTime> lastPointsAwarded = new ConcurrentDictionary<long, DateTime>();
         private ConcurrentDictionary<long, DateTime> playerEntryTime = new ConcurrentDictionary<long, DateTime>();
+        private ConcurrentDictionary<long, bool> safezoneEntityIds = new ConcurrentDictionary<long, bool>();
 
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
         private System.Timers.Timer messageAndGpsTimer;
@@ -58,11 +62,13 @@ namespace EventSystem.Event
 
             // Losowanie pozycji sfery
             Vector3D sphereCenter = RandomizePosition(settings);
-            double sphereRadius = settings.Radius;
+            double Radius = settings.Radius;
 
             // Przechowuje wartości w polach klasy, aby móc ich użyć w CheckPlayersInSphere
             this.sphereCenter = sphereCenter;
-            this.ZoneRadius = sphereRadius;
+            this.ZoneRadius = Radius;
+
+            CreateSafeZoneAroundWarZone();
 
             // Subskrypcja sprawdzania pozycji graczy co sekundę
             SubscribeToUpdatePerSecond(CheckPlayersInSphere);
@@ -112,6 +118,8 @@ namespace EventSystem.Event
             lastPointsAwarded.Clear();
             ParticipatingPlayers.Clear();
             playerEntryTime.Clear();
+
+            RemoveSafeZoneAroundWarZone();
 
             // Zatrzymaj i wyczyść timer
             if (messageAndGpsTimer != null)
@@ -334,13 +342,13 @@ namespace EventSystem.Event
 
         public bool IsPlayerInZone(Vector3D playerPosition, Vector3D sphereCenter, double ZoneRadius)
         {
-            if (_config.WarZoneSettings.Shape == ZoneShape.Sphere)
+            if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Sphere)
             {
                 // Logika dla sfery
                 double distance = Vector3D.Distance(playerPosition, sphereCenter);
                 return distance <= ZoneRadius;
             }
-            else if (_config.WarZoneSettings.Shape == ZoneShape.Cube)
+            else if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Cube)
             {
                 // Logika dla sześcianu
                 double halfEdgeLength = ZoneRadius / 2;
@@ -416,6 +424,83 @@ namespace EventSystem.Event
             Cube
         }
 
+        // Metoda do tworzenia SafeZone wokół wylosowanej pozycji
+        private void CreateSafeZoneAroundWarZone()
+        {
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                try
+                {
+                    // Przygotowanie definicji SafeZone
+                    var safezoneDefinition = new MyObjectBuilder_SafeZone
+                    {
+                        PositionAndOrientation = new MyPositionAndOrientation(sphereCenter, Vector3.Forward, Vector3.Up),
+                        Enabled = true,
+                        AccessTypePlayers = MySafeZoneAccess.Blacklist,
+                        AccessTypeFactions = MySafeZoneAccess.Blacklist,
+                        AccessTypeGrids = MySafeZoneAccess.Whitelist,
+                        AccessTypeFloatingObjects = MySafeZoneAccess.Blacklist,
+                        AllowedActions = MySafeZoneAction.All,
+                        ModelColor = new SerializableVector3(1f, 0f, 0f),
+                        Texture = "SafeZone_Texture_Restricted",
+                        IsVisible = true,
+                        DisplayName = "WarZoneSafeZone"
+                    };
+
+                    // Ustawienie rozmiaru strefy
+                    float zoneSize = (float)ZoneRadius;
+                    if (_config.WarZoneGridSettings.Shape == ZoneShapeGrid.Sphere)
+                    {
+                        safezoneDefinition.Shape = MySafeZoneShape.Sphere;
+                        safezoneDefinition.Radius = zoneSize;
+                    }
+                    else // Dla boxa
+                    {
+                        safezoneDefinition.Shape = MySafeZoneShape.Box;
+                        safezoneDefinition.Size = new Vector3(zoneSize, zoneSize, zoneSize);
+                    }
+
+                    // Tworzenie encji z definicji
+                    var safezoneEntity = MyAPIGateway.Entities.CreateFromObjectBuilder(safezoneDefinition);
+
+                    if (safezoneEntity != null)
+                    {
+                        // Rejestrowanie encji w grze
+                        MyAPIGateway.Entities.AddEntity(safezoneEntity, true);
+                        safezoneEntityIds.TryAdd(safezoneEntity.EntityId, true);
+                        //Log.Info($"Safezone created successfully with EntityId: {safezoneEntity.EntityId}");
+                    }
+                    else
+                    {
+                        Log.Error("Failed to create safezone. Entity creation returned null.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Exception occurred while creating safezone: {ex.Message}");
+                    LoggerHelper.DebugLog(Log, _config, "Exception details: ", ex);
+                }
+            });
+        }
+
+        private void RemoveSafeZoneAroundWarZone()
+        {
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                var safezoneIds = safezoneEntityIds.Keys.ToList();
+
+                foreach (var safezoneId in safezoneIds)
+                {
+                    if (MyAPIGateway.Entities.TryGetEntityById(safezoneId, out var safezoneEntity))
+                    {
+                        safezoneEntity.Close();
+                        MyAPIGateway.Entities.RemoveEntity(safezoneEntity);
+
+                        safezoneEntityIds.TryRemove(safezoneId, out _);
+                    }
+                }
+            });
+        }
         public class WarZoneGridConfig
         {
             public bool IsEnabled { get; set; }

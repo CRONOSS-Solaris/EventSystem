@@ -1,5 +1,6 @@
 ﻿using EventSystem.Utils;
 using NLog;
+using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -7,6 +8,7 @@ using System.Threading.Tasks;
 
 namespace EventSystem.Events
 {
+    [ProtoContract]
     public abstract partial class EventsBase
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
@@ -24,6 +26,7 @@ namespace EventSystem.Events
         /// <summary>
         /// Gets or sets the name of the event.
         /// </summary>
+        [ProtoMember(1)]
         public string EventName { get; set; }
 
         /// <summary>
