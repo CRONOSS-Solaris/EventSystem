@@ -4,6 +4,7 @@ using NLog;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Torch;
@@ -33,7 +34,22 @@ namespace EventSystem.Events
         {
             try
             {
+                // Sprawdź, czy EventName jest ustawiony
+                if (string.IsNullOrEmpty(eventItem.EventName))
+                {
+                    throw new InvalidOperationException($"Event '{eventItem.GetType().Name}' cannot be registered without an EventName.");
+                }
+
+                // Sprawdź, czy nazwa eventu już istnieje
+                if (_events.Any(e => e.EventName.Equals(eventItem.EventName, StringComparison.OrdinalIgnoreCase)))
+                {
+                    // Można wyrzucić wyjątek lub zalogować, że nazwa eventu już istnieje
+                    Log.Error($"Event with the name '{eventItem.EventName}' is already registered.");
+                    return; // Przerwij metodę, nie dodawaj duplikatu
+                }
+
                 _events.Add(eventItem);
+
                 if (eventItem.UseEventSpecificConfig)
                 {
                     eventItem.LoadEventSpecificSettings();
@@ -42,11 +58,12 @@ namespace EventSystem.Events
                 {
                     eventItem.LoadEventSettings(_config);
                 }
+
                 LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' successfully registered");
             }
             catch (Exception ex)
             {
-                Log.Error(ex, $"Error while registering event '{eventItem.EventName}': {ex.Message}");
+                Log.Error(ex, $"Error while registering event '{eventItem.GetType().Name}': {ex.Message}");
             }
         }
 

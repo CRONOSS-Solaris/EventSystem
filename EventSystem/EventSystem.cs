@@ -283,24 +283,42 @@ namespace EventSystem
             {
                 try
                 {
-                    var eventInstance = Activator.CreateInstance(eventType, new object[] { _config?.Data }) as EventsBase;
-                    if (eventInstance != null)
+                    object eventInstance = null;
+
+                    // Sprawdź dostępne konstruktory i wybierz odpowiedni sposób tworzenia instancji
+                    var ctorWithData = eventType.GetConstructor(new[] { _config?.Data?.GetType() });
+                    if (ctorWithData != null && _config?.Data != null)
                     {
-                        _eventManager.RegisterEvent(eventInstance);
-                        Log.Info($"Event '{eventType.Name}' successfully registered.");
+                        eventInstance = Activator.CreateInstance(eventType, new object[] { _config.Data });
+                    }
+                    else
+                    {
+                        var ctorWithoutData = eventType.GetConstructor(Type.EmptyTypes);
+                        if (ctorWithoutData != null)
+                        {
+                            eventInstance = Activator.CreateInstance(eventType);
+                        }
+                    }
+
+                    if (eventInstance is EventsBase eventsBaseInstance)
+                    {
+                        _eventManager.RegisterEvent(eventsBaseInstance);
+                    }
+                    else
+                    {
+                        Log.Error($"Failed to create an instance of event '{eventType.Name}'.");
                     }
                 }
                 catch (MissingMethodException ex)
                 {
-                    Log.Error($"Error registering event '{eventType.Name}': No matching constructor found. {ex.Message}");
+                    Log.Error($"Error registering event '{eventType.Name}': No suitable constructor found. {ex.Message}");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error($"Error registering event '{eventType.Name}': {ex.GetType()}: {ex.Message}");
+                    Log.Error($"Unexpected error registering event '{eventType.Name}': {ex.GetType()}: {ex.Message}");
                 }
             }
         }
-
 
         private void ScheduleAllEvents()
         {
