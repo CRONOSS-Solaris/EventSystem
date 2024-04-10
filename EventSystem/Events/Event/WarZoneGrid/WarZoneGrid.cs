@@ -62,24 +62,8 @@ namespace EventSystem.Event
             var settings = _config.WarZoneGridSettings;
 
             // Losowanie pozycji sfery
-            Vector3D sphereCenter = RandomizePosition(settings);
+            Vector3D initialSphereCenter = RandomizePosition(settings);
             double Radius = settings.Radius;
-
-            // Przechowuje wartości w polach klasy, aby móc ich użyć w CheckPlayersInSphere
-            this.sphereCenter = sphereCenter;
-            this.ZoneRadius = Radius;
-
-            // Subskrypcja sprawdzania pozycji graczy co sekundę
-            SubscribeToUpdatePerSecond(CheckPlayersInSphere);
-
-            // Inicjalizacja i konfiguracja timera
-            messageAndGpsTimer = new System.Timers.Timer(settings.MessageAndGpsBroadcastIntervalSeconds * 1000);
-            messageAndGpsTimer.Elapsed += async (sender, e) => await SendEventMessagesAndGps();
-            messageAndGpsTimer.AutoReset = true;
-            messageAndGpsTimer.Enabled = true;
-
-            // Rozpocznij timer od razu
-            await SendEventMessagesAndGps();
 
             // Ustawienia siatki
             var gridSettings = new GridSpawnSettings
@@ -101,29 +85,61 @@ namespace EventSystem.Event
                 }
             };
 
-            // Spawnowanie siatki na środku strefy.
+            // Definicja nazwy siatki i jej ustawień
             var gridName = settings.PrefabName;
             GridSettingsDictionary[gridName] = gridSettings;
-            HashSet<long> spawnedEntityIds = new HashSet<long>();
-            if (!string.IsNullOrWhiteSpace(gridName))
+
+            bool isSpawnSuccessful = false;
+            const int maxSpawnAttempts = 3;
+
+            for (int attempt = 1; attempt <= maxSpawnAttempts && !isSpawnSuccessful; attempt++)
             {
-                spawnedEntityIds = await SpawnGrid(gridName, sphereCenter);
+                // Spawnowanie siatki na środku strefy.
+                var spawnedEntityIds = await SpawnGrid(gridName, initialSphereCenter);
+
+                // Sprawdź, czy siatka została pomyślnie zespawniona
+                if (spawnedEntityIds.Count > 0)
+                {
+                    isSpawnSuccessful = true;
+                    // Oblicz rzeczywiste centrum siatki i aktualizuj sphereCenter
+                    sphereCenter = CalculateGridCenter(spawnedEntityIds); // Zaktualizowane centrum sfery
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"SphereCenter Coords: {sphereCenter.X}, {sphereCenter.Y}, {sphereCenter.X}");
+                    this.ZoneRadius = Radius; // Przechowuje wartość w polu klasy
+                                              // Aktualizacja zakończona, twórz strefę bezpieczeństwa
+                    CreateSafeZoneAroundWarZone();
+                    break; // Wyjdź z pętli, jeśli spawn się powiódł
+                }
+                else if (attempt < maxSpawnAttempts)
+                {
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Attempt {attempt} to spawn the grid failed. Trying again...");
+                    await Task.Delay(5000); // Czeka 5 sekund przed kolejną próbą
+                }
             }
 
-            // Sprawdź, czy siatka została pomyślnie zespawniona przed tworzeniem strefy bezpieczeństwa
-            if (spawnedEntityIds.Count > 0)
+            if (!isSpawnSuccessful)
             {
-                // Siatka została pomyślnie zespawniona, twórz strefę bezpieczeństwa
-                CreateSafeZoneAroundWarZone();
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be welded together after multiple attempts. The safety zone will not be created.");
+                EventSystemMain.ChatManager.SendMessageAsOther(EventName, "Due to unexpected technical issues, the event cannot be initiated. We apologize for the inconvenience.", Color.Red);
+
             }
             else
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be welded together. The safety zone will not be created.");
+                // Subskrypcja sprawdzania pozycji graczy co sekundę
+                SubscribeToUpdatePerSecond(CheckPlayersInSphere);
+
+                // Inicjalizacja i konfiguracja timera
+                messageAndGpsTimer = new System.Timers.Timer(settings.MessageAndGpsBroadcastIntervalSeconds * 1000);
+                messageAndGpsTimer.Elapsed += async (sender, e) => await SendEventMessagesAndGps();
+                messageAndGpsTimer.AutoReset = true;
+                messageAndGpsTimer.Enabled = true;
+
+                // Rozpocznij timer od razu
+                await SendEventMessagesAndGps();
+
             }
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start {EventName}.");
         }
-
 
         private async Task SendEventMessagesAndGps()
         {
@@ -138,7 +154,6 @@ namespace EventSystem.Event
                 SendGpsToPlayer(playerId, $"{EventName} Event", sphereCenter, $"Location of the {EventName} event!", TimeSpan.FromSeconds(_config.WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
-
 
         public override async Task SystemEndEvent()
         {

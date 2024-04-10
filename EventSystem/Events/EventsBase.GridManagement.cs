@@ -136,5 +136,26 @@ namespace EventSystem.Events
         }
 
 
+        public Vector3D CalculateGridCenter(HashSet<long> spawnedEntityIds)
+        {
+            Vector3D center = Vector3D.Zero;
+            int count = 0;
+
+            foreach (var entityId in spawnedEntityIds)
+            {
+                if (MyAPIGateway.Entities.TryGetEntityById(entityId, out var entity))
+                {
+                    center += entity.GetPosition();
+                    count++;
+                }
+            }
+
+            if (count > 0)
+            {
+                center /= count;
+            }
+
+            return center;
+        }
     }
 }
