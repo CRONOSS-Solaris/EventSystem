@@ -100,6 +100,10 @@ namespace EventSystem.Events
 
 
         //WarZone Event
+
+        /// <summary>
+        /// Defines the type of coordinate randomization used in war zone events, specifying how coordinates are randomized within space.
+        /// </summary>
         public enum CoordinateRandomizationType
         {
             Line,
@@ -107,21 +111,47 @@ namespace EventSystem.Events
             Cube
         }
 
+        /// <summary>
+        /// Specifies the shape of a zone used in war zone events, defining the physical area where player interactions can occur.
+        /// </summary>
         public enum ZoneShape
         {
             Sphere,
             Cube
         }
 
+
+        /// <summary>
+        /// Represents a set of coordinates within a three-dimensional space.
+        /// </summary>
         public class AreaCoords
         {
+            /// <summary>
+            /// Gets or sets the X-coordinate.
+            /// </summary>
             public double X { get; set; }
+
+            /// <summary>
+            /// Gets or sets the Y-coordinate.
+            /// </summary>
             public double Y { get; set; }
+
+            /// <summary>
+            /// Gets or sets the Z-coordinate.
+            /// </summary>
             public double Z { get; set; }
 
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AreaCoords"/> class.
+            /// </summary>
             public AreaCoords() { }
 
-            // Konstruktor przyjmujący wartości X, Y, Z
+            /// <summary>
+            /// Initializes a new instance of the <see cref="AreaCoords"/> class with specific coordinates.
+            /// </summary>
+            /// <param name="x">The X-coordinate.</param>
+            /// <param name="y">The Y-coordinate.</param>
+            /// <param name="z">The Z-coordinate.</param>
             public AreaCoords(double x, double y, double z)
             {
                 X = x;
@@ -129,6 +159,7 @@ namespace EventSystem.Events
                 Z = z;
             }
         }
+
 
     }
 }

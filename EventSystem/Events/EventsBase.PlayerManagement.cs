@@ -454,6 +454,21 @@ namespace EventSystem.Events
             }
         }
 
+        /// <summary>
+        /// Sends a GPS location to a specific player. This can be used for marking objectives, points of interest, or event locations on the player's HUD.
+        /// </summary>
+        /// <param name="playerId">The unique identifier of the player to send the GPS to.</param>
+        /// <param name="name">The name of the GPS marker.</param>
+        /// <param name="coords">The coordinates of the GPS marker.</param>
+        /// <param name="description">Optional. A description of the GPS marker.</param>
+        /// <param name="discardAt">Optional. The time at which the GPS marker should automatically be removed. If null, the marker does not expire.</param>
+        /// <param name="showOnHud">Optional. Whether the GPS marker should be shown on the HUD. Default is true.</param>
+        /// <param name="alwaysVisible">Optional. Whether the GPS marker is always visible, ignoring distance and line of sight. Default is true.</param>
+        /// <param name="color">Optional. The color of the GPS marker. If null, the default color is used.</param>
+        /// <param name="entityId">Optional. The entity ID associated with the GPS marker. Default is 0.</param>
+        /// <param name="isObjective">Optional. Whether the GPS marker is an objective marker. Default is false.</param>
+        /// <param name="contractId">Optional. The contract ID associated with the GPS marker. Default is 0.</param>
+        /// <param name="propagateToOtherServers">Optional. Whether the GPS marker should be propagated to other servers in a network. Default is true.</param>
         public void SendGpsToPlayer(long playerId, string name, Vector3D coords, string description = "", TimeSpan? discardAt = null, bool showOnHud = true, bool alwaysVisible = true, Color? color = null, long entityId = 0, bool isObjective = false, long contractId = 0, bool propagateToOtherServers = true)
         {
             var gps = new MyGps
