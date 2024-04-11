@@ -3,7 +3,6 @@ using EventSystem.Utils;
 using NLog;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.World;
-using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -11,6 +10,7 @@ using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using VRage;
+using VRage.Game;
 using VRage.Game.ObjectBuilders.Components;
 using VRageMath;
 
@@ -69,7 +69,8 @@ namespace EventSystem.Event
             {
                 FunctionalBlockSettings = new FunctionalBlockSettings
                 {
-                    Enabled = true
+                    Enabled = true,
+                    ShareMode = MyOwnershipShareModeEnum.All,
                 },
                 CubeGridSettings = new CubeGridSettings
                 {
