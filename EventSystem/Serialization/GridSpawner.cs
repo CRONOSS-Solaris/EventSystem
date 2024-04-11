@@ -300,6 +300,7 @@ namespace EventSystem.Serialization
                 if (block is MyObjectBuilder_FunctionalBlock functionalBlock)
                 {
                     functionalBlock.Enabled = settings.FunctionalBlockSettings.Enabled;
+                    functionalBlock.ShareMode = settings.FunctionalBlockSettings.ShareMode;
                 }
             }
 

@@ -1,4 +1,6 @@
-﻿public class GridSpawnSettings
+﻿using VRage.Game;
+
+public class GridSpawnSettings
 {
     public FunctionalBlockSettings FunctionalBlockSettings { get; set; } = new FunctionalBlockSettings();
     public CubeGridSettings CubeGridSettings { get; set; } = new CubeGridSettings();
@@ -8,6 +10,7 @@
 public class FunctionalBlockSettings
 {
     public bool Enabled { get; set; }
+    public MyOwnershipShareModeEnum ShareMode { get; set; } = MyOwnershipShareModeEnum.None;
 }
 
 public class CubeGridSettings
