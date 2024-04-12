@@ -1,4 +1,5 @@
 ﻿using EventSystem.Utils;
+using Sandbox.Common.ObjectBuilders;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
@@ -6,7 +7,9 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using VRage;
 using VRage.Game.ModAPI;
+using VRage.Game.ObjectBuilders.Components;
 using VRageMath;
 
 namespace EventSystem.Events
@@ -16,6 +19,7 @@ namespace EventSystem.Events
         //list of grids created by event
         protected ConcurrentDictionary<long, bool> SpawnedGridsEntityIds { get; } = new ConcurrentDictionary<long, bool>();
         public static ConcurrentDictionary<string, GridSpawnSettings> GridSettingsDictionary = new ConcurrentDictionary<string, GridSpawnSettings>();
+        protected ConcurrentDictionary<long, bool> safezoneEntityIds = new ConcurrentDictionary<long, bool>();
 
 
         /// <summary>
@@ -135,7 +139,11 @@ namespace EventSystem.Events
             return foundPosition;
         }
 
-
+        /// <summary>
+        /// Calculates the geometric center of all spawned grids specified by their entity IDs.
+        /// </summary>
+        /// <param name="spawnedEntityIds">A set of entity IDs for which the center is to be calculated.</param>
+        /// <returns>The calculated center as a Vector3D. Returns Vector3D.Zero if no entities are found or input set is empty.</returns>
         public Vector3D CalculateGridCenter(HashSet<long> spawnedEntityIds)
         {
             Vector3D center = Vector3D.Zero;
@@ -156,6 +164,103 @@ namespace EventSystem.Events
             }
 
             return center;
+        }
+
+        /// <summary>
+        /// Creates a safe zone with customizable settings around a specified center point. This method can be used
+        /// to dynamically generate safe zones during events, offering protection or restrictions in designated areas.
+        /// </summary>
+        /// <param name="center">The center point of the safe zone.</param>
+        /// <param name="radius">The radius of the safe zone if it's a sphere, or half the edge length if it's a cube.</param>
+        /// <param name="shape">The shape of the safe zone, either Sphere or Cube.</param>
+        /// <param name="isEnabled">Determines whether the safe zone is enabled upon creation. Default is true.</param>
+        /// <param name="accessTypePlayers">Defines the access type for players. Default is Blacklist.</param>
+        /// <param name="accessTypeFactions">Defines the access type for factions. Default is Blacklist.</param>
+        /// <param name="accessTypeGrids">Defines the access type for grids. Default is Whitelist.</param>
+        /// <param name="accessTypeFloatingObjects">Defines the access type for floating objects. Default is Blacklist.</param>
+        /// <param name="allowedActions">Specifies the actions that are allowed within the safe zone. Default is All.</param>
+        /// <param name="modelColor">The color of the safe zone model. Pass null to use the default red color.</param>
+        /// <param name="texture">The texture of the safe zone. Default is "SafeZone_Texture_Restricted".</param>
+        /// <param name="isVisible">Determines whether the safe zone is visible. Default is true.</param>
+        /// <param name="displayName">The display name of the safe zone. If empty or null, a generic name will be used.</param>
+        /// Example:
+        /// ZoneShape shape = _config.WarZoneGridSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
+        /// CreateSafeZone(sphereCenter, Radius, shape, true, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Whitelist, MySafeZoneAccess.Blacklist, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, new SerializableVector3(0f, 0f, 1f), "SafeZone_Texture_Restricted", true, $"{EventName}SafeZone");
+        protected void CreateSafeZone(Vector3D center, double radius, ZoneShape shape, bool isEnabled = true, MySafeZoneAccess accessTypePlayers = MySafeZoneAccess.Blacklist, MySafeZoneAccess accessTypeFactions = MySafeZoneAccess.Blacklist, MySafeZoneAccess accessTypeGrids = MySafeZoneAccess.Whitelist, MySafeZoneAccess accessTypeFloatingObjects = MySafeZoneAccess.Blacklist, MySafeZoneAction allowedActions = MySafeZoneAction.All, SerializableVector3? modelColor = null, string texture = "SafeZone_Texture_Default", bool isVisible = true, string displayName = "")
+        {
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                try
+                {
+                    SerializableVector3 color = modelColor ?? new SerializableVector3(0f, 0f, 0f);
+
+                    var safezoneDefinition = new MyObjectBuilder_SafeZone
+                    {
+                        PositionAndOrientation = new MyPositionAndOrientation(center, Vector3.Forward, Vector3.Up),
+                        Enabled = isEnabled,
+                        AccessTypePlayers = accessTypePlayers,
+                        AccessTypeFactions = accessTypeFactions,
+                        AccessTypeGrids = accessTypeGrids,
+                        AccessTypeFloatingObjects = accessTypeFloatingObjects,
+                        AllowedActions = allowedActions,
+                        ModelColor = color,
+                        Texture = texture,
+                        IsVisible = isVisible,
+                        DisplayName = displayName
+                    };
+
+                    // Ustawienie rozmiaru strefy
+                    if (shape == ZoneShape.Sphere)
+                    {
+                        safezoneDefinition.Shape = MySafeZoneShape.Sphere;
+                        safezoneDefinition.Radius = (float)radius;
+                    }
+                    else // Dla boxa
+                    {
+                        safezoneDefinition.Shape = MySafeZoneShape.Box;
+                        safezoneDefinition.Size = new Vector3((float)radius, (float)radius, (float)radius);
+                    }
+
+                    var safezoneEntity = MyAPIGateway.Entities.CreateFromObjectBuilder(safezoneDefinition);
+                    if (safezoneEntity != null)
+                    {
+                        MyAPIGateway.Entities.AddEntity(safezoneEntity, true);
+                        safezoneEntityIds.TryAdd(safezoneEntity.EntityId, true);
+                    }
+                    else
+                    {
+                        Log.Error("Failed to create safezone. Entity creation returned null.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error($"Exception occurred while creating safezone: {ex.Message}");
+                }
+            });
+        }
+
+        /// <summary>
+        /// Removes all safe zones previously created by this event. This method should be called
+        /// when the event ends or when the safe zones are no longer needed, to clean up all
+        /// safe zone entities and release resources.
+        /// </summary>
+        protected void RemoveSafeZone()
+        {
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                var safezoneIds = safezoneEntityIds.Keys.ToList();
+
+                foreach (var safezoneId in safezoneIds)
+                {
+                    if (MyAPIGateway.Entities.TryGetEntityById(safezoneId, out var safezoneEntity))
+                    {
+                        safezoneEntity.Close();
+                        MyAPIGateway.Entities.RemoveEntity(safezoneEntity);
+
+                        safezoneEntityIds.TryRemove(safezoneId, out _);
+                    }
+                }
+            });
         }
     }
 }
