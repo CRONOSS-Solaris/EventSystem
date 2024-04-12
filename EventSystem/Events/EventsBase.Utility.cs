@@ -11,6 +11,7 @@ using VRageMath;
 using System.Linq;
 using Newtonsoft.Json;
 using System.IO;
+using System.Collections.Generic;
 
 namespace EventSystem.Events
 {
@@ -174,15 +175,26 @@ namespace EventSystem.Events
 
         public void SaveEntityIds()
         {
+            // Using HashSet to ensure there are no duplicates
+            var spawnedGridsSet = new HashSet<long>(SpawnedGridsEntityIds.Keys);
+            var safeZonesSet = new HashSet<long>(safezoneEntityIds.Keys);
+
+            // Check if both sets are empty and if so, do not overwrite the file.
+            if (spawnedGridsSet.Count == 0 && safeZonesSet.Count == 0)
+            {
+                return;
+            }
+
             var ids = new
             {
-                SpawnedGrids = SpawnedGridsEntityIds.Keys.ToList(),
-                SafeZones = safezoneEntityIds.Keys.ToList()
+                SpawnedGrids = spawnedGridsSet.ToList(),
+                SafeZones = safeZonesSet.ToList()
             };
 
             var json = JsonConvert.SerializeObject(ids, Formatting.Indented);
             File.WriteAllText(_configPath, json);
         }
+
 
         private void LoadEntityIds()
         {
