@@ -9,6 +9,8 @@ using VRage.Game.ObjectBuilders.Components;
 using VRage;
 using VRageMath;
 using System.Linq;
+using Newtonsoft.Json;
+using System.IO;
 
 namespace EventSystem.Events
 {
@@ -166,6 +168,44 @@ namespace EventSystem.Events
                 Y = y;
                 Z = z;
             }
+        }
+
+        private string _configPath = Path.Combine("EventSystem", "Config", "EntityIDs.json");
+
+        private void SaveEntityIds()
+        {
+            var ids = new
+            {
+                SpawnedGrids = SpawnedGridsEntityIds.Keys.ToList(),
+                SafeZones = safezoneEntityIds.Keys.ToList()
+            };
+
+            var json = JsonConvert.SerializeObject(ids, Formatting.Indented);
+            File.WriteAllText(_configPath, json);
+        }
+
+        private void LoadEntityIds()
+        {
+            if (File.Exists(_configPath))
+            {
+                var json = File.ReadAllText(_configPath);
+                var ids = JsonConvert.DeserializeObject<dynamic>(json);
+                foreach (long id in ids.SpawnedGrids)
+                {
+                    SpawnedGridsEntityIds.TryAdd(id, true);
+                }
+                foreach (long id in ids.SafeZones)
+                {
+                    safezoneEntityIds.TryAdd(id, true);
+                }
+            }
+        }
+
+        public async Task ServerStartCleanup()
+        {
+            LoadEntityIds();
+            await CleanupGrids();
+            RemoveSafeZone();
         }
     }
 }

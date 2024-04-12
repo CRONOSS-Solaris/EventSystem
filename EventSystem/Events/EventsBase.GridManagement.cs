@@ -58,6 +58,7 @@ namespace EventSystem.Events
                     {
                         SpawnedGridsEntityIds.TryAdd(entityId, true);
                     }
+                    SaveEntityIds();
                     LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Successfully spawned grid '{gridName}' with entity IDs: {string.Join(", ", entityIds)}.");
                     return entityIds;
                 }
@@ -101,6 +102,7 @@ namespace EventSystem.Events
 
             await Task.WhenAll(removalTasks);
             SpawnedGridsEntityIds.Clear();
+            SaveEntityIds();
         }
 
         /// <summary>
@@ -226,6 +228,7 @@ namespace EventSystem.Events
                     {
                         MyAPIGateway.Entities.AddEntity(safezoneEntity, true);
                         safezoneEntityIds.TryAdd(safezoneEntity.EntityId, true);
+                        SaveEntityIds();
                     }
                     else
                     {
@@ -260,6 +263,7 @@ namespace EventSystem.Events
                         safezoneEntityIds.TryRemove(safezoneId, out _);
                     }
                 }
+                SaveEntityIds();
             });
         }
     }

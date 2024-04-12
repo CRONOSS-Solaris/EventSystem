@@ -169,6 +169,8 @@ namespace EventSystem
                     //compiler
                     CompileAndLoadSourceCode(session);
 
+                    EventsBase.ServerStartCleanup();
+
                     // Events
                     _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
                     // Automatyczna rejestracja eventów
