@@ -48,6 +48,9 @@ namespace EventSystem.Events
                     return; // Przerwij metodę, nie dodawaj duplikatu
                 }
 
+                eventItem.SaveEntityIds();
+                eventItem.ServerStartCleanup();
+
                 _events.Add(eventItem);
 
                 if (eventItem.UseEventSpecificConfig)

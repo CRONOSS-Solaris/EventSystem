@@ -106,6 +106,8 @@ namespace EventSystem
             _config = fileManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
             _packRewardsConfig = fileManager.SetupConfig("PackRewardsConfig.cfg", new PackRewardsConfig());
             _itemRewardsConfig = fileManager.SetupConfig("ItemRewardsConfig.cfg", new ItemRewardsConfig());
+            string jsonFilePath = Path.Combine(StoragePath, "EventSystem", "Config", "EntityIDs.json");
+            fileManager.CreateFile(jsonFilePath);
             _packRewardsConfig.Data.GenerateExampleRewards();
             _itemRewardsConfig.Data.GenerateExampleIndividualItems();
             Save();
@@ -168,8 +170,6 @@ namespace EventSystem
                     ExtractAndProcessDLLFiles();
                     //compiler
                     CompileAndLoadSourceCode(session);
-
-                    EventsBase.ServerStartCleanup();
 
                     // Events
                     _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
