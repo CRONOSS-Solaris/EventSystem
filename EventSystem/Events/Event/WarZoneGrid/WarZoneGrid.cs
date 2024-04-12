@@ -188,7 +188,19 @@ namespace EventSystem.Event
         {
             var now = DateTime.UtcNow;
             var newEnemiesInZone = new HashSet<long>();
+            var currentlyOnlinePlayers = new HashSet<long>(MySession.Static.Players.GetOnlinePlayers()?.Select(p => p.Identity.IdentityId) ?? new HashSet<long>());
             bool stateChanged = false;
+
+            // Sprawdzamy obecnych graczy w strefie
+            foreach (var kvp in playersInSphere.ToList())
+            {
+                if (!currentlyOnlinePlayers.Contains(kvp.Key))
+                {
+                    // Gracz był w strefie, ale nie jest już online
+                    playersInSphere.TryRemove(kvp.Key, out _);
+                    stateChanged = true;
+                }
+            }
 
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
@@ -245,6 +257,7 @@ namespace EventSystem.Event
 
             AwardPointsToPlayers(now);
         }
+
 
 
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
