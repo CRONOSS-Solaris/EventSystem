@@ -107,23 +107,7 @@
         <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding WarZoneSettings.IsEnabled}" />
 
         <Label Grid.Row="3" Grid.Column="0" Content="Active Days Of Month"/>
-        <StackPanel Grid.Row="3" Grid.Column="1" Orientation="Horizontal">
-            <ItemsControl x:Name="DaysItemsControl" ItemsSource="{Binding WarZoneSettings.ActiveDaysOfMonth}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <StackPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <TextBlock Text="{Binding}" Margin="5"/>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-            <TextBox Style="{DynamicResource TextBoxStyle1}" x:Name="NewDayTextBox" Width="50" Margin="2"/>
-            <Button Style="{StaticResource ButtonStyle1}" Content="+" Click="AddDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
-            <Button Style="{StaticResource ButtonStyle1}" Content="-" Click="RemoveSelectedDay_Click" Width="32" Height="32" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="2"/>
-        </StackPanel>
+        <TextBox Grid.Row="3" Grid.Column="1" Style="{DynamicResource TextBoxStyle1}" x:Name="DaysTextBox" Margin="2" TextChanged="DaysTextBox_TextChanged" LostFocus="DaysTextBox_LostFocus" />
 
         <Label Grid.Row="4" Grid.Column="0" Content="Event Description"/>
         <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="4" Grid.Column="1" Text="{Binding WarZoneSettings.EventDescription}" Tag="StartTime" Margin="2" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>

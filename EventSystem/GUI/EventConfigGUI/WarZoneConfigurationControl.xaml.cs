@@ -1,11 +1,8 @@
 ﻿using NLog;
-using Sandbox.Engine.Utils;
 using System;
-using System.Diagnostics;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
-using VRage.Plugins;
 
 namespace EventSystem
 {
@@ -23,84 +20,44 @@ namespace EventSystem
         {
             Plugin = plugin;
             DataContext = plugin.Config;
+            UpdateDaysTextBox();
         }
 
-        private void TimeTextBox_LostFocus(object sender, RoutedEventArgs e)
+        // Metoda do aktualizacji TextBox na podstawie listy dni
+        private void UpdateDaysTextBox()
         {
-            if (sender is TextBox timeTextBox)
-            {
-                if (!TimeSpan.TryParse(timeTextBox.Text, out TimeSpan timeResult))
-                {
-                    MessageBox.Show("Please enter a valid time in HH:mm:ss format.", "Invalid Time Format", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
+            DaysTextBox.Text = string.Join(", ", Plugin.Config.WarZoneSettings.ActiveDaysOfMonth);
         }
 
-        private void AddDay_Click(object sender, RoutedEventArgs e)
+        // Metoda wywoływana po zmianie tekstu w TextBox (LostFocus lub podobne zdarzenie)
+        private void DaysTextBox_TextChanged(object sender, TextChangedEventArgs e)
         {
-            if (int.TryParse(NewDayTextBox.Text, out int newDay))
-            {
-                if (newDay >= 1 && newDay <= 31)
-                {
-                    if (!Plugin.Config.WarZoneSettings.ActiveDaysOfMonth.Contains(newDay))
-                    {
-                        Plugin.Config.WarZoneSettings.ActiveDaysOfMonth.Add(newDay);
-                        // Aktualizacja ItemsControl
-                        UpdateDaysOfMonthItemsControl();
-                        NewDayTextBox.Clear();
-                    }
-                    else
-                    {
-                        MessageBox.Show("The number given is already on the list.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("The number specified must be between 1 and 31.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("The value given is not an integer.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            if (!(sender is TextBox textBox)) return;
+
+            var newText = textBox.Text;
+            if (newText.EndsWith(",") || newText.EndsWith(" "))
+                return; // Jeśli użytkownik wpisuje kolejne liczby, nie reagujemy na każde naciśnięcie przecinka lub spacji.
+
+            UpdateActiveDaysOfMonth();
         }
 
-        private void RemoveSelectedDay_Click(object sender, RoutedEventArgs e)
+        private void DaysTextBox_LostFocus(object sender, RoutedEventArgs e)
         {
-            if (int.TryParse(NewDayTextBox.Text, out int dayToRemove))
-            {
-                if (dayToRemove >= 1 && dayToRemove <= 31)
-                {
-                    if (Plugin.Config.WarZoneSettings.ActiveDaysOfMonth.Contains(dayToRemove))
-                    {
-                        Plugin.Config.WarZoneSettings.ActiveDaysOfMonth.Remove(dayToRemove);
-                        // Aktualizacja ItemsControl
-                        UpdateDaysOfMonthItemsControl();
-                        NewDayTextBox.Clear();
-                    }
-                    else
-                    {
-                        MessageBox.Show("The specified number does not exist in the list.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                    }
-                }
-                else
-                {
-                    MessageBox.Show("The number specified must be between 1 and 31.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            }
-            else
-            {
-                MessageBox.Show("The value given is not an integer.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            }
+            UpdateActiveDaysOfMonth();
         }
 
-
-
-        private void UpdateDaysOfMonthItemsControl()
+        private void UpdateActiveDaysOfMonth()
         {
-            var currentItemsSource = DaysItemsControl.ItemsSource;
-            DaysItemsControl.ItemsSource = null;
-            DaysItemsControl.ItemsSource = currentItemsSource;
+            var textBox = DaysTextBox;
+            var daysText = textBox.Text;
+            var daysList = daysText.Split(new[] { ',', ' ' }, StringSplitOptions.RemoveEmptyEntries)
+                                   .Select(day => int.TryParse(day, out int result) && result >= 1 && result <= 31 ? result : (int?)null)
+                                   .Where(day => day != null)
+                                   .Select(day => day.Value)
+                                   .Distinct()
+                                   .ToList();
+
+            Plugin.Config.WarZoneSettings.ActiveDaysOfMonth = daysList;
         }
 
     }
