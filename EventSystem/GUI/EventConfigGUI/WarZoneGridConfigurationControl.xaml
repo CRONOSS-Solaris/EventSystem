@@ -77,83 +77,127 @@
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
-            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <!-- Dodanie definicji kolumn -->
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="Auto"/>
-            <!-- Kolumna dla etykiet -->
-            <ColumnDefinition Width="*"/>
-            <!-- Kolumna dla pól wprowadzania danych -->
-        </Grid.ColumnDefinitions>
+        <Label Grid.Row="0" Grid.Column="0" Content="WarZoneGrid Event Settings" Grid.ColumnSpan="2" FontSize="26" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
 
-        <Label Grid.Row="0" Grid.Column="0" Content="WarZoneGrid" Grid.ColumnSpan="2" FontSize="18" FontWeight="Bold" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+        <!-- Base Settings -->
+        <Border Grid.Row="1" BorderBrush="Gray" BorderThickness="1" CornerRadius="5" Margin="5">
+            <Expander IsExpanded="True">
+                <Expander.Header>
+                    <TextBlock Text="Base Settings" FontWeight="Bold" FontSize="20"/>
+                </Expander.Header>
+                <StackPanel>
+                    <Label Content="Is Enabled:" FontWeight="Bold" FontSize="16"/>
+                    <ToggleButton x:Name="EventToggleButton" Margin="5" HorizontalAlignment="Left" Style="{StaticResource ToggleButtonStyle1}" Checked="EnabledEventButton_Checked" Unchecked="DisabledEventButton_Unchecked" Width="60" Height="20" IsChecked="{Binding WarZoneGridSettings.IsEnabled}" />
 
-        <Label Grid.Row="1" Grid.Column="0" Content="Is Enabled"/>
-        <CheckBox Grid.Row="1" Grid.Column="1" IsChecked="{Binding WarZoneGridSettings.IsEnabled}" />
+                    <Label Content="Event Name:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.EventName}" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="2" Grid.Column="0" Content="Event Name"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="2" Grid.Column="1" Text="{Binding WarZoneGridSettings.EventName}" Tag="StartTime" Margin="2"/>
+                    <Label Content="Active Days Of Month:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" x:Name="DaysTextBox" FontSize="16" Margin="2" TextChanged="DaysTextBox_TextChanged" LostFocus="DaysTextBox_LostFocus" />
 
-        <Label Grid.Row="3" Grid.Column="0" Content="Active Days Of Month"/>
-        <TextBox Grid.Row="3" Grid.Column="1" Style="{DynamicResource TextBoxStyle1}" x:Name="DaysTextBox" Margin="2" TextChanged="DaysTextBox_TextChanged" LostFocus="DaysTextBox_LostFocus" />
+                    <Label Content="Start Time:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.StartTime}" Tag="StartTime" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="4" Grid.Column="0" Content="Event Description"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="4" Grid.Column="1" Text="{Binding WarZoneGridSettings.EventDescription}" Tag="StartTime" Margin="2" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                    <Label Content="End Time:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.EndTime}" Tag="EndTime" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="5" Grid.Column="0" Content="Start Time"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="5" Grid.Column="1" Text="{Binding WarZoneGridSettings.StartTime}" Tag="StartTime" Margin="2"/>
+                    <Label Content="OwnerGrid:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.OwnerGrid}" Tag="PrefabName" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="6" Grid.Column="0" Content="End Time"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="6" Grid.Column="1" Text="{Binding WarZoneGridSettings.EndTime}" Tag="EndTime" Margin="2"/>
+                    <Label Content="PrefabName:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.PrefabName}" Tag="PrefabName" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="7" Grid.Column="0" Content="OwnerGrid"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="7" Grid.Column="1" Text="{Binding WarZoneGridSettings.OwnerGrid}" Tag="PrefabName" Margin="2"/>
+                    <Label Content="Message And Gps Broadcast Interval Seconds:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds}" Tag="MessageAndGpsBroadcastIntervalSeconds" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="8" Grid.Column="0" Content="PrefabName"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="8" Grid.Column="1" Text="{Binding WarZoneGridSettings.PrefabName}" Tag="PrefabName" Margin="2"/>
+                    <Label Content="Event Description:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.EventDescription}" FontSize="16" Margin="2" TextWrapping="Wrap" AcceptsReturn="True" ScrollViewer.VerticalScrollBarVisibility="Auto"/>
+                </StackPanel>
+            </Expander>
+        </Border>
 
-        <Label Grid.Row="9" Grid.Column="0" Content="Points Award Interval Seconds"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="9" Grid.Column="1" Text="{Binding WarZoneGridSettings.PointsAwardIntervalSeconds}" Tag="PointsAwardIntervalSeconds" Margin="2"/>
 
-        <Label Grid.Row="10" Grid.Column="0" Content="Message And Gps Broadcast Interval Seconds"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="10" Grid.Column="1" Text="{Binding WarZoneGridSettings.MessageAndGpsBroadcastIntervalSeconds}" Tag="MessageAndGpsBroadcastIntervalSeconds" Margin="2"/>
+        <Grid Grid.Row="2">
+            <Rectangle Height="2" Fill="Black" HorizontalAlignment="Stretch" VerticalAlignment="Center" RadiusX="1" RadiusY="1" Margin="0,3,0,3">
+                <Rectangle.Effect>
+                    <DropShadowEffect ShadowDepth="2" Direction="270" Color="Gray" BlurRadius="5"/>
+                </Rectangle.Effect>
+            </Rectangle>
+        </Grid>
 
-        <Label Grid.Row="11" Grid.Column="0" Content="Points Per Interval"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="11" Grid.Column="1" Text="{Binding WarZoneGridSettings.PointsPerInterval}" Tag="PointsPerInterval" Margin="2"/>
+        <!-- Award Settings -->
+        <Border Grid.Row="3" BorderBrush="Gray" BorderThickness="1" CornerRadius="5" Margin="5">
+            <Expander IsExpanded="false" >
+                <Expander.Header>
+                    <TextBlock Text="Award Settings" FontWeight="Bold" FontSize="20"/>
+                </Expander.Header>
+                <StackPanel>
+                    <Label Content="Points Award Interval Seconds:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.PointsAwardIntervalSeconds}" Tag="PointsAwardIntervalSeconds" FontSize="16" Margin="2"/>
 
-        <Label Grid.Row="12" Grid.Column="0" Content="Radius"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="12" Grid.Column="1" Text="{Binding WarZoneGridSettings.Radius}" Tag="Radius" Margin="2"/>
+                    <Label Content="Points Per Interval:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.PointsPerInterval}" Tag="PointsPerInterval" FontSize="16" Margin="2"/>
+                </StackPanel>
+            </Expander>
+        </Border>
 
-        <Label Grid.Row="13" Grid.Column="0" Content="Shape"/>
-        <ComboBox Grid.Row="13" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.Shape}" SelectedValuePath="Content">
-            <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Sphere}"/>
-            <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Cube}"/>
-        </ComboBox>
+        <Grid Grid.Row="4">
+            <Rectangle Height="2" Fill="Black" HorizontalAlignment="Stretch" VerticalAlignment="Center" RadiusX="1" RadiusY="1" Margin="0,3,0,3">
+                <Rectangle.Effect>
+                    <DropShadowEffect ShadowDepth="2" Direction="270" Color="Gray" BlurRadius="5"/>
+                </Rectangle.Effect>
+            </Rectangle>
+        </Grid>
 
-        <Label Grid.Row="14" Grid.Column="0" Content="Min Coords (X, Y, Z)"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="14" Grid.Column="1" Text="{Binding WarZoneGridSettings.MinCoords, Converter={StaticResource AreaCoordsConverter}}" Tag="MinCoords" Margin="2"/>
+        <!-- SafeZone Settings -->
+        <Border Grid.Row="5" BorderBrush="Gray" BorderThickness="1" CornerRadius="5" Margin="5">
+            <Expander IsExpanded="False">
+                <Expander.Header>
+                    <TextBlock Text="SafeZone Settings" FontWeight="Bold" FontSize="20"/>
+                </Expander.Header>
+                <StackPanel>
+                    <Label Content="Shape:" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.Shape}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Sphere}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Cube}"/>
+                    </ComboBox>
+                    <Label Content="Radius:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.Radius}" FontSize="16" Margin="2"/>
+                </StackPanel>
+            </Expander>
+        </Border>
 
-        <Label Grid.Row="15" Grid.Column="0" Content="Max Coords (X, Y, Z)"/>
-        <TextBox Style="{DynamicResource TextBoxStyle1}" Grid.Row="15" Grid.Column="1" Text="{Binding WarZoneGridSettings.MaxCoords, Converter={StaticResource AreaCoordsConverter}}" Tag="MaxCoords" Margin="2"/>
+        <Grid Grid.Row="6">
+            <Rectangle Height="2" Fill="Black" HorizontalAlignment="Stretch" VerticalAlignment="Center" RadiusX="1" RadiusY="1" Margin="0,3,0,3">
+                <Rectangle.Effect>
+                    <DropShadowEffect ShadowDepth="2" Direction="270" Color="Gray" BlurRadius="5"/>
+                </Rectangle.Effect>
+            </Rectangle>
+        </Grid>
 
-        <Label Grid.Row="16" Grid.Column="0" Content="Randomization Type"/>
-        <ComboBox Grid.Row="16" Grid.Column="1" SelectedValue="{Binding WarZoneGridSettings.RandomizationType}" SelectedValuePath="Content">
-            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Line}"/>
-            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Sphere}"/>
-            <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Cube}"/>
-        </ComboBox>
-
+        <!-- Coordinate Randomization Settings -->
+        <Border Grid.Row="7" BorderBrush="Gray" BorderThickness="1" CornerRadius="5" Margin="5">
+            <Expander IsExpanded="False">
+                <Expander.Header>
+                    <TextBlock Text="Coordinate Randomization Settings:" FontWeight="Bold" FontSize="20"/>
+                </Expander.Header>
+                <StackPanel>
+                    <Label Content="Randomization Type" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.RandomizationType}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Line}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Sphere}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+CoordinateRandomizationType.Cube}"/>
+                    </ComboBox>
+                    <Label Content="Min Coords (X, Y, Z):" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.MinCoords, Converter={StaticResource AreaCoordsConverter}}" FontSize="16" Margin="2"/>
+                    <Label Content="Max Coords (X, Y, Z):" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.MaxCoords, Converter={StaticResource AreaCoordsConverter}}" FontSize="16" Margin="2"/>
+                </StackPanel>
+            </Expander>
+        </Border>
     </Grid>
+
 </UserControl>

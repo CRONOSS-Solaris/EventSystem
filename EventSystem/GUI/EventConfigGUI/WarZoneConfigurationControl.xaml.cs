@@ -3,6 +3,7 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using VRage.Plugins;
 
 namespace EventSystem
 {
@@ -21,6 +22,24 @@ namespace EventSystem
             Plugin = plugin;
             DataContext = plugin.Config;
             UpdateDaysTextBox();
+        }
+
+        private void EnabledEventButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin.Config != null)
+            {
+                Plugin.Config.WarZoneSettings.IsEnabled = true;
+                Plugin.Save();
+            }
+        }
+
+        private void DisabledEventButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin.Config != null)
+            {
+                Plugin.Config.WarZoneSettings.IsEnabled = false;
+                Plugin.Save();
+            }
         }
 
         // Metoda do aktualizacji TextBox na podstawie listy dni

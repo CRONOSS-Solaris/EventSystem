@@ -26,6 +26,24 @@ namespace EventSystem
             UpdateDaysTextBox();
         }
 
+        private void EnabledEventButton_Checked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin.Config != null)
+            {
+                Plugin.Config.WarZoneGridSettings.IsEnabled = true;
+                Plugin.Save();
+            }
+        }
+
+        private void DisabledEventButton_Unchecked(object sender, RoutedEventArgs e)
+        {
+            if (Plugin.Config != null)
+            {
+                Plugin.Config.WarZoneGridSettings.IsEnabled = false;
+                Plugin.Save();
+            }
+        }
+
         // Metoda do aktualizacji TextBox na podstawie listy dni
         private void UpdateDaysTextBox()
         {
