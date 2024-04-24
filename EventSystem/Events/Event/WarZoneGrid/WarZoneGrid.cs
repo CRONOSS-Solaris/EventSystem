@@ -108,7 +108,7 @@ namespace EventSystem.Event
                                               // Aktualizacja zakończona, twórz strefę bezpieczeństwa
 
                     ZoneShape shape = _config.WarZoneGridSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
-                    CreateSafeZone(sphereCenter, Radius, shape, true, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Whitelist, MySafeZoneAccess.Blacklist, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, new SerializableVector3(1f, 0f, 0f), "SafeZone_Texture_Restricted", true, $"{EventName}SafeZone");
+                    CreateSafeZone(sphereCenter, Radius, shape, true, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Whitelist, MySafeZoneAccess.Blacklist, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneGridSettings.SafeZoneColor, _config.WarZoneGridSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
                     break; // Wyjdź z pętli, jeśli spawn się powiódł
                 }
                 else if (attempt < maxSpawnAttempts)
@@ -387,6 +387,8 @@ namespace EventSystem.Event
                     PointsPerInterval = 10,
                     Radius = 100,
                     Shape = ZoneShape.Cube,
+                    SafeZoneTexture = "SafeZone_Texture_Restricted",
+                    SafeZoneColor = new SerializableVector3(1f, 0f, 0f),
                     MinCoords = new AreaCoords(-1000, -1000, -1000),
                     MaxCoords = new AreaCoords(1000, 1000, 1000),
                     RandomizationType = CoordinateRandomizationType.Line,
@@ -490,6 +492,8 @@ namespace EventSystem.Event
             public int PointsPerInterval { get; set; }
             public double Radius { get; set; }
             public ZoneShape Shape { get; set; }
+            public string SafeZoneTexture { get; set; }
+            public SerializableVector3 SafeZoneColor { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
             public CoordinateRandomizationType RandomizationType { get; set; }

@@ -5,6 +5,8 @@
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:utils="clr-namespace:EventSystem.Utils"
              xmlns:events="clr-namespace:EventSystem.Events"
+             xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+
 
              mc:Ignorable="d" 
              d:DesignHeight="550" d:DesignWidth="800">
@@ -64,6 +66,7 @@
             </Style>
 
             <utils:AreaCoordsConverter x:Key="AreaCoordsConverter"/>
+            <utils:ColorConverter x:Key="ColorConverter"/>
 
         </ResourceDictionary>
     </UserControl.Resources>
@@ -152,14 +155,24 @@
                 <Expander.Header>
                     <TextBlock Text="SafeZone Settings" FontWeight="Bold" FontSize="20"/>
                 </Expander.Header>
+                
                 <StackPanel>
                     <Label Content="Shape:" FontWeight="Bold" FontSize="16"/>
                     <ComboBox SelectedValue="{Binding WarZoneSettings.Shape}" FontSize="16" SelectedValuePath="Content">
                         <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Sphere}"/>
                         <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Cube}"/>
                     </ComboBox>
+                    
                     <Label Content="Radius:" FontWeight="Bold" FontSize="16"/>
                     <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneSettings.Radius}" FontSize="16" Margin="2"/>
+
+                    <Label Content="SafeZone Texture:" FontWeight="Bold" FontSize="16"/>
+                    <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneSettings.SafeZoneTexture}" FontSize="16" Margin="2"/>
+
+                    <Label Content="SafeZone Color:" FontWeight="Bold" FontSize="16"/>
+                    <xctk:ColorPicker Name="safeZoneColorPicker" SelectedColor="{Binding WarZoneSettings.SafeZoneColor, Converter={StaticResource ColorConverter}}" FontSize="16" Margin="2"/>
+
+
                 </StackPanel>
             </Expander>
         </Border>

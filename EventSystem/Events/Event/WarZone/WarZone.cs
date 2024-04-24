@@ -24,7 +24,7 @@ namespace EventSystem.Event
         private ConcurrentDictionary<long, bool> playerMessageSent = new ConcurrentDictionary<long, bool>();
         private ConcurrentDictionary<long, DateTime> lastPointsAwarded = new ConcurrentDictionary<long, DateTime>();
         private ConcurrentDictionary<long, DateTime> playerEntryTime = new ConcurrentDictionary<long, DateTime>();
-        private ConcurrentDictionary<long, bool> safezoneEntityIds = new ConcurrentDictionary<long, bool>();
+
 
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
         private System.Timers.Timer messageAndGpsTimer;
@@ -69,7 +69,8 @@ namespace EventSystem.Event
             this.sphereCenter = sphereCenter;
             this.ZoneRadius = Radius;
 
-            CreateSafeZoneAroundWarZone();
+            ZoneShape shape = _config.WarZoneSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
+            CreateSafeZone(sphereCenter, Radius, shape, true, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneSettings.SafeZoneColor, _config.WarZoneSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
 
 
             // Subskrypcja sprawdzania pozycji graczy co sekundę
@@ -114,7 +115,7 @@ namespace EventSystem.Event
             ParticipatingPlayers.Clear();
             playerEntryTime.Clear();
 
-            RemoveSafeZoneAroundWarZone();
+            RemoveSafeZone();
 
             // Zatrzymaj i wyczyść timer
             if (messageAndGpsTimer != null)
@@ -313,84 +314,6 @@ namespace EventSystem.Event
             return false;
         }
 
-        // Metoda do tworzenia SafeZone wokół wylosowanej pozycji
-        private void CreateSafeZoneAroundWarZone()
-        {
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                try
-                {
-                    // Przygotowanie definicji SafeZone
-                    var safezoneDefinition = new MyObjectBuilder_SafeZone
-                    {
-                        PositionAndOrientation = new MyPositionAndOrientation(sphereCenter, Vector3.Forward, Vector3.Up),
-                        Enabled = true,
-                        AccessTypePlayers = MySafeZoneAccess.Blacklist,
-                        AccessTypeFactions = MySafeZoneAccess.Blacklist,
-                        AccessTypeGrids = MySafeZoneAccess.Blacklist,
-                        AccessTypeFloatingObjects = MySafeZoneAccess.Blacklist,
-                        AllowedActions = MySafeZoneAction.All,
-                        ModelColor = new SerializableVector3(1f, 0f, 0f),
-                        Texture = "SafeZone_Texture_Restricted",
-                        IsVisible = true,
-                        DisplayName = $"{EventName}SafeZone"
-                    };
-
-                    // Ustawienie rozmiaru strefy
-                    float zoneSize = (float)ZoneRadius;
-                    if (_config.WarZoneSettings.Shape == ZoneShape.Sphere)
-                    {
-                        safezoneDefinition.Shape = MySafeZoneShape.Sphere;
-                        safezoneDefinition.Radius = zoneSize;
-                    }
-                    else // Dla boxa
-                    {
-                        safezoneDefinition.Shape = MySafeZoneShape.Box;
-                        safezoneDefinition.Size = new Vector3(zoneSize, zoneSize, zoneSize);
-                    }
-
-                    // Tworzenie encji z definicji
-                    var safezoneEntity = MyAPIGateway.Entities.CreateFromObjectBuilder(safezoneDefinition);
-
-                    if (safezoneEntity != null)
-                    {
-                        // Rejestrowanie encji w grze
-                        MyAPIGateway.Entities.AddEntity(safezoneEntity, true);
-                        safezoneEntityIds.TryAdd(safezoneEntity.EntityId, true);
-                        //Log.Info($"Safezone created successfully with EntityId: {safezoneEntity.EntityId}");
-                    }
-                    else
-                    {
-                        Log.Error("Failed to create safezone. Entity creation returned null.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error($"Exception occurred while creating safezone: {ex.Message}");
-                    LoggerHelper.DebugLog(Log, _config, "Exception details: ", ex);
-                }
-            });
-        }
-
-        private void RemoveSafeZoneAroundWarZone()
-        {
-            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
-            {
-                var safezoneIds = safezoneEntityIds.Keys.ToList();
-
-                foreach (var safezoneId in safezoneIds)
-                {
-                    if (MyAPIGateway.Entities.TryGetEntityById(safezoneId, out var safezoneEntity))
-                    {
-                        safezoneEntity.Close();
-                        MyAPIGateway.Entities.RemoveEntity(safezoneEntity);
-
-                        safezoneEntityIds.TryRemove(safezoneId, out _);
-                    }
-                }
-            });
-        }
-
         public override Task LoadEventSettings(EventSystemConfig config)
         {
             if (config.WarZoneSettings == null)
@@ -406,6 +329,8 @@ namespace EventSystem.Event
                     MessageAndGpsBroadcastIntervalSeconds = 300,
                     PointsPerInterval = 10,
                     Radius = 100,
+                    SafeZoneTexture = "SafeZone_Texture_Restricted",
+                    SafeZoneColor = new SerializableVector3(1f, 0f, 0f),
                     Shape = ZoneShape.Cube,
                     RandomizationType = CoordinateRandomizationType.Line,
                     MinCoords = new AreaCoords(-1000, -1000, -1000),
@@ -509,6 +434,8 @@ namespace EventSystem.Event
             public int PointsPerInterval { get; set; }
             public ZoneShape Shape { get; set; }
             public double Radius { get; set; }
+            public string SafeZoneTexture { get; set; }
+            public SerializableVector3 SafeZoneColor { get; set; }
             public CoordinateRandomizationType RandomizationType { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }

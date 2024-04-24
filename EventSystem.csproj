@@ -281,6 +281,7 @@
     <Compile Include="EventSystem\Serialization\GridSerializer.cs" />
     <Compile Include="EventSystem\Managers\FileManager.cs" />
     <Compile Include="EventSystem\Serialization\GridSpawner.cs" />
+    <Compile Include="EventSystem\Utils\ColorConverter.cs" />
     <Compile Include="EventSystem\Utils\CommandInCooldown.cs" />
     <Compile Include="EventSystem\Utils\Compiler.cs" />
     <Compile Include="EventSystem\Utils\GameEvents.cs" />
