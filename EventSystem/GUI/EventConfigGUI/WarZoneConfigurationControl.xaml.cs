@@ -3,7 +3,10 @@ using System;
 using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
+using System.Windows.Threading;
 using VRage.Plugins;
+using static EventSystem.Events.EventsBase;
 
 namespace EventSystem
 {
@@ -11,10 +14,28 @@ namespace EventSystem
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystemMain/WarZoneConfigurationControl");
         private EventSystemMain Plugin { get; }
+        private int clickCount = 0;
+        private DispatcherTimer clickTimer = new DispatcherTimer();
+        private DispatcherTimer unlockTimer = new DispatcherTimer();
 
         public WarZoneConfigurationControl()
         {
             InitializeComponent();
+
+            // Timer dla podwójnego kliknięcia
+            clickTimer.Interval = TimeSpan.FromMilliseconds(300);
+            clickTimer.Tick += (s, e) => {
+                clickTimer.Stop();
+                clickCount = 0;
+            };
+
+            // Timer dla automatycznego zablokowania
+            unlockTimer.Interval = TimeSpan.FromSeconds(30);
+            unlockTimer.Tick += (s, e) => {
+                overlay.Visibility = Visibility.Visible;
+                actionsListBox.IsEnabled = false;
+                unlockTimer.Stop();
+            };
         }
 
         public WarZoneConfigurationControl(EventSystemMain plugin) : this()
@@ -22,6 +43,7 @@ namespace EventSystem
             Plugin = plugin;
             DataContext = plugin.Config;
             UpdateDaysTextBox();
+            SetAllowedActions();
         }
 
         private void EnabledEventButton_Checked(object sender, RoutedEventArgs e)
@@ -77,6 +99,89 @@ namespace EventSystem
                                    .ToList();
 
             Plugin.Config.WarZoneSettings.ActiveDaysOfMonth = daysList;
+        }
+
+        private void SetAllowedActions()
+        {
+            if (actionsListBox == null)
+            {
+                Log.Error("actionsListBox is not initialized.");
+                return;
+            }
+            if (Plugin.Config == null)
+            {
+                Log.Error("Plugin.Config is null.");
+                return;
+            }
+
+            actionsListBox.SelectedItems.Clear();
+            MySafeZoneAction configActions = Plugin.Config.WarZoneSettings.AllowedActions;
+            Log.Info($"Configured actions: {configActions}");
+
+            foreach (ListBoxItem item in actionsListBox.Items)
+            {
+                if (Enum.TryParse<MySafeZoneAction>(item.Content.ToString(), out MySafeZoneAction action))
+                {
+                    if ((configActions & action) == action)
+                    {
+                        item.IsSelected = true;
+                        Log.Info($"Selecting action: {action}");
+                    }
+                    else
+                    {
+                        Log.Info($"Not selecting action: {action}");
+                    }
+                }
+                else
+                {
+                    Log.Error($"Failed to parse '{item.Content}' as MySafeZoneAction.");
+                }
+            }
+        }
+
+
+        private void ActionsListBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            var listBox = sender as ListBox;
+            if (listBox != null && Plugin.Config != null)
+            {
+                MySafeZoneAction selectedActions = MySafeZoneAction.None; // Start with no actions selected
+
+                foreach (ListBoxItem item in listBox.SelectedItems)
+                {
+                    if (Enum.TryParse<MySafeZoneAction>(item.Content.ToString(), out MySafeZoneAction action))
+                    {
+                        selectedActions |= action; // Combine actions using bitwise OR
+                    }
+                }
+
+                Plugin.Config.WarZoneSettings.AllowedActions = selectedActions;
+                Plugin.Save();
+                Log.Info($"Updated allowed actions to: {selectedActions}");
+            }
+        }
+
+        private void Overlay_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            clickCount++;
+            if (clickCount == 1)
+            {
+                clickTimer.Start();
+            }
+            else if (clickCount == 2)
+            {
+                clickTimer.Stop();
+                clickCount = 0;
+                UnlockActions(sender, new RoutedEventArgs());
+            }
+        }
+
+
+        private void UnlockActions(object sender, RoutedEventArgs e)
+        {
+            overlay.Visibility = Visibility.Collapsed;
+            actionsListBox.IsEnabled = true;
+            unlockTimer.Start();
         }
 
     }

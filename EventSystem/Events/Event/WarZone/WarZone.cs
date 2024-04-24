@@ -70,7 +70,7 @@ namespace EventSystem.Event
             this.ZoneRadius = Radius;
 
             ZoneShape shape = _config.WarZoneSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
-            CreateSafeZone(sphereCenter, Radius, shape, true, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAccess.Blacklist, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneSettings.SafeZoneColor, _config.WarZoneSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
+            CreateSafeZone(sphereCenter, Radius, shape, true, _config.WarZoneSettings.AccessTypePlayers, _config.WarZoneSettings.AccessTypeFactions, _config.WarZoneSettings.AccessTypeGrids, _config.WarZoneSettings.AccessTypeFloatingObjects, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneSettings.SafeZoneColor, _config.WarZoneSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
 
 
             // Subskrypcja sprawdzania pozycji graczy co sekundę
@@ -331,6 +331,11 @@ namespace EventSystem.Event
                     Radius = 100,
                     SafeZoneTexture = "SafeZone_Texture_Restricted",
                     SafeZoneColor = new SerializableVector3(1f, 0f, 0f),
+                    AccessTypePlayers = MySafeZoneAccess.Blacklist,
+                    AccessTypeFactions = MySafeZoneAccess.Blacklist,
+                    AccessTypeGrids = MySafeZoneAccess.Blacklist,
+                    AccessTypeFloatingObjects = MySafeZoneAccess.Blacklist,
+                    AllowedActions = MySafeZoneAction.Damage | MySafeZoneAction.Shooting,
                     Shape = ZoneShape.Cube,
                     RandomizationType = CoordinateRandomizationType.Line,
                     MinCoords = new AreaCoords(-1000, -1000, -1000),
@@ -432,10 +437,19 @@ namespace EventSystem.Event
             public int PointsAwardIntervalSeconds { get; set; }
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
+
+
             public ZoneShape Shape { get; set; }
             public double Radius { get; set; }
             public string SafeZoneTexture { get; set; }
             public SerializableVector3 SafeZoneColor { get; set; }
+
+            public MySafeZoneAccess AccessTypePlayers { get; set; }
+            public MySafeZoneAccess AccessTypeFactions { get; set; }
+            public MySafeZoneAccess AccessTypeGrids { get; set; }
+            public MySafeZoneAccess AccessTypeFloatingObjects { get; set; }
+            public MySafeZoneAction AllowedActions { get; set; }
+
             public CoordinateRandomizationType RandomizationType { get; set; }
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }

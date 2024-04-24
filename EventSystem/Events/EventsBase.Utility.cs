@@ -130,7 +130,29 @@ namespace EventSystem.Events
             Cube
         }
 
+        public enum MySafeZoneAccess
+        {
+            Whitelist,
+            Blacklist
+        }
 
+        [Flags]
+        public enum MySafeZoneAction
+        {
+            None = 0,
+            Damage = 0x1,
+            Shooting = 0x2,
+            Drilling = 0x4,
+            Welding = 0x8,
+            Grinding = 0x10,
+            VoxelHand = 0x20,
+            Building = 0x40,
+            LandingGearLock = 0x80,
+            ConvertToStation = 0x100,
+            BuildingProjections = 0x200,
+            All = 0x3FF,
+            AdminIgnore = 0x37E
+        }
 
         /// <summary>
         /// Represents a set of coordinates within a three-dimensional space.

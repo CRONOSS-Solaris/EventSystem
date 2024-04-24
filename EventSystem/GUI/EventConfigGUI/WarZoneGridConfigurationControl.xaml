@@ -160,14 +160,14 @@
                 <Expander.Header>
                     <TextBlock Text="SafeZone Settings" FontWeight="Bold" FontSize="20"/>
                 </Expander.Header>
+
                 <StackPanel>
-                    
                     <Label Content="Shape:" FontWeight="Bold" FontSize="16"/>
                     <ComboBox SelectedValue="{Binding WarZoneGridSettings.Shape}" FontSize="16" SelectedValuePath="Content">
                         <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Sphere}"/>
                         <ComboBoxItem Content="{x:Static events:EventsBase+ZoneShape.Cube}"/>
                     </ComboBox>
-                    
+
                     <Label Content="Radius:" FontWeight="Bold" FontSize="16"/>
                     <TextBox Style="{StaticResource TextBoxStyle1}" Text="{Binding WarZoneGridSettings.Radius}" FontSize="16" Margin="2"/>
 
@@ -176,7 +176,64 @@
 
                     <Label Content="SafeZone Color:" FontWeight="Bold" FontSize="16"/>
                     <xctk:ColorPicker Name="safeZoneColorPicker" SelectedColor="{Binding WarZoneGridSettings.SafeZoneColor, Converter={StaticResource ColorConverter}}" FontSize="16" Margin="2"/>
-                    
+
+                    <Label Content="Player Access Type:" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.AccessTypePlayers}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Whitelist}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Blacklist}"/>
+                    </ComboBox>
+
+                    <Label Content="Faction Access Type:" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.AccessTypeFactions}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Whitelist}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Blacklist}"/>
+                    </ComboBox>
+
+                    <Label Content="Grids Access Type:" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.AccessTypeGrids}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Whitelist}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Blacklist}"/>
+                    </ComboBox>
+
+                    <Label Content="Floating Objects Access Type:" FontWeight="Bold" FontSize="16"/>
+                    <ComboBox SelectedValue="{Binding WarZoneGridSettings.AccessTypeFloatingObjects}" FontSize="16" SelectedValuePath="Content">
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Whitelist}"/>
+                        <ComboBoxItem Content="{x:Static events:EventsBase+MySafeZoneAccess.Blacklist}"/>
+                    </ComboBox>
+
+                    <Label Content="Allowed Actions:" FontWeight="Bold" FontSize="16"/>
+                    <Grid>
+                        <ListBox Name="actionsListBox" SelectionMode="Extended" FontSize="16" Margin="2" SelectionChanged="ActionsListBox_SelectionChanged">
+                            <ListBox.Resources>
+                                <Style TargetType="ListBoxItem">
+                                    <Setter Property="Background" Value="Transparent"/>
+                                    <Setter Property="Foreground" Value="Black"/>
+                                    <Style.Triggers>
+                                        <Trigger Property="IsSelected" Value="True">
+                                            <Setter Property="Background" Value="SkyBlue"/>
+                                            <Setter Property="Foreground" Value="Red"/>
+                                        </Trigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ListBox.Resources>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Damage}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Shooting}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Drilling}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Welding}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Grinding}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.VoxelHand}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.Building}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.LandingGearLock}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.ConvertToStation}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.BuildingProjections}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.All}"/>
+                            <ListBoxItem Content="{x:Static events:EventsBase+MySafeZoneAction.AdminIgnore}"/>
+                        </ListBox>
+                        <Border Name="overlay" Background="#AAFFFFFF" Visibility="Visible" MouseLeftButtonDown="Overlay_MouseLeftButtonDown">
+                            <TextBlock Text="Double click to edit" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="Black" FontSize="16"/>
+                        </Border>
+                    </Grid>
+
                 </StackPanel>
             </Expander>
         </Border>

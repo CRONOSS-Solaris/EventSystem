@@ -259,7 +259,7 @@ namespace EventSystem
             }
             catch (Exception ex)
             {
-                Log.Error(ex, "Błąd podczas rozpakowywania i przetwarzania plików pluginu.");
+                Log.Error(ex, "Error while unpacking and processing plugin files.");
             }
             finally
             {
