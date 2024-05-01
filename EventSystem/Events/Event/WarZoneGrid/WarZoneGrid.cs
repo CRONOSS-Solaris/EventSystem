@@ -54,8 +54,8 @@ namespace EventSystem.Event
             // Dodanie wszystkich graczy do listy uczestników
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
-                long playerId = player.Identity.IdentityId;
-                ParticipatingPlayers.TryAdd(playerId, true);
+                long steamId = player.Identity.IdentityId;
+                ParticipatingPlayers.TryAdd(steamId, true);
             }
 
             var settings = _config.WarZoneGridSettings;
