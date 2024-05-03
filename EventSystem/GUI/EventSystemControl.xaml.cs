@@ -1,5 +1,6 @@
 ﻿using EventSystem.Config;
 using EventSystem.Utils;
+using Sandbox.Engine.Utils;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -25,6 +26,7 @@ namespace EventSystem
             DataContext = new DataContextProxy
             {
                 Config = plugin.Config,
+                DCconfig = plugin.DiscordBotConfig,
                 Plugin = plugin
             };
             Loaded += OnLoaded;
@@ -65,6 +67,7 @@ namespace EventSystem
         {
             public EventSystemConfig Config { get; set; }
             public EventSystemMain Plugin { get; set; }
+            public DiscordBotConfig DCconfig { get; set; }
         }
 
 

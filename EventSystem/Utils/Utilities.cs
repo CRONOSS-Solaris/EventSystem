@@ -1,7 +1,9 @@
 ﻿using Sandbox.Definitions;
 using Sandbox.Game.Entities;
 using Sandbox.ModAPI;
+using System;
 using System.Collections.Generic;
+using System.Net;
 using VRage.Game;
 using VRage.Game.ModAPI;
 using VRage.ModAPI;
@@ -45,6 +47,19 @@ namespace EventSystem.Utils
 
             player = null;
             return false;
+        }
+
+        public static string GetLocalIPAddress()
+        {
+            var host = Dns.GetHostEntry(Dns.GetHostName());
+            foreach (var ip in host.AddressList)
+            {
+                if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+                {
+                    return ip.ToString();
+                }
+            }
+            throw new Exception("No network adapters with an IPv4 address in the system!");
         }
     }
 }

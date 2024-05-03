@@ -1,5 +1,9 @@
-﻿using EventSystem.Config;
+﻿using DSharpPlus.Entities;
+using EventSystem.Config;
 using EventSystem.DataBase;
+using EventSystem.Discord;
+using EventSystem.Discord.Utils;
+using EventSystem.Discord.Web;
 using EventSystem.Events;
 using EventSystem.Managers;
 using EventSystem.Nexus;
@@ -7,6 +11,7 @@ using EventSystem.Serialization;
 using EventSystem.Utils;
 using Nexus.API;
 using NLog;
+using Sandbox.Game.World;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
@@ -52,6 +57,8 @@ namespace EventSystem
         // Konfiguracja
         private Persistent<EventSystemConfig> _config;
         public EventSystemConfig Config => _config?.Data;
+        private Persistent<DiscordBotConfig> _discordBotConfig;
+        public DiscordBotConfig DiscordBotConfig => _discordBotConfig?.Data;
         private Persistent<PackRewardsConfig> _packRewardsConfig;
         public PackRewardsConfig PackRewardsConfig => _packRewardsConfig?.Data;
         private Persistent<ItemRewardsConfig> _itemRewardsConfig;
@@ -85,6 +92,13 @@ namespace EventSystem
         //GridSpawner
         private GridSpawner _gridSpawner;
 
+        //DiscordBot
+        public static Bot DiscordBot = new Bot();
+        public bool WorldOnline;
+        private DiscordHttpServer _discordHttpServer;
+        public MessageService MessageService { get; private set; }
+
+
         //EventsBase
 
         public EventsBase EventsBase;
@@ -97,20 +111,20 @@ namespace EventSystem
         public Dictionary<string, List<string>> AvailableItemSubtypes { get; private set; } = new Dictionary<string, List<string>>();
 
         //Metody
-        public override void Init(ITorchBase torch)
+        public override async void Init(ITorchBase torch)
         {
             base.Init(torch);
             Instance = this;
             //config
             var fileManager = new FileManager(Path.Combine(StoragePath, "EventSystem"));
             _config = fileManager.SetupConfig("EventSystemConfig.cfg", new EventSystemConfig());
+            _discordBotConfig = fileManager.SetupConfig("DiscordBotConfig.cfg", new DiscordBotConfig());
             _packRewardsConfig = fileManager.SetupConfig("PackRewardsConfig.cfg", new PackRewardsConfig());
             _itemRewardsConfig = fileManager.SetupConfig("ItemRewardsConfig.cfg", new ItemRewardsConfig());
             string jsonFilePath = Path.Combine(StoragePath, "EventSystem", "Config", "EntityIDs.json");
             fileManager.CreateFile(jsonFilePath);
             _packRewardsConfig.Data.GenerateExampleRewards();
             _itemRewardsConfig.Data.GenerateExampleIndividualItems();
-            Save();
 
             //PostgresSQL
             if (_config.Data.UseDatabase)
@@ -126,8 +140,17 @@ namespace EventSystem
             // Inicjalizacja PointsTransferManager
             _pointsTransferManager = new PointsTransferManager();
 
+            //DiscordBot
+            DiscordBotConfig.BotStatus = "Offline";
+
+            if (DiscordBotConfig.EnableDiscordBot)
+            {
+                await DiscordBot.ConnectAsync();
+                MessageService = DiscordBot.MessageService;
+            }
+
             // Events
-            _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
+            _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager, MessageService);
             // Automatyczna rejestracja eventów
             RegisterAllEvents();
 
@@ -139,9 +162,10 @@ namespace EventSystem
                 Log.Warn("No session manager loaded!");
 
             Save();
+
         }
 
-        private void SessionChanged(ITorchSession session, TorchSessionState state)
+        private async void SessionChanged(ITorchSession session, TorchSessionState state)
         {
 
             switch (state)
@@ -172,7 +196,7 @@ namespace EventSystem
                     CompileAndLoadSourceCode(session);
 
                     // Events
-                    _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager);
+                    _eventManager = new EventManager(_config?.Data, _activeEventsLCDManager, _allEventsLcdManager, MessageService);
                     // Automatyczna rejestracja eventów
                     RegisterAllEvents();
 
@@ -189,7 +213,24 @@ namespace EventSystem
                     //item loader and button on
                     ItemLoader.LoadAvailableItemTypesAndSubtypes(AvailableItemTypes, AvailableItemSubtypes, Log, Config);
                     _control.Dispatcher.Invoke(() => _control.UpdateButtonState(true));
+
                     Log.Info("Session Loaded!");
+                    WorldOnline = true;
+
+                    //DiscordBot
+                    if (DiscordBotConfig.EnableDiscordBot)
+                    {
+                        if (DiscordBot.IsConnected)
+                            await DiscordBot.Client.UpdateStatusAsync(new DiscordActivity(Instance.DiscordBotConfig.StatusMessage, ActivityType.Playing), UserStatus.Online);
+                        else
+                        {
+                            await DiscordBot.ConnectAsync();
+                        }
+
+                        _discordHttpServer = new DiscordHttpServer();
+                        _discordHttpServer.Start($"http://{DiscordBotConfig.DiscordHttpAdress}/auth/");
+                    }
+
                     break;
 
                 case TorchSessionState.Unloading:
@@ -201,6 +242,17 @@ namespace EventSystem
                     //button off
                     _control.Dispatcher.Invoke(() => _control.UpdateButtonState(false));
                     Log.Info("Session Unloading!");
+                    WorldOnline = false;
+
+
+                    //DiscordBot
+                    if (DiscordBotConfig.EnableDiscordBot)
+                    {
+                        if (DiscordBot.IsConnected)
+                            await DiscordBot.Client.UpdateStatusAsync(new DiscordActivity("for the server to come online...", ActivityType.Watching), UserStatus.DoNotDisturb);
+
+                        _discordHttpServer.Stop();
+                    }
                     break;
                 case TorchSessionState.Unloaded:
                     break;
@@ -351,7 +403,7 @@ namespace EventSystem
             }
             else
             {
-                await _playerAccountXmlManager.CreatePlayerAccountAsync((long)player.SteamId);
+                await _playerAccountXmlManager.CreatePlayerAccountAsync(player.Name, (long)player.SteamId);
                 LoggerHelper.DebugLog(Log, _config.Data, $"Player account file created for {player.Name}");
             }
         }
@@ -427,79 +479,39 @@ namespace EventSystem
             }
         }
 
+        public long GetIdentityId(ulong steamId)
+        {
+            return MySession.Static.Players.TryGetIdentityId(steamId);
+        }
 
-        //private ConcurrentDictionary<Action, int> updateSubscribers = new ConcurrentDictionary<Action, int>();
-        //private ConcurrentDictionary<Action, int> updateSubscribersPerSecond = new ConcurrentDictionary<Action, int>();
+        public bool IsPlayerOnline(long identityId)
+        {
+            return MySession.Static.Players.GetOnlinePlayers().Any(p => p.Identity.IdentityId == identityId);
+        }
 
-        //// Zdefiniowane czasowe aktualizacje
-        //private int _currentFrameCount = 0;
-        //private readonly int _maxUpdateTime = 60 * 60; // Co 1 minutę przy założeniu 60 FPS
 
-        //private int _currentFrameCountSeconds = 0;
-        //private static readonly int _maxUpdateTimeSeconds = 60; // Co 1 sekundę
-
-        //public override void Update()
-        //{
-        //    _currentFrameCount++;
-        //    _currentFrameCountSeconds++;
-
-        //    if (_currentFrameCount >= _maxUpdateTime)
-        //    {
-        //        var orderedActions = updateSubscribers.OrderBy(kvp => kvp.Value).Select(kvp => kvp.Key);
-        //        foreach (var action in orderedActions)
-        //        {
-        //            action();
-        //        }
-        //        _currentFrameCount = 0;
-        //    }
-
-        //    if (_currentFrameCountSeconds >= _maxUpdateTimeSeconds)
-        //    {
-        //        var orderedActionsPerSecond = updateSubscribersPerSecond.OrderBy(kvp => kvp.Value).Select(kvp => kvp.Key);
-        //        foreach (var action in orderedActionsPerSecond)
-        //        {
-        //            action();
-        //        }
-        //        _currentFrameCountSeconds = 0;
-        //    }
-        //}
-
-        //// Dodaj subskrybenta aktualizacji
-        //public void AddUpdateSubscriber(Action updateAction, int priority = 0)
-        //{
-        //    updateSubscribers.TryAdd(updateAction, priority);
-        //}
-
-        //// Usuń subskrybenta aktualizacji
-        //public void RemoveUpdateSubscriber(Action updateAction)
-        //{
-        //    updateSubscribers.TryRemove(updateAction, out _);
-        //}
-
-        //// Dodaj subskrybenta aktualizacji co sekundę
-        //public void AddUpdateSubscriberPerSecond(Action updateAction, int priority = 0)
-        //{
-        //    updateSubscribersPerSecond.TryAdd(updateAction, priority);
-        //}
-
-        //// Usuń subskrybenta aktualizacji co sekundę
-        //public void RemoveUpdateSubscriberPerSecond(Action updateAction)
-        //{
-        //    updateSubscribersPerSecond.TryRemove(updateAction, out _);
-        //}
-        public void Save()
+        public Task Save()
         {
             try
             {
                 _config.Save();
                 _packRewardsConfig.Save();
                 _itemRewardsConfig.Save();
+                _discordBotConfig.Save();
                 Log.Info("Configuration Saved.");
             }
             catch (IOException e)
             {
-                Log.Warn(e, "Configuration failed to save");
+                Log.Warn(" Configuration failed to save: " + e.ToString());
             }
+
+            return Task.CompletedTask;
+        }
+
+        public override void Dispose()
+        {
+            DiscordBot.Dispose();
+            base.Dispose();
         }
     }
 }

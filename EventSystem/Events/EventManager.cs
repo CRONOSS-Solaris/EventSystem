@@ -1,4 +1,7 @@
-﻿using EventSystem.Managers;
+﻿using DSharpPlus.Entities;
+using EventSystem.Discord;
+using EventSystem.Discord.Utils;
+using EventSystem.Managers;
 using EventSystem.Utils;
 using NLog;
 using Sandbox.ModAPI;
@@ -22,13 +25,17 @@ namespace EventSystem.Events
         private readonly EventSystemConfig _config;
         private readonly ActiveEventsLCDManager _activeEventsLCDManager;
         private AllEventsLCDManager _allEventsLcdManager;
+        private readonly MessageService _messageService;
 
-        public EventManager(EventSystemConfig config, ActiveEventsLCDManager lcdManager, AllEventsLCDManager allEventsLcdManager)
+        public EventManager(EventSystemConfig config, ActiveEventsLCDManager lcdManager, AllEventsLCDManager allEventsLcdManager, MessageService messageService)
         {
             _config = config;
             _activeEventsLCDManager = lcdManager;
             _allEventsLcdManager = allEventsLcdManager;
+            _messageService = messageService;
+
         }
+
 
         public void RegisterEvent(EventsBase eventItem)
         {
@@ -129,20 +136,22 @@ namespace EventSystem.Events
             var eventItem = (EventsBase)state;
             LoggerHelper.DebugLog(Log, _config, $"Attempting to start event '{eventItem.EventName}'.");
 
-            // Asynchroniczne wywołanie ExecuteEvent z obsługą callback
-            Task.Run(() => eventItem.SystemStartEvent()).ContinueWith(task =>
+            // Asynchronous invocation of ExecuteEvent with a callback
+            Task.Run(() => eventItem.SystemStartEvent()).ContinueWith(async task =>
             {
-                // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
+                // Executed on the ThreadPool thread, thus any UI or game element interactions require InvokeOnMainThread
                 if (task.IsFaulted)
                 {
-                    // Logowanie błędów, jeśli takie wystąpiły
+                    // Error logging, if any occur
                     var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
-                    LoggerHelper.DebugLog(Log, _config, $"Error during starting event '{eventItem.EventName}': {exception}");
+                    Log.Error($"Error during starting event '{eventItem.EventName}': {exception}");
                 }
                 else
                 {
                     SendNotification($"{eventItem.EventName} is starting now!", "Green");
-                    // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
+                    string endTime = $"{eventItem.EndTime:hh\\:mm\\:ss}";
+                    await _messageService.SendEmbedMessageToAllRegisteredUsers($"⏰ {eventItem.EventName} is starting now! ⏰", $"Join us for the event! It will end at {endTime} 🎉", DiscordColor.Green);
+                    // Success, additional actions or state updates can be performed here
                     LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' started successfully.");
                 }
 

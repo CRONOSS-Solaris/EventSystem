@@ -1,7 +1,9 @@
-﻿using EventSystem.Events;
+﻿using EventSystem.Discord;
+using EventSystem.Events;
 using EventSystem.Managers;
 using EventSystem.Utils;
 using NLog;
+using Sandbox.Game;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -533,6 +535,36 @@ namespace EventSystem
                 return await Plugin.PlayerAccountXmlManager.UpdatePlayerPointsAsync((long)steamId, pointsChange);
             }
         }
+
+        [Command("discordlogin", "Login using your Discord account.")]
+        [Permission(MyPromoteLevel.None)]
+        public async void DiscordLogin()
+        {
+            if (Context.Player == null)
+            {
+                Log.Error("This command can only be used by a player.");
+                return;
+            }
+
+            long steamId = (long)Context.Player.SteamUserId;
+
+            // Check if the player already has a linked Discord ID
+            bool alreadyLinked = Plugin.Config.UseDatabase ?
+                await Plugin.DatabaseManager.HasLinkedDiscordId(steamId) :
+                await Plugin.PlayerAccountXmlManager.HasLinkedDiscordId(steamId);
+
+            if (alreadyLinked)
+            {
+
+                EventSystemMain.ChatManager.SendMessageAsOther($"{Plugin.Config.EventPrefix}","Your Discord account is already linked.", Color.Red, (ulong)steamId);
+                return;
+            }
+
+            string loginUrl = DiscordAuthHelper.GetDiscordLoginUrl(steamId);
+            string steamOverlayUrl = $"https://steamcommunity.com/linkfilter/?url={Uri.EscapeUriString(loginUrl)}";
+
+            MyVisualScriptLogicProvider.OpenSteamOverlay(steamOverlayUrl, Context.Player.Identity.IdentityId);
+        } 
 
     }
 }

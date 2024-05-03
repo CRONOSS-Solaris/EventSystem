@@ -145,7 +145,36 @@
                             <Button Style="{StaticResource ButtonStyle1}" Grid.Column="1" Content="Wiki" Click="WikiButton_OnClick" VerticalAlignment="Center" HorizontalAlignment="Center" Width="100" FontWeight="Bold" Height="22"/>
                         </Grid>
                     </GroupBox>
+                    
+                    <!-- Discord Bot -->
+                    <GroupBox Grid.Row="1" Grid.Column="1" Header="Discord Bot" FontWeight="Bold" BorderBrush="Black" BorderThickness="2" Margin="5,145,5,69" Grid.RowSpan="2">
+                        <Grid Margin="5">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="130"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <CheckBox Content="Enable Discord Bot" IsChecked="{Binding DCconfig.EnableDiscordBot}" Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Normal"/>
+                            <Label Content="Bot Name" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DCconfig.DiscordBotName}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Http Adress" Grid.Row="2" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DCconfig.DiscordHttpAdress}" Grid.Row="2" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Token" Grid.Row="3" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DCconfig.Token}" Grid.Row="3" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Client ID" Grid.Row="4" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DCconfig.ClientId}" Grid.Row="4" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
+                            <Label Content="Client Secret" Grid.Row="5" Grid.Column="0" FontWeight="Normal"/>
+                            <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding DCconfig.ClientSecret}" Grid.Row="5" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
 
+                        </Grid>
+                    </GroupBox>
 
                     <!-- LCD Management -->
                     <GroupBox Header="LCD Management" FontWeight="Bold" Grid.Row="2" Grid.Column="0" BorderBrush="Black" BorderThickness="2" Margin="5,5,5,69">
@@ -163,11 +192,11 @@
                                 <ColumnDefinition Width="*"/>
                                 <ColumnDefinition Width="*"/>
                             </Grid.ColumnDefinitions>
-                            <CheckBox Content="Enable Active Events LCD Manager" IsChecked="{Binding Config.EnableActiveEventsLCDManager}" Grid.Row="0" FontWeight="Normal"/>
+                            <CheckBox Content="Enable Active Events LCD Manager" IsChecked="{Binding Config.EnableActiveEventsLCDManager}" Grid.Row="0" Grid.ColumnSpan="2" FontWeight="Normal" Margin="0,-4,0,4"/>
                             <Label Content="Active Events LCD Tag Name" Grid.Row="1" Grid.Column="0" FontWeight="Normal"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding Config.ActiveEventsLCDManagerTagName}" Grid.Row="1" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
                             <Rectangle Grid.Row="2" Fill="Black" Grid.ColumnSpan="2"/>
-                            <CheckBox Content="Enable All Events LCD Manager" IsChecked="{Binding Config.EnableAllEventsLCDManager}" Grid.Row="3" Margin="0,5,0,0" FontWeight="Normal"/>
+                            <CheckBox Content="Enable All Events LCD Manager" IsChecked="{Binding Config.EnableAllEventsLCDManager}" Grid.Row="3" Grid.ColumnSpan="2" Margin="0,3,0,2" FontWeight="Normal"/>
                             <Label Content="All Events LCD Tag Name" Grid.Row="4" Grid.Column="0" FontWeight="Normal"/>
                             <TextBox Style="{DynamicResource TextBoxStyle1}" Text="{Binding Config.AllEventsLcdTagName}" Grid.Row="4" Grid.Column="1" Margin="5,5,5,5" Padding="1,0,0,0"/>
                         </Grid>

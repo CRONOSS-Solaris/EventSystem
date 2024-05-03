@@ -1,4 +1,6 @@
 ﻿using Npgsql;
+using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 
 namespace EventSystem.DataBase
@@ -25,6 +27,7 @@ namespace EventSystem.DataBase
                         CREATE TABLE IF NOT EXISTS eventsystem_player_accounts (
                             nickname VARCHAR(255),
                             steam_id BIGINT PRIMARY KEY,
+                            discord_id BIGINT,
                             points BIGINT NOT NULL
                         )";
                     cmd.ExecuteNonQuery();
@@ -96,6 +99,128 @@ namespace EventSystem.DataBase
                 }
             }
             return null;
+        }
+
+        public async Task LinkDiscordId(long steamId, string discordId)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var cmd = new NpgsqlCommand("UPDATE eventsystem_player_accounts SET discord_id = @discordId WHERE steam_id = @steamId", connection))
+                {
+                    cmd.Parameters.AddWithValue("@discordId", discordId);
+                    cmd.Parameters.AddWithValue("@steamId", steamId);
+                    await cmd.ExecuteNonQueryAsync();
+                }
+            }
+        }
+
+        public async Task<bool> HasLinkedDiscordId(long steamId)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var cmd = new NpgsqlCommand("SELECT discord_id FROM eventsystem_player_accounts WHERE steam_id = @steamId", connection))
+                {
+                    cmd.Parameters.AddWithValue("@steamId", steamId);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            var discordId = reader["discord_id"];
+                            return discordId != DBNull.Value && !string.IsNullOrWhiteSpace(discordId.ToString());
+                        }
+                    }
+                }
+            }
+            return false;
+        }
+
+        public async Task<long?> GetPlayerPointsByDiscordId(string discordId)
+        {
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var cmd = new NpgsqlCommand("SELECT points FROM eventsystem_player_accounts WHERE discord_id = @discordId", connection))
+                {
+                    cmd.Parameters.AddWithValue("@discordId", discordId);
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        if (await reader.ReadAsync())
+                        {
+                            return reader.GetInt64(0);
+                        }
+                    }
+                }
+            }
+            return null; // Return null if no record is found or in case of an error
+        }
+
+        public async Task<List<(string Username, int Points)>> GetTopFiveUsersWithPoints()
+        {
+            var topUsers = new List<(string Username, int Points)>();
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var cmd = new NpgsqlCommand("SELECT username, points FROM eventsystem_player_accounts ORDER BY points DESC LIMIT 5", connection))
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            topUsers.Add((reader.GetString(0), reader.GetInt32(1)));
+                        }
+                    }
+                }
+            }
+            return topUsers;
+        }
+
+        public async Task<long?> GetSteamIdByDiscordId(string discordIdStr)
+        {
+            if (long.TryParse(discordIdStr, out long discordId))
+            {
+                using (var connection = new NpgsqlConnection(_connectionString))
+                {
+                    await connection.OpenAsync();
+                    using (var cmd = new NpgsqlCommand("SELECT steam_id FROM eventsystem_player_accounts WHERE discord_id = @discordId", connection))
+                    {
+                        cmd.Parameters.AddWithValue("@discordId", discordId); // Użyj skonwertowanego long
+                        using (var reader = await cmd.ExecuteReaderAsync())
+                        {
+                            if (await reader.ReadAsync() && !reader.IsDBNull(0))
+                            {
+                                return reader.GetInt64(0);
+                            }
+                        }
+                    }
+                }
+            }
+            return null; // Zwróć null jeśli konwersja się nie powiedzie lub rekord nie zostanie znaleziony
+        }
+
+        public async Task<List<ulong>> GetAllDiscordIds()
+        {
+            List<ulong> discordIds = new List<ulong>();
+            using (var connection = new NpgsqlConnection(_connectionString))
+            {
+                await connection.OpenAsync();
+                using (var cmd = new NpgsqlCommand("SELECT discord_id FROM eventsystem_player_accounts WHERE discord_id IS NOT NULL", connection))
+                {
+                    using (var reader = await cmd.ExecuteReaderAsync())
+                    {
+                        while (await reader.ReadAsync())
+                        {
+                            // Sprawdzenie czy wartość discord_id nie jest null i dodanie do listy
+                            if (!reader.IsDBNull(0)) // Zakładając, że discord_id jest w pierwszej kolumnie
+                            {
+                                discordIds.Add((ulong)reader.GetInt64(0));
+                            }
+                        }
+                    }
+                }
+            }
+            return discordIds;
         }
 
 
