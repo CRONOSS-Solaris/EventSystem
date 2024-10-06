@@ -3,6 +3,7 @@ using EventSystem.Utils;
 using NLog;
 using Sandbox.Common.ObjectBuilders;
 using Sandbox.Game.World;
+using Sandbox.ModAPI;
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
@@ -28,13 +29,13 @@ namespace EventSystem.Event
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
         private System.Timers.Timer messageAndGpsTimer;
 
-
         private bool enemyInZone = false;
-
 
         private Vector3D sphereCenter;
         private double ZoneRadius;
 
+        // Zmieniono na ConcurrentDictionary dla łatwiejszego dostępu do kluczy
+        private ConcurrentDictionary<long, bool> spawnedGridEntityIds = new ConcurrentDictionary<long, bool>();
 
         public WarZoneGrid(EventSystemConfig config)
         {
@@ -48,9 +49,16 @@ namespace EventSystem.Event
 
         public override string EventDescription => _config.WarZoneGridSettings.EventDescription;
 
-
         public override async Task SystemStartEvent()
         {
+            // Jeśli stan eventu został wcześniej zapisany, użyj danych z LoadFullState
+            if (sphereCenter == Vector3D.Zero)
+            {
+                // Losowanie pozycji sfery tylko jeśli nie została wcześniej ustawiona
+                sphereCenter = RandomizePosition(_config.WarZoneGridSettings);
+                ZoneRadius = _config.WarZoneGridSettings.Radius;
+            }
+
             // Dodanie wszystkich graczy do listy uczestników
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
@@ -59,10 +67,6 @@ namespace EventSystem.Event
             }
 
             var settings = _config.WarZoneGridSettings;
-
-            // Losowanie pozycji sfery
-            Vector3D initialSphereCenter = RandomizePosition(settings);
-            double Radius = settings.Radius;
 
             // Ustawienia siatki
             var gridSettings = new GridSpawnSettings
@@ -95,20 +99,26 @@ namespace EventSystem.Event
             for (int attempt = 1; attempt <= maxSpawnAttempts && !isSpawnSuccessful; attempt++)
             {
                 // Spawnowanie siatki na środku strefy.
-                var spawnedEntityIds = await SpawnGrid(gridName, initialSphereCenter);
+                var spawnedEntityIds = await SpawnGrid(gridName, sphereCenter);
 
                 // Sprawdź, czy siatka została pomyślnie zespawniona
                 if (spawnedEntityIds.Count > 0)
                 {
                     isSpawnSuccessful = true;
+
+                    foreach (var id in spawnedEntityIds)
+                    {
+                        spawnedGridEntityIds.TryAdd(id, true);
+                    }
+
                     // Oblicz rzeczywiste centrum siatki i aktualizuj sphereCenter
                     sphereCenter = CalculateGridCenter(spawnedEntityIds); // Zaktualizowane centrum sfery
-                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"SphereCenter Coords: {sphereCenter.X}, {sphereCenter.Y}, {sphereCenter.X}");
-                    this.ZoneRadius = Radius; // Przechowuje wartość w polu klasy
-                                              // Aktualizacja zakończona, twórz strefę bezpieczeństwa
+                    LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"SphereCenter Coords: {sphereCenter.X}, {sphereCenter.Y}, {sphereCenter.Z}");
+                    this.ZoneRadius = ZoneRadius; // Przechowuje wartość w polu klasy
 
-                    ZoneShape shape = _config.WarZoneGridSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
-                    CreateSafeZone(sphereCenter, Radius, shape, true, _config.WarZoneGridSettings.AccessTypePlayers, _config.WarZoneGridSettings.AccessTypeFactions, _config.WarZoneGridSettings.AccessTypeGrids, _config.WarZoneGridSettings.AccessTypeFloatingObjects, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneGridSettings.SafeZoneColor, _config.WarZoneGridSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
+                    // Twórz strefę bezpieczeństwa
+                    ZoneShape shape = settings.Shape == ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
+                    CreateSafeZone(sphereCenter, ZoneRadius, shape, true, settings.AccessTypePlayers, settings.AccessTypeFactions, settings.AccessTypeGrids, settings.AccessTypeFloatingObjects, settings.AllowedActions, settings.SafeZoneColor, settings.SafeZoneTexture, true, $"{EventName}SafeZone");
                     break; // Wyjdź z pętli, jeśli spawn się powiódł
                 }
                 else if (attempt < maxSpawnAttempts)
@@ -120,9 +130,8 @@ namespace EventSystem.Event
 
             if (!isSpawnSuccessful)
             {
-                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be welded together after multiple attempts. The safety zone will not be created.");
+                LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, "The grid could not be spawned after multiple attempts. The safety zone will not be created.");
                 EventSystemMain.ChatManager.SendMessageAsOther(EventName, "Due to unexpected technical issues, the event cannot be initiated. We apologize for the inconvenience.", Color.Red);
-
             }
             else
             {
@@ -138,6 +147,8 @@ namespace EventSystem.Event
                 // Rozpocznij timer od razu
                 await SendEventMessagesAndGps();
 
+                // Zapisz stan eventu
+                SaveFullState();
             }
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start {EventName}.");
@@ -181,6 +192,28 @@ namespace EventSystem.Event
             await CleanupGrids();
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending {EventName}.");
+
+            // Usuń zapisany stan eventu po jego zakończeniu
+            DeleteFullState();
+
+            await Task.CompletedTask;
+        }
+
+        public override async Task RestoreEvent()
+        {
+
+            // Subskrypcja sprawdzania pozycji graczy co sekundę
+            SubscribeToUpdatePerSecond(CheckPlayersInSphere);
+
+            // Odtwórz timer
+            var settings = _config.WarZoneGridSettings;
+            messageAndGpsTimer = new System.Timers.Timer(settings.MessageAndGpsBroadcastIntervalSeconds * 1000);
+            messageAndGpsTimer.Elapsed += async (sender, e) => await SendEventMessagesAndGps();
+            messageAndGpsTimer.AutoReset = true;
+            messageAndGpsTimer.Enabled = true;
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Restored {EventName} after server restart.");
+
             await Task.CompletedTask;
         }
 
@@ -258,8 +291,6 @@ namespace EventSystem.Event
             AwardPointsToPlayers(now);
         }
 
-
-
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
         {
             bool previouslyEnemyInZone = enemyInZone;
@@ -311,8 +342,7 @@ namespace EventSystem.Event
                     else if (!isPlayerCurrentlyInZone)
                     {
                         // Jeśli gracz opuścił strefę, usuń jego czas wejścia, aby nie liczyć czasu spędzonego poza strefą
-                        DateTime removedTime;
-                        playerEntryTime.TryRemove(playerId, out removedTime);
+                        playerEntryTime.TryRemove(playerId, out _);
                     }
                 }
             }
@@ -329,7 +359,6 @@ namespace EventSystem.Event
                 }
             }
         }
-
 
         // Implementacja metody IsEnemy
         private bool IsEnemy(long playerId)
@@ -484,6 +513,32 @@ namespace EventSystem.Event
             return new Vector3D(x, y, z);
         }
 
+        // Implementacja metod do zapisywania i wczytywania stanu
+
+        protected override object GetEventStateData()
+        {
+            return new WarZoneGridStateData
+            {
+                SphereCenter = this.sphereCenter,
+                ZoneRadius = this.ZoneRadius,
+            };
+        }
+
+        protected override void SetEventStateData(object data)
+        {
+            if (data is WarZoneGridStateData stateData)
+            {
+                this.sphereCenter = stateData.SphereCenter;
+                this.ZoneRadius = stateData.ZoneRadius;
+            }
+        }
+
+        private class WarZoneGridStateData
+        {
+            public Vector3D SphereCenter { get; set; }
+            public double ZoneRadius { get; set; }
+        }
+
         public class WarZoneGridConfig
         {
             public string EventName { get; set; }
@@ -509,7 +564,7 @@ namespace EventSystem.Event
             public AreaCoords MinCoords { get; set; }
             public AreaCoords MaxCoords { get; set; }
             public CoordinateRandomizationType RandomizationType { get; set; }
-            public long OwnerGrid {  get; set; }
+            public long OwnerGrid { get; set; }
             public string EventDescription { get; set; }
         }
     }

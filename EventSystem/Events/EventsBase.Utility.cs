@@ -193,7 +193,7 @@ namespace EventSystem.Events
             }
         }
 
-        private string _configPath = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "Config", "EntityIDs.json");
+        private string _configPath = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "EventTechnical_ReadOnly", "EntityIDs.json");
 
         public void SaveEntityIds()
         {

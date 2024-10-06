@@ -121,7 +121,7 @@ namespace EventSystem
             _discordBotConfig = fileManager.SetupConfig("DiscordBotConfig.cfg", new DiscordBotConfig());
             _packRewardsConfig = fileManager.SetupConfig("PackRewardsConfig.cfg", new PackRewardsConfig());
             _itemRewardsConfig = fileManager.SetupConfig("ItemRewardsConfig.cfg", new ItemRewardsConfig());
-            string jsonFilePath = Path.Combine(StoragePath, "EventSystem", "Config", "EntityIDs.json");
+            string jsonFilePath = Path.Combine(StoragePath, "EventSystem", "EventTechnical_ReadOnly", "EntityIDs.json");
             fileManager.CreateFile(jsonFilePath);
             _packRewardsConfig.Data.GenerateExampleRewards();
             _itemRewardsConfig.Data.GenerateExampleIndividualItems();

@@ -18,7 +18,8 @@ namespace EventSystem.Managers
                           Path.Combine(_rootPath, "PlayerAccounts"),
                           Path.Combine(_rootPath, "EventPrefabBlueprint"),
                           Path.Combine(_rootPath, "CommandPrefabTest"),
-                          Path.Combine(_rootPath, "EventSourceCode")
+                          Path.Combine(_rootPath, "EventSourceCode"),
+                          Path.Combine(_rootPath, "EventTechnical_ReadOnly")
 
                           );
         }

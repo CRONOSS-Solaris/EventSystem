@@ -4,7 +4,11 @@ using ProtoBuf;
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Runtime.Serialization;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
+using System.Linq;
+using System.Collections.Concurrent;
 
 namespace EventSystem.Events
 {
@@ -14,79 +18,79 @@ namespace EventSystem.Events
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventsBase");
 
         /// <summary>
-        /// Gets or sets a value indicating whether to use event-specific configuration.
+        /// Określa, czy używać konfiguracji specyficznej dla eventu.
         /// </summary>
         public bool UseEventSpecificConfig { get; set; } = true;
 
         /// <summary>
-        /// Gets or sets the path where blueprint grids are stored for the event.
+        /// Ścieżka, gdzie są przechowywane blueprinty gridów dla eventu.
         /// </summary>
         protected virtual string PrefabStoragePath { get; set; } = Path.Combine("EventSystem", "EventPrefabBlueprint");
 
         /// <summary>
-        /// Gets or sets the name of the event.
+        /// Nazwa eventu.
         /// </summary>
         [ProtoMember(1)]
         public string EventName { get; set; }
 
         /// <summary>
-        /// Gets or sets a value indicating whether the event is enabled.
+        /// Określa, czy event jest włączony.
         /// </summary>
         public bool IsEnabled { get; set; }
 
         /// <summary>
-        /// Gets or sets a list of days of the month when the event is active.
+        /// Lista dni miesiąca, w których event jest aktywny.
         /// </summary>
         public List<int> ActiveDaysOfMonth { get; set; }
 
         /// <summary>
-        /// Gets or sets the start time of the event.
+        /// Czas rozpoczęcia eventu.
         /// </summary>
         public TimeSpan StartTime { get; set; }
 
         /// <summary>
-        /// Gets or sets the end time of the event.
+        /// Czas zakończenia eventu.
         /// </summary>
         public TimeSpan EndTime { get; set; }
 
         /// <summary>
-        /// Gets the description of the event.
+        /// Opis eventu.
         /// </summary>
         public abstract string EventDescription { get; }
 
         /// <summary>
-        /// Performs specific actions related to starting the event.
+        /// Wykonuje specyficzne akcje związane z rozpoczęciem eventu.
         /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>Zadanie reprezentujące asynchroniczną operację.</returns>
         public abstract Task SystemStartEvent();
 
         /// <summary>
-        /// Starts the event.
+        /// Uruchamia event.
         /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>Zadanie reprezentujące asynchroniczną operację.</returns>
         public virtual Task StartEvent()
         {
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Performs specific actions related to ending the event.
+        /// Wykonuje specyficzne akcje związane z zakończeniem eventu.
         /// </summary>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <returns>Zadanie reprezentujące asynchroniczną operację.</returns>
         public abstract Task SystemEndEvent();
 
         /// <summary>
-        /// Loads the settings of a specific event from the configuration.
+        /// Ładuje ustawienia specyficzne dla eventu z konfiguracji.
         /// </summary>
-        /// <param name="config">The configuration to load settings from.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
+        /// <param name="config">Konfiguracja do załadowania ustawień.</param>
+        /// <returns>Zadanie reprezentujące asynchroniczną operację.</returns>
         public virtual Task LoadEventSettings(EventSystemConfig config)
         {
             return Task.CompletedTask;
         }
 
         /// <summary>
-        /// Loads event-specific settings.
+        /// Ładuje ustawienia specyficzne dla eventu.
         /// </summary>
         public virtual void LoadEventSpecificSettings()
         {
@@ -94,20 +98,20 @@ namespace EventSystem.Events
         }
 
         /// <summary>
-        /// Checks if the event is active on the specified day of the month.
+        /// Sprawdza, czy event jest aktywny w danym dniu miesiąca.
         /// </summary>
-        /// <param name="day">The day of the month to check.</param>
-        /// <returns>True if the event is active on the specified day, otherwise false.</returns>
+        /// <param name="day">Dzień miesiąca do sprawdzenia.</param>
+        /// <returns>True, jeśli event jest aktywny w danym dniu, w przeciwnym razie false.</returns>
         public bool IsActiveOnDayOfMonth(int day)
         {
-            // Returns true if the event is active on the specified day of the month
+            // Zwraca true, jeśli event jest aktywny w danym dniu miesiąca
             return ActiveDaysOfMonth.Count == 0 || ActiveDaysOfMonth.Contains(day);
         }
 
         /// <summary>
-        /// Checks if the event is active at the current moment.
+        /// Sprawdza, czy event jest obecnie aktywny.
         /// </summary>
-        /// <returns>True if the event is currently active, otherwise false.</returns>
+        /// <returns>True, jeśli event jest obecnie aktywny, w przeciwnym razie false.</returns>
         public bool IsActiveNow()
         {
             var now = DateTime.Now;
@@ -115,22 +119,21 @@ namespace EventSystem.Events
             bool isActiveTime = now.TimeOfDay >= StartTime && now.TimeOfDay <= EndTime;
             bool isActive = IsEnabled && isActiveToday && isActiveTime;
 
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Checking if '{EventName}' is active now:");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Current time: {now}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Sprawdzanie, czy '{EventName}' jest aktywny teraz:");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Aktualny czas: {now}");
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"IsEnabled: {IsEnabled}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active today ({now.Day}): {isActiveToday}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Active time ({now.TimeOfDay}): {isActiveTime}");
-            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Is active: {isActive}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Aktywny dzisiaj ({now.Day}): {isActiveToday}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Aktywny czas ({now.TimeOfDay}): {isActiveTime}");
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Czy aktywny: {isActive}");
 
             return isActive;
         }
 
-
         /// <summary>
-        /// Calculates the time left until the event starts.
+        /// Oblicza czas pozostały do rozpoczęcia eventu.
         /// </summary>
-        /// <param name="now">The current date and time.</param>
-        /// <returns>The time left until the event starts.</returns>
+        /// <param name="now">Aktualna data i czas.</param>
+        /// <returns>Czas pozostały do rozpoczęcia eventu.</returns>
         public TimeSpan GetNextStartTime(DateTime now)
         {
             var startOfDay = now.Date.Add(StartTime);
@@ -138,14 +141,174 @@ namespace EventSystem.Events
         }
 
         /// <summary>
-        /// Calculates the time remaining in the event.
+        /// Oblicza czas pozostały do zakończenia eventu.
         /// </summary>
-        /// <param name="now">The current date and time.</param>
-        /// <returns>The time remaining in the event.</returns>
+        /// <param name="now">Aktualna data i czas.</param>
+        /// <returns>Czas pozostały do zakończenia eventu.</returns>
         public TimeSpan GetNextEndTime(DateTime now)
         {
             var endOfDay = now.Date.Add(EndTime);
             return now < endOfDay ? endOfDay - now : TimeSpan.Zero;
+        }
+
+        /// <summary>
+        /// Aktualny stan eventu.
+        /// </summary>
+        public EventState State { get; set; }
+
+        private static readonly string StateDirectory = Path.Combine(EventSystemMain.Instance.StoragePath, "EventSystem", "EventTechnical_ReadOnly");
+
+        /// <summary>
+        /// Zapisuje pełny stan eventu, włączając dane dynamiczne, do pliku JSON.
+        /// </summary>
+        public virtual void SaveFullState()
+        {
+            try
+            {
+                if (!Directory.Exists(StateDirectory))
+                {
+                    Directory.CreateDirectory(StateDirectory);
+                }
+
+                string stateFilePath = Path.Combine(StateDirectory, $"{EventName}_fullstate.json");
+
+                // Pobierz dynamiczne dane stanu
+                var dynamicData = GetEventStateData();
+
+                // Dodaj identyfikatory safezon i siatek do dynamicznych danych stanu
+                var eventState = new EventStateData
+                {
+                    State = this.State,
+                    DynamicData = new
+                    {
+                        EventSpecificData = dynamicData,
+                        SafeZoneEntityIds = safezoneEntityIds.Keys.ToList(),
+                        SpawnedGridEntityIds = SpawnedGridsEntityIds.Keys.ToList()
+                    }
+                };
+
+                string json = JsonConvert.SerializeObject(eventState, Formatting.Indented);
+                File.WriteAllText(stateFilePath, json);
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Błąd podczas zapisywania pełnego stanu dla eventu '{EventName}': {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Ładuje pełny stan eventu, włączając dane dynamiczne, z pliku JSON.
+        /// </summary>
+        public virtual void LoadFullState()
+        {
+            try
+            {
+                string stateFilePath = Path.Combine(StateDirectory, $"{EventName}_fullstate.json");
+                if (File.Exists(stateFilePath))
+                {
+                    string json = File.ReadAllText(stateFilePath);
+                    var eventState = JsonConvert.DeserializeObject<EventStateData>(json);
+
+                    this.State = eventState.State;
+
+                    if (eventState.DynamicData != null)
+                    {
+                        // Odczytaj identyfikatory safezon i siatek
+                        var dynamicData = eventState.DynamicData as Newtonsoft.Json.Linq.JObject;
+                        var eventSpecificData = dynamicData["EventSpecificData"];
+                        var safeZoneIds = dynamicData["SafeZoneEntityIds"]?.ToObject<List<long>>() ?? new List<long>();
+                        var spawnedGridIds = dynamicData["SpawnedGridEntityIds"]?.ToObject<List<long>>() ?? new List<long>();
+
+                        // Ustaw dane specyficzne dla eventu
+                        SetEventStateData(eventSpecificData);
+
+                        // Przywróć identyfikatory safezon
+                        safezoneEntityIds.Clear();
+                        foreach (var id in safeZoneIds)
+                        {
+                            safezoneEntityIds.TryAdd(id, true);
+                        }
+
+                        // Przywróć identyfikatory zespawnowanych siatek
+                        SpawnedGridsEntityIds.Clear();
+                        foreach (var id in spawnedGridIds)
+                        {
+                            SpawnedGridsEntityIds.TryAdd(id, true);
+                        }
+                    }
+                }
+                else
+                {
+                    // Brak zapisanego stanu, inicjalizacja jako zaplanowany
+                    this.State = EventState.Scheduled;
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Błąd podczas wczytywania pełnego stanu dla eventu '{EventName}': {ex.Message}");
+                this.State = EventState.Scheduled; // Domyślny stan w przypadku błędu
+            }
+        }
+
+
+        /// <summary>
+        /// Usuwa zapisany pełny stan eventu.
+        /// </summary>
+        public virtual void DeleteFullState()
+        {
+            try
+            {
+                string stateFilePath = Path.Combine(StateDirectory, $"{EventName}_fullstate.json");
+                if (File.Exists(stateFilePath))
+                {
+                    File.Delete(stateFilePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"Błąd podczas usuwania pełnego stanu dla eventu '{EventName}': {ex.Message}");
+            }
+        }
+
+        /// <summary>
+        /// Pobiera dynamiczne dane stanu eventu do zapisania.
+        /// Ta metoda powinna być nadpisana w klasach pochodnych, aby uwzględnić specyficzne dane stanu.
+        /// </summary>
+        /// <returns>Obiekt reprezentujący dynamiczne dane stanu.</returns>
+        protected virtual object GetEventStateData()
+        {
+            // Nadpisz w klasach pochodnych, aby zwrócić specyficzne dane stanu
+            return null;
+        }
+
+        /// <summary>
+        /// Ustawia dynamiczne dane stanu eventu z wczytanych danych.
+        /// Ta metoda powinna być nadpisana w klasach pochodnych, aby przywrócić specyficzne dane stanu.
+        /// </summary>
+        /// <param name="data">Dynamiczne dane stanu wczytane z zapisanego stanu.</param>
+        protected virtual void SetEventStateData(object data)
+        {
+            // Nadpisz w klasach pochodnych, aby ustawić specyficzne dane stanu
+        }
+
+        /// <summary>
+        /// Przywraca stan eventu po restarcie lub awarii serwera.
+        /// </summary>
+        /// <returns>Zadanie reprezentujące asynchroniczną operację.</returns>
+        public virtual async Task RestoreEvent()
+        {
+            // Domyślna implementacja: wywołaj SystemStartEvent bez ponownego inicjalizowania
+            await SystemStartEvent();
+        }
+
+        [ProtoContract]
+        protected class EventStateData
+        {
+            [ProtoMember(1)]
+            public EventState State { get; set; }
+
+            [ProtoMember(1)]
+            public object DynamicData { get; set; }
         }
     }
 }

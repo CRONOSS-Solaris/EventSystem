@@ -7,6 +7,7 @@ using NLog;
 using Sandbox.ModAPI;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -16,6 +17,13 @@ using Torch.Commands;
 
 namespace EventSystem.Events
 {
+    public enum EventState
+    {
+        Scheduled,
+        Running,
+        Ended
+    }
+
     public class EventManager
     {
         public static readonly Logger Log = LogManager.GetLogger("EventSystem/EventManager");
@@ -24,8 +32,9 @@ namespace EventSystem.Events
         private readonly Dictionary<string, Timer> _endTimers = new Dictionary<string, Timer>();
         private readonly EventSystemConfig _config;
         private readonly ActiveEventsLCDManager _activeEventsLCDManager;
-        private AllEventsLCDManager _allEventsLcdManager;
+        private readonly AllEventsLCDManager _allEventsLcdManager;
         private readonly MessageService _messageService;
+        private readonly object _eventStateLock = new object();
 
         public EventManager(EventSystemConfig config, ActiveEventsLCDManager lcdManager, AllEventsLCDManager allEventsLcdManager, MessageService messageService)
         {
@@ -33,29 +42,24 @@ namespace EventSystem.Events
             _activeEventsLCDManager = lcdManager;
             _allEventsLcdManager = allEventsLcdManager;
             _messageService = messageService;
-
         }
-
 
         public void RegisterEvent(EventsBase eventItem)
         {
             try
             {
-                // Sprawdź, czy EventName jest ustawiony
                 if (string.IsNullOrEmpty(eventItem.EventName))
                 {
                     throw new InvalidOperationException($"Event '{eventItem.GetType().Name}' cannot be registered without an EventName.");
                 }
 
-                // Sprawdź, czy nazwa eventu już istnieje
                 if (_events.Any(e => e.EventName.Equals(eventItem.EventName, StringComparison.OrdinalIgnoreCase)))
                 {
-                    // Można wyrzucić wyjątek lub zalogować, że nazwa eventu już istnieje
                     Log.Error($"Event with the name '{eventItem.EventName}' is already registered.");
-                    return; // Przerwij metodę, nie dodawaj duplikatu
+                    return;
                 }
 
-                eventItem.ServerStartCleanup();
+                eventItem.LoadFullState();
 
                 _events.Add(eventItem);
 
@@ -76,110 +80,162 @@ namespace EventSystem.Events
             }
         }
 
+        public void InitializeEvents()
+        {
+            foreach (var eventItem in _events)
+            {
+                // Wczytaj pełny stan, włączając dane dynamiczne
+                eventItem.LoadFullState();
+
+                if (eventItem.State == EventState.Running)
+                {
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' był uruchomiony podczas awarii serwera. Przywracanie go teraz.");
+
+                    // Uruchom event bez ponownej inicjalizacji wszystkiego
+                    StartEvent(eventItem, restore: true);
+                }
+                else if (eventItem.State == EventState.Scheduled)
+                {
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' jest zaplanowany. Ponowne planowanie.");
+                    ScheduleEvent(eventItem);
+                }
+            }
+
+            UpdateLCDs();
+        }
+
         public void ScheduleEvent(EventsBase eventItem)
         {
-            // Sprawdź, czy event jest włączony
-            if (!eventItem.IsEnabled)
+            lock (_eventStateLock)
             {
-                LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' is disabled and will not be scheduled.");
-                return;
-            }
-
-            var now = DateTime.Now;
-            var dayOfMonth = now.Day;
-
-            if (eventItem.IsActiveOnDayOfMonth(dayOfMonth))
-            {
-                var startTime = eventItem.GetNextStartTime(now);
-                var endTime = eventItem.GetNextEndTime(now);
-
-                try
+                if (!eventItem.IsEnabled)
                 {
-                    // Sprawdź, czy czas rozpoczęcia jest w przeszłości, a czas zakończenia w przyszłości
-                    if (now > now.Date.Add(eventItem.StartTime) && now < now.Date.Add(eventItem.EndTime))
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' jest wyłączony i nie zostanie zaplanowany.");
+                    return;
+                }
+
+                if (eventItem.State == EventState.Ended)
+                {
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' już się zakończył.");
+                    return;
+                }
+
+                var now = DateTime.Now;
+                var dayOfMonth = now.Day;
+
+                if (eventItem.IsActiveOnDayOfMonth(dayOfMonth))
+                {
+                    var startTime = eventItem.GetNextStartTime(now);
+                    var endTime = eventItem.GetNextEndTime(now);
+
+                    try
                     {
-                        StartEvent(eventItem); // Uruchom event od razu
+                        if (now > now.Date.Add(eventItem.StartTime) && now < now.Date.Add(eventItem.EndTime))
+                        {
+                            StartEvent(eventItem);
+                        }
+                        else
+                        {
+                            if (startTime > TimeSpan.Zero)
+                            {
+                                var startTimer = new Timer(StartEvent, eventItem, startTime, Timeout.InfiniteTimeSpan);
+                                _startTimers[eventItem.EventName] = startTimer;
+                                eventItem.State = EventState.Scheduled;
+                                eventItem.SaveFullState();
+                            }
+
+                            if (endTime > TimeSpan.Zero)
+                            {
+                                if (_endTimers.ContainsKey(eventItem.EventName))
+                                {
+                                    _endTimers[eventItem.EventName].Change(endTime, Timeout.InfiniteTimeSpan);
+                                }
+                                else
+                                {
+                                    var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
+                                    _endTimers[eventItem.EventName] = endTimer;
+                                }
+                            }
+                        }
                     }
-                    else
+                    catch (Exception ex)
                     {
-                        // Harmonogram rozpoczęcia eventu
-                        if (startTime > TimeSpan.Zero)
-                        {
-                            var startTimer = new Timer(StartEvent, eventItem, startTime, Timeout.InfiniteTimeSpan);
-                            _startTimers[eventItem.EventName] = startTimer;
-                        }
-                        // Harmonogram zakończenia eventu
-                        if (endTime > TimeSpan.Zero)
-                        {
-                            if (_endTimers.ContainsKey(eventItem.EventName))
-                            {
-                                _endTimers[eventItem.EventName].Change(endTime, Timeout.InfiniteTimeSpan);
-                            }
-                            else
-                            {
-                                var endTimer = new Timer(EndEvent, eventItem, endTime, Timeout.InfiniteTimeSpan);
-                                _endTimers[eventItem.EventName] = endTimer;
-                            }
-                        }
+                        Log.Error(ex, $"Error while scheduling event '{eventItem.EventName}': {ex.Message}");
                     }
                 }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, $"Error while scheduling event '{eventItem.EventName}': {ex.Message}");
-                }
+                UpdateLCDs();
             }
-            UpdateLCDs();
         }
 
         private void StartEvent(object state)
         {
-            var eventItem = (EventsBase)state;
-            LoggerHelper.DebugLog(Log, _config, $"Attempting to start event '{eventItem.EventName}'.");
+            StartEvent(state, restore: false);
+        }
 
-            // Asynchronous invocation of ExecuteEvent with a callback
-            Task.Run(() => eventItem.SystemStartEvent()).ContinueWith(async task =>
+        private void StartEvent(object state, bool restore)
+        {
+            var eventItem = (EventsBase)state;
+            LoggerHelper.DebugLog(Log, _config, $"Próba uruchomienia eventu '{eventItem.EventName}'.");
+
+            lock (_eventStateLock)
             {
-                // Executed on the ThreadPool thread, thus any UI or game element interactions require InvokeOnMainThread
-                if (task.IsFaulted)
+                eventItem.State = EventState.Running;
+                eventItem.SaveFullState();
+            }
+
+            Task.Run(async () =>
+            {
+                if (restore)
                 {
-                    // Error logging, if any occur
-                    var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
-                    Log.Error($"Error during starting event '{eventItem.EventName}': {exception}");
+                    // Jeśli przywracamy, uruchom event bez ponownej inicjalizacji
+                    await eventItem.RestoreEvent();
                 }
                 else
                 {
-                    SendNotification($"{eventItem.EventName} is starting now!", "Green");
+                    // Normalne uruchomienie eventu
+                    await eventItem.SystemStartEvent();
+                }
+            }).ContinueWith(async task =>
+            {
+                if (task.IsFaulted)
+                {
+                    var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
+                    Log.Error($"Błąd podczas uruchamiania eventu '{eventItem.EventName}': {exception}");
+                }
+                else
+                {
+                    SendNotification($"{eventItem.EventName} rozpoczyna się teraz!", "Green");
                     string endTime = $"{eventItem.EndTime:hh\\:mm\\:ss}";
-                    await _messageService.SendEmbedMessageToAllRegisteredUsers($"⏰ {eventItem.EventName} is starting now! ⏰", $"Join us for the event! It will end at {endTime} 🎉", DiscordColor.Green);
-                    // Success, additional actions or state updates can be performed here
-                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' started successfully.");
+                    await _messageService.SendEmbedMessageToAllRegisteredUsers($"⏰ {eventItem.EventName} rozpoczyna się teraz! ⏰", $"Dołącz do nas! Event zakończy się o {endTime} 🎉", DiscordColor.Green);
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' został pomyślnie uruchomiony.");
                 }
 
                 UpdateLCDs();
             });
         }
 
-
         private void EndEvent(object state)
         {
             var eventItem = (EventsBase)state;
-            LoggerHelper.DebugLog(Log, _config, $"Attempting to end event '{eventItem.EventName}'.");
+            LoggerHelper.DebugLog(Log, _config, $"Próba zakończenia eventu '{eventItem.EventName}'.");
 
-            // Asynchroniczne wywołanie EndEvent z obsługą callback
+            lock (_eventStateLock)
+            {
+                eventItem.State = EventState.Ended;
+                eventItem.SaveFullState();
+            }
+
             Task.Run(() => eventItem.SystemEndEvent()).ContinueWith(task =>
             {
-                // Wykonywane na wątku ThreadPool, dlatego wszelkie interakcje z UI lub elementami gry wymagają InvokeOnMainThread
                 if (task.IsFaulted)
                 {
-                    // Logowanie błędów, jeśli takie wystąpiły
                     var exception = task.Exception?.InnerException?.Message ?? "Unknown error";
-                    LoggerHelper.DebugLog(Log, _config, $"Error during ending event '{eventItem.EventName}': {exception}");
+                    LoggerHelper.DebugLog(Log, _config, $"Błąd podczas zakończania eventu '{eventItem.EventName}': {exception}");
                 }
                 else
                 {
-                    SendNotification($"{eventItem.EventName} has ended. Thank you for participating!", "Red");
-                    // Sukces, można tutaj zaktualizować stan lub wykonać dodatkowe czynności
-                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' ended successfully.");
+                    SendNotification($"{eventItem.EventName} zakończył się. Dziękujemy za udział!", "Red");
+                    LoggerHelper.DebugLog(Log, _config, $"Event '{eventItem.EventName}' został pomyślnie zakończony.");
                 }
 
                 UpdateLCDs();
@@ -188,19 +244,18 @@ namespace EventSystem.Events
 
         private void UpdateLCDs()
         {
-            // Wywołanie metody na głównym wątku gry
             MyAPIGateway.Utilities.InvokeOnGameThread(() =>
             {
                 try
                 {
                     _activeEventsLCDManager.UpdateMonitorBlocks();
                     _allEventsLcdManager.UpdateMonitorBlocks();
-                    LoggerHelper.DebugLog(Log, _config, "LCDs updated successfully.");
+                    LoggerHelper.DebugLog(Log, _config, "LCD zostały zaktualizowane pomyślnie.");
                 }
                 catch (Exception ex)
                 {
-                    Log.Error(ex, $"Error while updating LCDs: {ex.Message}");
-                    LoggerHelper.DebugLog(Log, _config, $"Error while updating LCDs: {ex.Message}");
+                    Log.Error(ex, $"Błąd podczas aktualizacji LCD: {ex.Message}");
+                    LoggerHelper.DebugLog(Log, _config, $"Błąd podczas aktualizacji LCD: {ex.Message}");
                 }
             });
         }
@@ -210,29 +265,28 @@ namespace EventSystem.Events
             var torch = TorchBase.Instance;
             if (torch == null)
             {
-                Log.Error("TorchBase.Instance is null. Notification cannot be sent.");
+                Log.Error("TorchBase.Instance jest null. Powiadomienie nie może zostać wysłane.");
                 return;
             }
 
             var session = torch.CurrentSession;
             if (session == null)
             {
-                Log.Error("TorchBase.CurrentSession is null. Notification cannot be sent.");
+                Log.Error("TorchBase.CurrentSession jest null. Powiadomienie nie może zostać wysłane.");
                 return;
             }
 
             var commandManager = session.Managers.GetManager<CommandManager>();
             if (commandManager == null)
             {
-                Log.Error("CommandManager is null. Notification cannot be sent.");
+                Log.Error("CommandManager jest null. Powiadomienie nie może zostać wysłane.");
                 return;
             }
 
             string notificationCommand = $"!notify \"{message}\" 9000 {color}";
             commandManager.HandleCommandFromServer(notificationCommand);
-            Log.Info($"A notification was sent: {message} with color {color}.");
+            Log.Info($"Wysłano powiadomienie: {message} z kolorem {color}.");
         }
-
 
         public IEnumerable<EventsBase> Events => _events;
     }

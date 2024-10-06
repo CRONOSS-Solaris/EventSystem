@@ -25,17 +25,13 @@ namespace EventSystem.Event
         private ConcurrentDictionary<long, DateTime> lastPointsAwarded = new ConcurrentDictionary<long, DateTime>();
         private ConcurrentDictionary<long, DateTime> playerEntryTime = new ConcurrentDictionary<long, DateTime>();
 
-
         private HashSet<long> currentEnemiesInZone = new HashSet<long>();
         private System.Timers.Timer messageAndGpsTimer;
 
-
         private bool enemyInZone = false;
-
 
         private Vector3D sphereCenter;
         private double ZoneRadius;
-
 
         public WarZone(EventSystemConfig config)
         {
@@ -49,9 +45,16 @@ namespace EventSystem.Event
 
         public override string EventDescription => _config.WarZoneSettings.EventDescription;
 
-
         public override async Task SystemStartEvent()
         {
+            // Jeśli stan eventu został wcześniej zapisany, użyj danych z LoadFullState
+            if (sphereCenter == Vector3D.Zero)
+            {
+                // Losowanie pozycji sfery tylko jeśli nie została wcześniej ustawiona
+                sphereCenter = RandomizePosition(_config.WarZoneSettings);
+                ZoneRadius = _config.WarZoneSettings.Radius;
+            }
+
             // Dodanie wszystkich graczy do listy uczestników
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
@@ -61,17 +64,15 @@ namespace EventSystem.Event
 
             var settings = _config.WarZoneSettings;
 
-            // Losowanie pozycji sfery
-            Vector3D sphereCenter = RandomizePosition(settings);
-            double Radius = settings.Radius;
+            ZoneShape shape = settings.Shape == ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
 
-            // Przechowuje wartości w polach klasy, aby móc ich użyć w CheckPlayersInSphere
-            this.sphereCenter = sphereCenter;
-            this.ZoneRadius = Radius;
-
-            ZoneShape shape = _config.WarZoneSettings.Shape == EventsBase.ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
-            CreateSafeZone(sphereCenter, Radius, shape, true, _config.WarZoneSettings.AccessTypePlayers, _config.WarZoneSettings.AccessTypeFactions, _config.WarZoneSettings.AccessTypeGrids, _config.WarZoneSettings.AccessTypeFloatingObjects, MySafeZoneAction.Damage | MySafeZoneAction.Shooting, _config.WarZoneSettings.SafeZoneColor, _config.WarZoneSettings.SafeZoneTexture, true, $"{EventName}SafeZone");
-
+            // Jeśli safezona nie została przywrócona, utwórz nową
+            if (!safezoneEntityIds.Any())
+            {
+                CreateSafeZone(sphereCenter, ZoneRadius, shape, true, settings.AccessTypePlayers, settings.AccessTypeFactions,
+                    settings.AccessTypeGrids, settings.AccessTypeFloatingObjects, settings.AllowedActions, settings.SafeZoneColor,
+                    settings.SafeZoneTexture, true, $"{EventName}SafeZone");
+            }
 
             // Subskrypcja sprawdzania pozycji graczy co sekundę
             SubscribeToUpdatePerSecond(CheckPlayersInSphere);
@@ -86,6 +87,9 @@ namespace EventSystem.Event
             await SendEventMessagesAndGps();
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"System Start {EventName}.");
+
+            // Zapisz stan eventu po upewnieniu się, że wszystko zostało utworzone
+            SaveFullState();
         }
 
         private async Task SendEventMessagesAndGps()
@@ -97,11 +101,11 @@ namespace EventSystem.Event
             foreach (var player in MySession.Static.Players.GetOnlinePlayers()?.ToList() ?? new List<MyPlayer>())
             {
                 long playerId = player.Identity.IdentityId;
-                // Tutaj wywołujesz metodę SendGpsToPlayer dla każdego gracza online
-                SendGpsToPlayer(playerId, $"{EventName} Event", sphereCenter, $"Location of the {EventName} event!", TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
+                // Wywołanie metody SendGpsToPlayer dla każdego gracza online
+                SendGpsToPlayer(playerId, $"{EventName} Event", sphereCenter, $"Location of the {EventName} event!",
+                    TimeSpan.FromSeconds(_config.WarZoneSettings.MessageAndGpsBroadcastIntervalSeconds), color: Color.Red);
             }
         }
-
 
         public override async Task SystemEndEvent()
         {
@@ -126,6 +130,45 @@ namespace EventSystem.Event
 
             LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Ending {EventName}.");
             await Task.CompletedTask;
+
+            // Usuń zapisany stan eventu po jego zakończeniu
+            DeleteFullState();
+        }
+
+        public override async Task RestoreEvent()
+        {
+            // Przywróć safezony
+            RestoreEntities();
+
+            // Subskrypcja sprawdzania pozycji graczy co sekundę
+            SubscribeToUpdatePerSecond(CheckPlayersInSphere);
+
+            // Odtwórz timer
+            var settings = _config.WarZoneSettings;
+            messageAndGpsTimer = new System.Timers.Timer(settings.MessageAndGpsBroadcastIntervalSeconds * 1000);
+            messageAndGpsTimer.Elapsed += async (sender, e) => await SendEventMessagesAndGps();
+            messageAndGpsTimer.AutoReset = true;
+            messageAndGpsTimer.Enabled = true;
+
+            LoggerHelper.DebugLog(Log, EventSystemMain.Instance.Config, $"Restored {EventName} after server restart.");
+
+            await Task.CompletedTask;
+        }
+
+        private void RestoreEntities()
+        {
+            MyAPIGateway.Utilities.InvokeOnGameThread(() =>
+            {
+                // Przywróć safezony
+                if (safezoneEntityIds.Any())
+                {
+                    var settings = _config.WarZoneSettings;
+                    ZoneShape shape = settings.Shape == ZoneShape.Sphere ? ZoneShape.Sphere : ZoneShape.Cube;
+                    CreateSafeZone(sphereCenter, ZoneRadius, shape, true, settings.AccessTypePlayers, settings.AccessTypeFactions,
+                        settings.AccessTypeGrids, settings.AccessTypeFloatingObjects, settings.AllowedActions, settings.SafeZoneColor,
+                        settings.SafeZoneTexture, true, $"{EventName}SafeZone");
+                }
+            });
         }
 
         private void CheckPlayersInSphere()
@@ -203,8 +246,6 @@ namespace EventSystem.Event
             AwardPointsToPlayers(now);
         }
 
-
-
         private void UpdateEnemyPresence(HashSet<long> newEnemiesInZone)
         {
             bool previouslyEnemyInZone = enemyInZone;
@@ -256,8 +297,7 @@ namespace EventSystem.Event
                     else if (!isPlayerCurrentlyInZone)
                     {
                         // Jeśli gracz opuścił strefę, usuń jego czas wejścia, aby nie liczyć czasu spędzonego poza strefą
-                        DateTime removedTime;
-                        playerEntryTime.TryRemove(playerId, out removedTime);
+                        playerEntryTime.TryRemove(playerId, out _);
                     }
                 }
             }
@@ -274,7 +314,6 @@ namespace EventSystem.Event
                 }
             }
         }
-
 
         // Implementacja metody IsEnemy
         private bool IsEnemy(long playerId)
@@ -427,6 +466,32 @@ namespace EventSystem.Event
             return new Vector3D(x, y, z);
         }
 
+        // Implementacja metod do zapisywania i wczytywania stanu
+
+        protected override object GetEventStateData()
+        {
+            return new WarZoneStateData
+            {
+                SphereCenter = this.sphereCenter,
+                ZoneRadius = this.ZoneRadius,
+            };
+        }
+
+        protected override void SetEventStateData(object data)
+        {
+            if (data is WarZoneStateData stateData)
+            {
+                this.sphereCenter = stateData.SphereCenter;
+                this.ZoneRadius = stateData.ZoneRadius;
+            }
+        }
+
+        private class WarZoneStateData
+        {
+            public Vector3D SphereCenter { get; set; }
+            public double ZoneRadius { get; set; }
+        }
+
         public class WarZoneConfig
         {
             public string EventName { get; set; }
@@ -437,7 +502,6 @@ namespace EventSystem.Event
             public int PointsAwardIntervalSeconds { get; set; }
             public int MessageAndGpsBroadcastIntervalSeconds { get; set; }
             public int PointsPerInterval { get; set; }
-
 
             public ZoneShape Shape { get; set; }
             public double Radius { get; set; }
